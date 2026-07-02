@@ -17,22 +17,13 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
 app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static('uploads'));
+app.use(express.json({ limit: '10mb' })); 
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-if (!fs.existsSync('uploads')) fs.mkdirSync('uploads');
-
-// ==========================================
-// MONGODB CONNECTION
-// ==========================================
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Successfully connected to MongoDB Atlas.'))
   .catch((error) => console.error('Database connection error:', error.message));
 
-// ==========================================
-// LIVE EXCEL READER HELPER
-// ==========================================
-// Reads the Excel file fresh every time it's called
 function getExcelStudents() {
   const excelPath = path.join(__dirname, 'data', 'students.xlsx');
   if (!fs.existsSync(excelPath)) return [];
@@ -41,30 +32,53 @@ function getExcelStudents() {
     const sheetName = workbook.SheetNames[0];
     return xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
   } catch (err) {
-    console.error('Error reading Excel:', err.message);
     return [];
   }
 }
 
-// ==========================================
-// MULTER (Photo Uploads)
-// ==========================================
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
+const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // ==========================================
-// CANDIDATE ROUTES
+// SECURITY GUARD (Middleware)
 // ==========================================
-app.post('/api/candidates', upload.single('photo'), async (req, res) => {
+const verifyAdmin = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Access Denied. No token provided.' });
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded.role !== 'admin') throw new Error('Not admin');
+        next();
+    } catch (err) {
+        res.status(401).json({ message: 'Invalid or Expired Admin Token.' });
+    }
+};
+
+// Admin Authentication Route
+app.post('/api/admin/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    // Looks for secure variables in Render, otherwise defaults to the hardcoded ones
+    const adminUser = process.env.ADMIN_USER || 'electionteam';
+    const adminPass = process.env.ADMIN_PASS || 'fpc2k26';
+
+    if (username === adminUser && password === adminPass) {
+        const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
+        res.json({ message: 'Login successful', token });
+    } else {
+        res.status(401).json({ message: 'Invalid Admin Credentials' });
+    }
+});
+
+// ==========================================
+// CANDIDATE ROUTES (Protected modifications)
+// ==========================================
+app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
     const { name, posting, department, year, section } = req.body;
     if (!req.file) return res.status(400).json({ message: 'Photo required.' });
-    const newCandidate = new Candidate({
-      name, posting, department, year: Number(year), section: section || 'None', photo: `/uploads/${req.file.filename}`
-    });
+    const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    const newCandidate = new Candidate({ name, posting, department, year: Number(year), section: section || 'None', photo: base64Image });
     await newCandidate.save();
     res.status(201).json({ message: 'Added successfully!', candidate: newCandidate });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -74,58 +88,42 @@ app.get('/api/candidates', async (req, res) => {
   try { res.json(await Candidate.find()); } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.put('/api/candidates/:id', async (req, res) => {
+app.delete('/api/candidates/:id', verifyAdmin, async (req, res) => {
   try {
-    await Candidate.findByIdAndUpdate(req.params.id, { name: req.body.name, posting: req.body.posting });
-    res.json({ message: 'Updated' });
-  } catch (error) { res.status(500).json({ error: error.message }); }
-});
-
-app.delete('/api/candidates/:id', async (req, res) => {
-  try {
-    const cand = await Candidate.findById(req.params.id);
-    if (cand && cand.photo) {
-      const filePath = path.join(__dirname, cand.photo);
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-    }
     await Candidate.findByIdAndDelete(req.params.id);
     res.json({ message: 'Deleted' });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
 // ==========================================
-// ADMIN ROUTES
+// ADMIN ROUTES (Highly Protected)
 // ==========================================
-app.get('/api/admin/stats', async (req, res) => {
+app.get('/api/admin/stats', verifyAdmin, async (req, res) => {
   try {
     const excelStudents = getExcelStudents();
     res.json({
-      totalStudents: excelStudents.length, // Reads live count from Excel
-      totalVotes: await Student.countDocuments(), // Reads total voter receipts in DB
+      totalStudents: excelStudents.length,
+      totalVotes: await Student.countDocuments(),
       totalCandidates: await Candidate.countDocuments()
     });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// NEW: Combines live Excel data with MongoDB Voting Receipts
-app.get('/api/admin/students', async (req, res) => {
+app.get('/api/admin/students', verifyAdmin, async (req, res) => {
   try {
     const excelStudents = getExcelStudents();
-    // Get list of everyone who has voted from the DB
     const votedStudents = await Student.find({}, 'rollNumber');
     const votedSet = new Set(votedStudents.map(s => String(s.rollNumber).toUpperCase()));
-
-    // Merge the data
     const directory = excelStudents.map(stu => ({
       name: stu.Name,
       rollNumber: String(stu.RollNumber).toUpperCase(),
       hasVoted: votedSet.has(String(stu.RollNumber).toUpperCase())
     }));
-    
     res.json(directory);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// Left public so the frontend knows if voting is open
 app.get('/api/admin/settings', async (req, res) => {
   try {
     const settings = await Settings.findOne({ settingsId: 'master_config' });
@@ -133,7 +131,7 @@ app.get('/api/admin/settings', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.post('/api/admin/settings', async (req, res) => {
+app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
     const { isPublished, startTime, endTime } = req.body;
     let settings = await Settings.findOne({ settingsId: 'master_config' });
@@ -144,20 +142,9 @@ app.post('/api/admin/settings', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// NUCLEAR WIPE
-app.delete('/api/admin/wipe-all', async (req, res) => {
+app.delete('/api/admin/wipe-all', verifyAdmin, async (req, res) => {
    try {
-       await Student.deleteMany({}); // Destroys all voting receipts
-       
-       const dir = 'uploads/';
-       fs.readdir(dir, (err, files) => {
-         if (!err) {
-           for (const file of files) {
-             if(file !== '.gitkeep') fs.unlink(path.join(dir, file), err => { if (err) console.error(err); });
-           }
-         }
-       });
-
+       await Student.deleteMany({});
        await Candidate.deleteMany({});
        res.json({ message: 'System completely wiped.' });
    } catch(error) { res.status(500).json({ error: error.message }); }
@@ -165,6 +152,10 @@ app.delete('/api/admin/wipe-all', async (req, res) => {
 
 app.get('/api/admin/download-results', async (req, res) => {
   try {
+    const token = req.query.token;
+    if (!token) return res.status(401).send('Access Denied');
+    jwt.verify(token, JWT_SECRET); 
+
     const candidates = await Candidate.find().sort({ votes: -1 });
     const candidateData = candidates.map(c => ({ Name: c.name, Posting: c.posting, Department: c.department, TotalVotes: c.votes }));
     
@@ -178,20 +169,23 @@ app.get('/api/admin/download-results', async (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="Election_Results.xlsx"');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(xlsx.write(wb, { type: 'buffer', bookType: 'xlsx' }));
-  } catch (error) { res.status(500).json({ error: error.message }); }
+  } catch (error) { res.status(401).send('Invalid Token or Error generating report'); }
 });
 
 // ==========================================
-// STUDENT ROUTES
+// STUDENT ROUTES (Unchanged)
 // ==========================================
-// LIVE EXCEL LOGIN: Reads directly from Excel on every login attempt!
 app.post('/api/student/login', async (req, res) => {
    try {
        const { rollNumber, dob } = req.body;
-       const students = getExcelStudents();
+       const cleanRoll = String(rollNumber).toUpperCase().trim();
        
+       const existingVote = await Student.findOne({ rollNumber: cleanRoll });
+       if (existingVote) return res.status(403).json({ message: 'You have already cast your ballot. Multiple votes are not allowed.' });
+
+       const students = getExcelStudents();
        const student = students.find(s => 
-           String(s.RollNumber).toUpperCase() === String(rollNumber).toUpperCase() &&
+           String(s.RollNumber).toUpperCase().trim() === cleanRoll &&
            String(s.DOB).trim() === String(dob).trim()
        );
 
@@ -200,29 +194,26 @@ app.post('/api/student/login', async (req, res) => {
        res.json({ 
            message: 'Login successful', 
            token: jwt.sign({ rollNumber: student.RollNumber }, JWT_SECRET, { expiresIn: '2h' }), 
-           student: { name: student.Name, rollNumber: String(student.RollNumber).toUpperCase() } 
+           student: { name: student.Name, rollNumber: cleanRoll } 
        });
    } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// SUBMIT BALLOT: Creates a "Voter Receipt" in MongoDB using the Roll Number
 app.post('/api/student/vote', async (req, res) => {
    try {
        const { rollNumber, studentName, candidateIds } = req.body; 
+       const cleanRoll = String(rollNumber).toUpperCase().trim();
        
-       // 1. Check if they already have a receipt in the DB
-       const existingVote = await Student.findOne({ rollNumber: rollNumber });
+       const existingVote = await Student.findOne({ rollNumber: cleanRoll });
        if (existingVote) return res.status(400).json({ message: 'You have already voted!' });
        
-       // 2. Check timing
        const settings = await Settings.findOne({ settingsId: 'master_config' });
        const now = new Date();
        if (!settings || !settings.isPublished || now < new Date(settings.startTime) || now > new Date(settings.endTime)) {
            return res.status(400).json({ message: 'Voting is currently closed.' });
        }
 
-       // 3. Create the receipt & Increment votes
-       await Student.create({ rollNumber: rollNumber, name: studentName, hasVoted: true });
+       await Student.create({ rollNumber: cleanRoll, name: studentName, hasVoted: true });
        await Candidate.updateMany({ _id: { $in: candidateIds } }, { $inc: { votes: 1 } });
        
        res.json({ message: 'Ballot successfully cast!' });

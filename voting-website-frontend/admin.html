@@ -235,7 +235,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
+if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
   let globalStudents = []; 
 
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
@@ -246,26 +246,38 @@
 
       const targetId = this.getAttribute('data-bs-target');
       const desktopTab = document.querySelector(`.sidebar-wrapper [data-bs-target="${targetId}"]`);
-      if (desktopTab) {
-        const tab = new bootstrap.Tab(desktopTab);
-        tab.show();
-      }
+      if (desktopTab) { const tab = new bootstrap.Tab(desktopTab); tab.show(); }
 
       document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
     });
   });
 
-  function logout() { localStorage.removeItem('isAdmin'); window.location.href = 'index.html'; }
+  function logout() { 
+    localStorage.removeItem('isAdmin'); 
+    localStorage.removeItem('adminToken'); 
+    window.location.href = 'index.html'; 
+  }
+  
   function showAlert(msg, type) {
     const d = document.getElementById('globalAlert');
     d.innerHTML = `<div class="alert alert-${type} alert-dismissible shadow-sm fw-bold">${msg}<button class="btn-close" data-bs-dismiss="alert"></button></div>`;
     setTimeout(() => d.innerHTML = '', 4000);
   }
 
+  // --- SECURITY WRAPPER ---
+  async function secureFetch(url, options = {}) {
+    const token = localStorage.getItem('adminToken');
+    if (!options.headers) options.headers = {};
+    options.headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, options);
+    if (res.status === 401) { logout(); } // Kick out fake/expired sessions
+    return res;
+  }
+
   async function loadAdminData() {
     try {
-      const statRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/stats');
+      const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
       if(statRes.ok) {
         const s = await statRes.json();
         document.getElementById('stat-students').textContent = s.totalStudents;
@@ -273,7 +285,7 @@
         document.getElementById('stat-candidates').textContent = s.totalCandidates;
       }
 
-      const stuRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/students');
+      const stuRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/students');
       if(stuRes.ok) {
         globalStudents = await stuRes.json();
         filterStudents(); 
@@ -407,7 +419,7 @@
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
     
-    const res = await fetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
+    const res = await secureFetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
     
     btn.disabled = false;
     btn.innerText = 'Save Candidate';
@@ -417,7 +429,7 @@
 
   async function deleteCandidate(id, name) {
     if (confirm(`Delete ${name}?`)) {
-      const res = await fetch(`https://fpc2k26-election.onrender.com/api/candidates/${id}`, { method: 'DELETE' });
+      const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${id}`, { method: 'DELETE' });
       if (res.ok) { showAlert('Deleted.', 'danger'); loadAdminData(); }
     }
   }
@@ -430,7 +442,7 @@
       endTime: document.getElementById('endTime').value 
     };
     
-    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
+    const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
       method: 'POST', 
       headers: {'Content-Type': 'application/json'}, 
       body: JSON.stringify(payload) 
@@ -450,7 +462,7 @@
       endTime: document.getElementById('endTime').value 
     };
     
-    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
+    const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
       method: 'POST', 
       headers: {'Content-Type': 'application/json'}, 
       body: JSON.stringify(payload) 
@@ -464,12 +476,15 @@
 
   async function nuclearWipe() {
     if(confirm("NUCLEAR WARNING: This permanently deletes ALL candidates, photos, and resets ALL votes. Proceed?")) {
-      const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/wipe-all', { method: 'DELETE' });
+      const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/wipe-all', { method: 'DELETE' });
       if(res.ok) { showAlert('System Nuclear Wipe Complete.', 'danger'); loadAdminData(); }
     }
   }
 
-  function downloadResults() { window.location.href = 'https://fpc2k26-election.onrender.com/api/admin/download-results'; }
+  function downloadResults() { 
+    const token = localStorage.getItem('adminToken');
+    window.location.href = `https://fpc2k26-election.onrender.com/api/admin/download-results?token=${token}`; 
+  }
   
   loadAdminData();
 </script>
