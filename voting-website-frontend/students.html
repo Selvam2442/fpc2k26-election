@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Official Ballot | Kamaraj College</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+    
+    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .face-logo { height: 38px; object-fit: contain; }
+    .header-right { display: flex; align-items: center; gap: 24px; }
+    
+    .btn-yellow { background-color: #ffc107; color: #000; font-weight: 700; border-radius: 6px; padding: 6px 16px; border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; transition: all 0.2s; }
+    .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; }
+    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; }
+
+    .wizard-step { display: none; animation: fadeIn 0.4s ease; }
+    .wizard-step.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+    .intro-screen { background: white; border-radius: 20px; padding: 40px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-top: 5vh; }
+    .progress-bar-custom { background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; }
+    .progress-fill { background-color: #0d6efd; height: 100%; transition: width 0.3s ease; }
+    .category-title { font-weight: 800; color: #0d6efd; text-transform: uppercase; letter-spacing: 1px; font-size: 1.5rem; }
+
+    .candidate-card { border: 2px solid #e9ecef; border-radius: 12px; overflow: hidden; background: #ffffff; cursor: pointer; transition: all 0.2s; height: 100%; display: flex; flex-direction: column; }
+    .candidate-card:hover { border-color: #0d6efd; box-shadow: 0 8px 15px rgba(13, 110, 253, 0.15); }
+    .candidate-card.selected { border: 3px solid #198754; box-shadow: 0 8px 20px rgba(25, 135, 84, 0.25); background-color: #f8fff9; transform: scale(1.02); }
+    .candidate-card.selected .select-btn { background-color: #198754; color: white; }
+    .candidate-card.selected .select-btn::after { content: ' \f00c'; font-family: "Font Awesome 6 Free"; font-weight: 900; }
+    
+    .candidate-img-wrapper { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background-color: #f1f3f5; }
+    .candidate-img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .candidate-info { padding: 10px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
+    .candidate-name { font-size: 1.1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.25rem; }
+    .meta-badge { background-color: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 600; display: inline-block; margin: 2px; }
+    
+    .select-btn { background-color: #e9ecef; color: #495057; border: none; padding: 8px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; text-transform: uppercase; margin-top: 10px; width: 100%; transition: all 0.2s; }
+    .nav-btn { border-radius: 50px; padding: 12px 30px; font-weight: 700; font-size: 1.1rem; }
+
+    .skeleton {
+      background: #e9ecef;
+      background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .skeleton-img { width: 100%; aspect-ratio: 3/4; border-radius: 0; }
+    .skeleton-text { height: 20px; width: 80%; margin: 10px auto; }
+    .skeleton-badge { height: 15px; width: 40%; margin: 5px auto; display: inline-block; border-radius: 5px; }
+    .skeleton-btn { height: 35px; width: 100%; margin-top: 10px; border-radius: 8px; }
+    
+    @media (max-width: 768px) {
+      .face-header { padding: 10px 15px; }
+      .face-logo { height: 30px; }
+      .candidate-info { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="face-header sticky-top">
+  <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="Face Prep Logo" class="face-logo" onerror="this.style.display='none'">
+  <div class="header-right">
+    <button class="btn-yellow d-none d-md-flex"><i class="fa-solid fa-gauge-high"></i> My Ballot</button>
+    <span class="nav-link-custom d-none d-lg-inline" id="headerNameDisplay">Voter</span>
+    <div class="avatar-circle shadow-sm" onclick="logout()" title="Log out safely" id="userAvatar">U</div>
+  </div>
+</nav>
+
+<div class="container py-4">
+  <div id="statusAlert" class="alert d-none shadow-sm rounded-4" role="alert"></div>
+
+  <!-- STEP 1: WELCOME SCREEN -->
+  <div id="introScreen" class="wizard-step active">
+    <div class="intro-screen mx-auto" style="max-width: 600px;">
+      <i class="fa-solid fa-graduation-cap text-primary mb-3" style="font-size: 4rem; color: #0d6efd !important;"></i>
+      <h2 class="fw-bold text-dark">Welcome, <span id="studentNameDisplay" style="color: #0d6efd;">Voter</span>!</h2>
+      <p class="text-muted mt-3 fs-5">You are about to enter the official secure voting booth. You must select <strong>one candidate for every posting</strong> to complete your ballot.</p>
+      <button class="btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm" style="background-color: #0d6efd; border: none;" onclick="startVoting()" id="startBtn">
+        <i class="fa-solid fa-play me-2"></i> START VOTING
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: VOTING WIZARD -->
+  <div id="votingWizard" class="wizard-step">
+    <div class="progress-bar-custom"><div class="progress-fill" id="wizardProgress"></div></div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="category-title mb-0" id="categoryTitle">Loading...</h3>
+      <span class="badge bg-dark" id="stepCounter">1 of X</span>
+    </div>
+
+    <div class="row g-2" id="candidatesGrid"></div>
+
+    <div class="d-flex justify-content-between mt-4 pb-5">
+      <button class="btn btn-outline-secondary nav-btn shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden;">
+        <i class="fa-solid fa-arrow-left me-1"></i> Prev
+      </button>
+      <button class="btn btn-primary nav-btn shadow" id="nextBtn" style="background-color: #0d6efd; border: none;" onclick="nextCategory()" disabled>
+        Next Category <i class="fa-solid fa-arrow-right ms-1"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3: SUCCESS SCREEN -->
+  <div id="successScreen" class="wizard-step">
+    <div class="intro-screen mx-auto text-center" style="max-width: 600px;">
+      <i class="fa-solid fa-check-circle text-success mb-4" style="font-size: 5rem;"></i>
+      <h1 class="fw-bold text-dark mb-3">Ballot Cast!</h1>
+      <p class="text-muted fs-5 mb-0">Thank you for participating. Your votes have been securely recorded.</p>
+      <button class="btn btn-dark mt-5 px-4 rounded-pill fw-bold" onclick="logout()">Close Session</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Ensure we are using rollNumber properly
+  const rollNumber = localStorage.getItem('rollNumber');
+  const token = localStorage.getItem('voterToken');
+  const studentName = localStorage.getItem('studentName');
+  
+  let groupedCandidates = {};
+  let postingsArray = [];
+  let currentCategoryIndex = 0;
+  let userSelections = {}; 
+
+  if (!rollNumber || !token) window.location.href = 'index.html';
+  if (studentName) {
+    document.getElementById('studentNameDisplay').textContent = studentName;
+    document.getElementById('headerNameDisplay').textContent = studentName;
+    document.getElementById('userAvatar').textContent = studentName.charAt(0).toUpperCase(); 
+  }
+  if (localStorage.getItem('hasVoted') === 'true') showSuccessScreen();
+
+  function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+  function triggerHaptic(pattern) {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  function renderSkeletons() {
+    const grid = document.getElementById('candidatesGrid');
+    grid.innerHTML = '';
+    for(let i=0; i<4; i++) {
+      grid.innerHTML += `
+        <div class="col-6 col-md-4 col-lg-3 mb-3">
+          <div class="card candidate-card" style="border: 2px solid #e9ecef; cursor: default;">
+            <div class="skeleton skeleton-img"></div>
+            <div class="candidate-info">
+              <div class="skeleton skeleton-text"></div>
+              <div><div class="skeleton skeleton-badge"></div><div class="skeleton skeleton-badge"></div></div>
+              <div class="skeleton skeleton-btn"></div>
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
+  async function fetchElectionData() {
+    try {
+      const response = await fetch('http://localhost:5000/api/candidates');
+      const candidates = await response.json();
+      
+      if (candidates.length === 0) {
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-clock me-2"></i> Election Not Active';
+        return;
+      }
+
+      groupedCandidates = candidates.reduce((acc, candidate) => {
+        const posting = candidate.posting.trim().toUpperCase();
+        if (!acc[posting]) acc[posting] = [];
+        acc[posting].push(candidate);
+        return acc;
+      }, {});
+
+      postingsArray = Object.keys(groupedCandidates);
+      postingsArray.sort((a, b) => {
+        if (a === 'PRESIDENT') return -1;
+        if (b === 'PRESIDENT') return 1;
+        return a.localeCompare(b);
+      });
+    } catch (error) { document.getElementById('startBtn').textContent = 'Server Connection Error'; }
+  }
+
+  function startVoting() {
+    document.getElementById('introScreen').classList.remove('active');
+    document.getElementById('votingWizard').classList.add('active');
+    
+    renderSkeletons();
+    setTimeout(renderCategory, 400);
+  }
+
+  function renderCategory() {
+    const postingTitle = postingsArray[currentCategoryIndex];
+    const candidates = groupedCandidates[postingTitle];
+    const selectedId = userSelections[postingTitle];
+    
+    document.getElementById('categoryTitle').textContent = postingTitle;
+    document.getElementById('stepCounter').textContent = `${currentCategoryIndex + 1} of ${postingsArray.length}`;
+    document.getElementById('wizardProgress').style.width = `${((currentCategoryIndex + 1) / postingsArray.length) * 100}%`;
+    
+    const grid = document.getElementById('candidatesGrid');
+    grid.innerHTML = '';
+    
+    candidates.forEach(candidate => {
+      const isSelected = candidate._id === selectedId;
+      const sec = candidate.section !== 'None' ? `(${candidate.section})` : '';
+      
+      grid.innerHTML += `
+        <div class="col-6 col-md-4 col-lg-3 mb-3">
+          <div class="card candidate-card ${isSelected ? 'selected' : ''}" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
+            <div class="candidate-img-wrapper">
+              <img src="http://localhost:5000${candidate.photo}" class="candidate-img" alt="${candidate.name}">
+            </div>
+            <div class="candidate-info">
+              <h3 class="candidate-name" title="${candidate.name}">${candidate.name}</h3>
+              <div class="mb-2">
+                <span class="meta-badge">${candidate.department} ${sec}</span>
+                <span class="meta-badge">Yr ${candidate.year}</span>
+              </div>
+              <div class="mt-auto">
+                <button class="select-btn">${isSelected ? 'SELECTED' : 'SELECT'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    });
+
+    const prevBtn = document.getElementById('prevBtn');
+    prevBtn.style.visibility = currentCategoryIndex === 0 ? 'hidden' : 'visible';
+
+    const nextBtn = document.getElementById('nextBtn');
+    nextBtn.disabled = !selectedId;
+    
+    if (currentCategoryIndex === postingsArray.length - 1) {
+      nextBtn.innerHTML = '<i class="fa-solid fa-check-to-slot me-2"></i> Cast Final Ballot';
+      nextBtn.style.backgroundColor = '#198754';
+    } else {
+      nextBtn.innerHTML = 'Next Category <i class="fa-solid fa-arrow-right ms-1"></i>';
+      nextBtn.style.backgroundColor = '#0d6efd';
+    }
+  }
+
+  function selectCandidate(candidateId, postingTitle) {
+    triggerHaptic(40);
+    userSelections[postingTitle] = candidateId;
+    renderCategory(); 
+  }
+
+  function changeCategory(direction) {
+    currentCategoryIndex += direction;
+    renderSkeletons();
+    setTimeout(renderCategory, 300);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function nextCategory() {
+    if (currentCategoryIndex === postingsArray.length - 1) {
+      submitFinalBallot();
+    } else {
+      changeCategory(1);
+    }
+  }
+
+  async function submitFinalBallot() {
+    const allSelectedIds = Object.values(userSelections);
+    if (!confirm(`Are you sure you want to securely cast your final ballot? You cannot change these votes.`)) return;
+
+    try {
+      const response = await fetch('http://localhost:5000/api/student/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Sending rollNumber instead of studentId
+        body: JSON.stringify({ rollNumber, studentName, candidateIds: allSelectedIds }) 
+      });
+
+      const data = await response.json();
+      if (response.ok || data.message === 'You have already voted!') {
+        localStorage.setItem('hasVoted', 'true');
+        
+        triggerHaptic([100, 50, 100, 50, 200]); 
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0d6efd', '#ffc107', '#198754'] });
+        
+        showSuccessScreen();
+      } else { alert(`Error: ${data.message}`); }
+    } catch (error) { alert('Error connecting to the voting server.'); }
+  }
+
+  function showSuccessScreen() {
+    document.getElementById('introScreen').classList.remove('active');
+    document.getElementById('votingWizard').classList.remove('active');
+    document.getElementById('successScreen').classList.add('active');
+  }
+
+  fetchElectionData();
+</script>
+</body>
+</html>

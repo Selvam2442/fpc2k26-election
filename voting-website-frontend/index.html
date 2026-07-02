@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Election | Kamaraj College</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .face-logo { height: 38px; object-fit: contain; }
+    .header-right { display: flex; align-items: center; gap: 20px; }
+    .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; }
+
+    .login-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 15px; }
+    .login-card { width: 100%; max-width: 450px; border-radius: 12px; border: none; box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+    .input-group-text { background-color: transparent; border-right: none; color: #0d6efd; }
+    .form-control { border-left: none; }
+    .form-control:focus { box-shadow: none; border-color: #dee2e6; }
+    .admin-link { cursor: pointer; color: #adb5bd; transition: color 0.3s ease; }
+    .admin-link:hover { color: #0d6efd; }
+    
+    .status-banner { font-size: 0.9rem; letter-spacing: 1px; font-weight: 800; transition: all 0.3s ease; }
+  </style>
+</head>
+<body>
+
+<nav class="face-header sticky-top">
+  <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="Face Prep Logo" class="face-logo" onerror="this.style.display='none'">
+  <div class="header-right">
+     <span class="nav-link-custom d-none d-md-inline">Kamaraj College Portal</span>
+  </div>
+</nav>
+
+<div class="login-container">
+  <div class="card login-card">
+    <div class="card-body p-4 p-md-5">
+      
+      <!-- STUDENT VIEW -->
+      <div id="studentView">
+        <div class="text-center mb-4">
+          <div id="publicStatusBadge" class="badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm">
+            <i class="fa-solid fa-spinner fa-spin me-1"></i> Checking Election Status...
+          </div>
+          
+          <h4 class="fw-bold text-dark"><i class="fa-solid fa-check-to-slot text-primary me-2"></i>Student Voting Booth</h4>
+          <p class="text-muted small">Log in to cast your vote</p>
+        </div>
+        <div id="studentAlert" class="alert d-none" role="alert"></div>
+        <form id="studentLoginForm">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">ROLL NUMBER</label>
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
+              <input type="text" class="form-control form-control-lg" id="rollNumber" placeholder="e.g. 26BCA001" required>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">DATE OF BIRTH</label>
+            <div class="input-group mb-1">
+              <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
+              <input type="text" class="form-control form-control-lg" id="dob" placeholder="DD-MM-YYYY" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" style="background-color: #0d6efd;">
+            Secure Login <i class="fa-solid fa-arrow-right ms-2"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- ADMIN VIEW -->
+      <div id="adminView" class="d-none">
+        <div class="text-center mb-4">
+          <h4 class="fw-bold text-dark"><i class="fa-solid fa-shield-halved text-danger me-2"></i>Admin Dashboard</h4>
+          <p class="text-muted small">Authorized personnel only</p>
+        </div>
+        <div id="adminAlert" class="alert d-none" role="alert"></div>
+        <form id="adminLoginForm">
+          <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">ADMIN ID</label>
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
+              <input type="text" class="form-control form-control-lg" id="adminId" required>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">PASSWORD</label>
+            <div class="input-group mb-3">
+              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
+              <input type="password" class="form-control form-control-lg" id="adminPassword" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold">
+            Authenticate <i class="fa-solid fa-unlock-keyhole ms-2"></i>
+          </button>
+        </form>
+      </div>
+
+      <div class="text-center mt-4">
+        <span class="text-decoration-none small fw-bold admin-link" id="toggleViewBtn">
+          <i class="fa-solid fa-gear me-1"></i> Staff / Admin Portal
+        </span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Check Election Status
+  async function checkElectionStatus() {
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/settings');
+      if (res.ok) {
+        const data = await res.json();
+        const badge = document.getElementById('publicStatusBadge');
+        const now = new Date();
+        const start = new Date(data.startTime);
+        const end = new Date(data.endTime);
+
+        if (data.isPublished && start && end && now >= start && now <= end) {
+          badge.innerHTML = '<i class="fa-solid fa-signal me-1"></i> ELECTION IS LIVE';
+          badge.className = 'badge bg-success status-banner mb-3 p-2 w-100 shadow-sm';
+        } else {
+          badge.innerHTML = '<i class="fa-solid fa-power-off me-1"></i> ELECTION OFFLINE';
+          badge.className = 'badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm';
+        }
+      }
+    } catch(e) {
+      document.getElementById('publicStatusBadge').innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> SERVER UNREACHABLE';
+    }
+  }
+  checkElectionStatus(); 
+  setInterval(checkElectionStatus, 60000); 
+
+  // Toggle View
+  const toggleBtn = document.getElementById('toggleViewBtn');
+  const studentView = document.getElementById('studentView');
+  const adminView = document.getElementById('adminView');
+  let isStudentView = true;
+
+  toggleBtn.addEventListener('click', () => {
+    isStudentView = !isStudentView;
+    if (isStudentView) {
+      studentView.classList.remove('d-none'); adminView.classList.add('d-none');
+      toggleBtn.innerHTML = '<i class="fa-solid fa-gear me-1"></i> Staff / Admin Portal';
+    } else {
+      studentView.classList.add('d-none'); adminView.classList.remove('d-none');
+      toggleBtn.innerHTML = '<i class="fa-solid fa-user-graduate me-1"></i> Return to Student Voting';
+    }
+  });
+
+  // Student Login 
+  document.getElementById('studentLoginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const alertBox = document.getElementById('studentAlert');
+    const rollNumber = document.getElementById('rollNumber').value.trim();
+    const dob = document.getElementById('dob').value.trim(); 
+
+    try {
+      const response = await fetch('http://localhost:5000/api/student/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rollNumber, dob })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        localStorage.setItem('voterToken', data.token);
+        localStorage.setItem('rollNumber', data.student.rollNumber); 
+        localStorage.setItem('studentName', data.student.name);
+        
+        alertBox.className = 'alert alert-success mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Login successful! Redirecting...';
+        alertBox.classList.remove('d-none');
+        setTimeout(() => window.location.href = 'students.html', 1000);
+      } else {
+        alertBox.className = 'alert alert-danger mb-3';
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message || 'Invalid Credentials.'}`;
+        alertBox.classList.remove('d-none');
+      }
+    } catch (error) {
+      alertBox.className = 'alert alert-danger mb-3';
+      alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Server connection failed.';
+      alertBox.classList.remove('d-none');
+    }
+  });
+
+  // Admin Login
+  document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const alertBox = document.getElementById('adminAlert');
+    if (document.getElementById('adminId').value === 'electionteam' && document.getElementById('adminPassword').value === 'fpc2k26') {
+      localStorage.setItem('isAdmin', 'true');
+      alertBox.className = 'alert alert-success mb-3';
+      alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Access granted! Redirecting...';
+      alertBox.classList.remove('d-none');
+      setTimeout(() => window.location.href = 'admin.html', 1000);
+    } else {
+      alertBox.className = 'alert alert-danger mb-3';
+      alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i>Invalid Admin Credentials.';
+      alertBox.classList.remove('d-none');
+    }
+  });
+</script>
+</body>
+</html>
