@@ -39,9 +39,6 @@ function getExcelStudents() {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// ==========================================
-// SECURITY GUARD (Middleware)
-// ==========================================
 const verifyAdmin = (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) return res.status(401).json({ message: 'Access Denied. No token provided.' });
@@ -54,11 +51,8 @@ const verifyAdmin = (req, res, next) => {
     }
 };
 
-// Admin Authentication Route
 app.post('/api/admin/login', (req, res) => {
     const { username, password } = req.body;
-    
-    // Looks for secure variables in Render, otherwise defaults to the hardcoded ones
     const adminUser = process.env.ADMIN_USER || 'electionteam';
     const adminPass = process.env.ADMIN_PASS || 'fpc2k26';
 
@@ -70,9 +64,6 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
-// ==========================================
-// CANDIDATE ROUTES (Protected modifications)
-// ==========================================
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
     const { name, posting, department, year, section } = req.body;
@@ -95,9 +86,6 @@ app.delete('/api/candidates/:id', verifyAdmin, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// ==========================================
-// ADMIN ROUTES (Highly Protected)
-// ==========================================
 app.get('/api/admin/stats', verifyAdmin, async (req, res) => {
   try {
     const excelStudents = getExcelStudents();
@@ -123,20 +111,20 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// Left public so the frontend knows if voting is open
 app.get('/api/admin/settings', async (req, res) => {
   try {
     const settings = await Settings.findOne({ settingsId: 'master_config' });
-    res.json(settings || { isPublished: false, startTime: null, endTime: null });
+    res.json(settings || { isPublished: false });
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// REMOVED TIMER LOGIC HERE
 app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
-    const { isPublished, startTime, endTime } = req.body;
+    const { isPublished } = req.body;
     let settings = await Settings.findOne({ settingsId: 'master_config' });
-    if (!settings) settings = new Settings({ isPublished, startTime, endTime });
-    else { settings.isPublished = isPublished; settings.startTime = startTime; settings.endTime = endTime; }
+    if (!settings) settings = new Settings({ isPublished });
+    else { settings.isPublished = isPublished; }
     await settings.save();
     res.json({ message: 'Updated', settings });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -172,9 +160,6 @@ app.get('/api/admin/download-results', async (req, res) => {
   } catch (error) { res.status(401).send('Invalid Token or Error generating report'); }
 });
 
-// ==========================================
-// STUDENT ROUTES (Unchanged)
-// ==========================================
 app.post('/api/student/login', async (req, res) => {
    try {
        const { rollNumber, dob } = req.body;
@@ -199,6 +184,7 @@ app.post('/api/student/login', async (req, res) => {
    } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// REMOVED TIMER LOGIC HERE
 app.post('/api/student/vote', async (req, res) => {
    try {
        const { rollNumber, studentName, candidateIds } = req.body; 
@@ -208,8 +194,8 @@ app.post('/api/student/vote', async (req, res) => {
        if (existingVote) return res.status(400).json({ message: 'You have already voted!' });
        
        const settings = await Settings.findOne({ settingsId: 'master_config' });
-       const now = new Date();
-       if (!settings || !settings.isPublished || now < new Date(settings.startTime) || now > new Date(settings.endTime)) {
+       
+       if (!settings || !settings.isPublished) {
            return res.status(400).json({ message: 'Voting is currently closed.' });
        }
 
