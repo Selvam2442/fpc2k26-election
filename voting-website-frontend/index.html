@@ -189,19 +189,39 @@
     }
   });
 
-  // Admin Login
-  document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+  // NEW SECURE ADMIN LOGIN
+  document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const alertBox = document.getElementById('adminAlert');
-    if (document.getElementById('adminId').value === 'electionteam' && document.getElementById('adminPassword').value === 'fpc2k26') {
-      localStorage.setItem('isAdmin', 'true');
-      alertBox.className = 'alert alert-success mb-3';
-      alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Access granted! Redirecting...';
-      alertBox.classList.remove('d-none');
-      setTimeout(() => window.location.href = 'admin.html', 1000);
-    } else {
+    const username = document.getElementById('adminId').value;
+    const password = document.getElementById('adminPassword').value;
+
+    try {
+      // Reaches out to your secure Render server to verify password
+      const response = await fetch('https://fpc2k26-election.onrender.com/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        // Saves the critical security token that stops you from being kicked out!
+        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('isAdmin', 'true');
+        
+        alertBox.className = 'alert alert-success mb-3';
+        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Access granted! Redirecting...';
+        alertBox.classList.remove('d-none');
+        setTimeout(() => window.location.href = 'admin.html', 1000);
+      } else {
+        alertBox.className = 'alert alert-danger mb-3';
+        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}`;
+        alertBox.classList.remove('d-none');
+      }
+    } catch (error) {
       alertBox.className = 'alert alert-danger mb-3';
-      alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i>Invalid Admin Credentials.';
+      alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Server connection failed.';
       alertBox.classList.remove('d-none');
     }
   });
