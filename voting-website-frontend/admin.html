@@ -79,6 +79,7 @@
       
       <div class="tab-content">
         
+        <!-- DASHBOARD TAB -->
         <div class="tab-pane fade show active" id="dashboard">
           <div class="card content-card mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center">
@@ -114,6 +115,7 @@
           </div>
         </div>
 
+        <!-- STUDENT DIRECTORY TAB -->
         <div class="tab-pane fade" id="studentsList">
           <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Student Directory</h3>
           
@@ -146,6 +148,7 @@
           </div>
         </div>
 
+        <!-- MANAGE CANDIDATES TAB -->
         <div class="tab-pane fade" id="candidates">
           <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Manage Candidates</h3>
@@ -186,14 +189,27 @@
           </div>
         </div>
 
+        <!-- NEW SEPARATED SETTINGS TAB -->
         <div class="tab-pane fade" id="settings">
           <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Election Controls</h3>
-          <div class="card content-card shadow-sm p-4 p-md-5">
-            <form id="settingsForm">
-              <div class="form-check form-switch mb-5">
-                <input class="form-check-input" type="checkbox" id="isPublished" style="transform: scale(1.5); margin-left: -2.5em;">
-                <label class="form-check-label fw-bold fs-5 ms-3 text-primary">PUBLISH ELECTION</label>
+          
+          <!-- Master Switch Card -->
+          <div class="card content-card shadow-sm mb-4 border-primary">
+            <div class="card-body d-flex justify-content-between align-items-center p-4">
+              <div>
+                <h5 class="fw-bold mb-1 text-primary">Master Publish Switch</h5>
+                <p class="text-muted mb-0 small">Turn the election ON or OFF globally.</p>
               </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input cursor-pointer" type="checkbox" id="isPublished" style="transform: scale(1.8); margin-right: 10px;" onchange="togglePublish()">
+              </div>
+            </div>
+          </div>
+
+          <!-- Timer Settings Card -->
+          <div class="card content-card shadow-sm p-4 p-md-5">
+            <h5 class="fw-bold mb-4">Set Voting Window</h5>
+            <form id="settingsForm">
               <div class="row mb-4">
                 <div class="col-md-6 mb-3"><label class="fw-bold text-muted">Start Time</label><input type="datetime-local" class="form-control form-control-lg" id="startTime" required></div>
                 <div class="col-md-6 mb-3"><label class="fw-bold text-muted">End Time</label><input type="datetime-local" class="form-control form-control-lg" id="endTime" required></div>
@@ -203,6 +219,7 @@
           </div>
         </div>
 
+        <!-- DANGER ZONE TAB -->
         <div class="tab-pane fade" id="danger">
           <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Danger Zone</h3>
           <div class="card content-card border-danger shadow-sm p-4 p-md-5 text-center">
@@ -223,15 +240,13 @@
   if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
   let globalStudents = []; 
 
-  // --- MOBILE SIDEBAR FIX ---
+  // Mobile Menu Fix
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      // 1. Hide the Offcanvas securely
       const offcanvasEl = document.getElementById('mobileSidebar');
       const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
       if (bsOffcanvas) bsOffcanvas.hide();
 
-      // 2. Trigger the actual Desktop tab
       const targetId = this.getAttribute('data-bs-target');
       const desktopTab = document.querySelector(`.sidebar-wrapper [data-bs-target="${targetId}"]`);
       if (desktopTab) {
@@ -239,7 +254,6 @@
         tab.show();
       }
 
-      // 3. Update the active blue visual style
       document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
     });
@@ -252,10 +266,8 @@
     setTimeout(() => d.innerHTML = '', 4000);
   }
 
-  // --- MAIN ADMIN DATA LOADER ---
   async function loadAdminData() {
     try {
-      // 1. Load Stats
       const statRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/stats');
       if(statRes.ok) {
         const s = await statRes.json();
@@ -264,35 +276,47 @@
         document.getElementById('stat-candidates').textContent = s.totalCandidates;
       }
 
-      // 2. Load Student Directory
       const stuRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/students');
       if(stuRes.ok) {
         globalStudents = await stuRes.json();
         filterStudents(); 
       }
 
-      // 3. Load Settings & Update Banner
       const setRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings');
       if(setRes.ok) {
         const settings = await setRes.json();
-        const b = document.getElementById('electionStatusBadge'), t = document.getElementById('electionStatusText');
-        const now = new Date();
-        const start = new Date(settings.startTime);
-        const end = new Date(settings.endTime);
+        const b = document.getElementById('electionStatusBadge');
+        const t = document.getElementById('electionStatusText');
         
+        // Fix: Toggle is ONLY based on database state, regardless of time
+        document.getElementById('isPublished').checked = settings.isPublished === true;
+
+        const now = new Date();
+        const start = settings.startTime ? new Date(settings.startTime) : null;
+        const end = settings.endTime ? new Date(settings.endTime) : null;
+        
+        // Format for inputs
+        const fmt = (d) => {
+           if (!d) return '';
+           const date = new Date(d);
+           return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+        };
+        document.getElementById('startTime').value = settings.startTime ? fmt(settings.startTime) : ''; 
+        document.getElementById('endTime').value = settings.endTime ? fmt(settings.endTime) : '';
+
+        // Status Badge Logic
         if (settings.isPublished && start && end && now >= start && now <= end) {
           b.className = 'badge bg-success fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'LIVE';
           t.innerHTML = `<strong>Starts:</strong> ${start.toLocaleString()} <br> <strong>Ends:</strong> ${end.toLocaleString()}`;
-          document.getElementById('isPublished').checked = true;
-          const fmt = (d) => new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
-          document.getElementById('startTime').value = fmt(settings.startTime); document.getElementById('endTime').value = fmt(settings.endTime);
+        } else if (settings.isPublished) {
+          b.className = 'badge bg-warning text-dark fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'SCHEDULED';
+          t.innerHTML = `Published, but outside active time window.<br><strong>Window:</strong> ${start ? start.toLocaleString() : 'N/A'} - ${end ? end.toLocaleString() : 'N/A'}`;
         } else {
           b.className = 'badge bg-secondary fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'OFFLINE';
-          t.textContent = 'Ballot is hidden or outside time window.'; document.getElementById('isPublished').checked = false;
+          t.textContent = 'Ballot is currently hidden (Master Switch is OFF).';
         }
       }
 
-      // 4. Load Candidates
       const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
       const candidates = await candRes.json();
       const tbody = document.getElementById('candidatesTableBody');
@@ -319,7 +343,6 @@
     } catch (e) { console.log(e); }
   }
 
-  // --- SMART FILTER LOGIC ---
   function filterStudents() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const filterStatus = document.getElementById('statusFilter').value;
@@ -352,7 +375,6 @@
     });
   }
 
-  // --- ADMIN ACTIONS ---
   document.getElementById('newCandidateForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData();
@@ -370,11 +392,46 @@
     }
   }
 
+  // --- NEW: Separate Publish Action ---
+  async function togglePublish() {
+    const isPublished = document.getElementById('isPublished').checked;
+    const payload = { 
+      isPublished: isPublished, 
+      startTime: document.getElementById('startTime').value, 
+      endTime: document.getElementById('endTime').value 
+    };
+    
+    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
+      method: 'POST', 
+      headers: {'Content-Type': 'application/json'}, 
+      body: JSON.stringify(payload) 
+    });
+    
+    if(res.ok) { 
+      showAlert(isPublished ? 'Election Published!' : 'Election Taken Offline!', 'success'); 
+      loadAdminData(); 
+    }
+  }
+
+  // --- NEW: Separate Timer Action ---
   document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const payload = { isPublished: document.getElementById('isPublished').checked, startTime: document.getElementById('startTime').value, endTime: document.getElementById('endTime').value };
-    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-    if(res.ok) { showAlert('Settings Updated!', 'success'); loadAdminData(); }
+    const payload = { 
+      isPublished: document.getElementById('isPublished').checked, 
+      startTime: document.getElementById('startTime').value, 
+      endTime: document.getElementById('endTime').value 
+    };
+    
+    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
+      method: 'POST', 
+      headers: {'Content-Type': 'application/json'}, 
+      body: JSON.stringify(payload) 
+    });
+    
+    if(res.ok) { 
+      showAlert('Timer Updated Successfully!', 'success'); 
+      loadAdminData(); 
+    }
   });
 
   async function nuclearWipe() {
@@ -386,7 +443,6 @@
 
   function downloadResults() { window.location.href = 'https://fpc2k26-election.onrender.com/api/admin/download-results'; }
   
-  // Initialize data
   loadAdminData();
 </script>
 </body>
