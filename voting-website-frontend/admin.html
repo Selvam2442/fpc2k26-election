@@ -12,10 +12,11 @@
     .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1050; }
     .face-logo { height: 38px; object-fit: contain; }
     .header-right { display: flex; align-items: center; gap: 24px; }
-    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; }
+    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; transition: all 0.2s; }
+    .avatar-circle:hover { background-color: #ffca2c; border-color: #ffffff; }
     
     .sidebar-wrapper { background-color: #ffffff; min-height: calc(100vh - 65px); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-    .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; }
+    .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; transition: all 0.2s; }
     .nav-pills .nav-link:hover { background-color: #f8f9fa; color: #0d6efd; }
     .nav-pills .nav-link.active { background-color: #e3f2fd; color: #0d6efd; border-left: 4px solid #0d6efd; }
     
@@ -44,7 +45,6 @@
   </div>
 </nav>
 
-<!-- Mobile Offcanvas Menu (Fixed JS Navigation) -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar">
   <div class="offcanvas-header border-bottom">
     <h5 class="offcanvas-title fw-bold text-primary">Admin Menu</h5>
@@ -64,7 +64,6 @@
 <div class="container-fluid">
   <div class="row">
     
-    <!-- Desktop Sidebar Menu -->
     <div class="col-md-2 p-0 sidebar-wrapper d-none d-md-block">
       <div class="nav flex-column nav-pills mt-3" role="tablist">
         <button class="nav-link active text-start" data-bs-toggle="pill" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> Dashboard</button>
@@ -80,7 +79,6 @@
       
       <div class="tab-content">
         
-        <!-- DASHBOARD -->
         <div class="tab-pane fade show active" id="dashboard">
           <div class="card content-card mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center">
@@ -116,7 +114,6 @@
           </div>
         </div>
 
-        <!-- UPGRADED STUDENT DIRECTORY -->
         <div class="tab-pane fade" id="studentsList">
           <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Student Directory</h3>
           
@@ -149,7 +146,6 @@
           </div>
         </div>
 
-        <!-- MANAGE CANDIDATES -->
         <div class="tab-pane fade" id="candidates">
           <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Manage Candidates</h3>
@@ -190,7 +186,6 @@
           </div>
         </div>
 
-        <!-- SETTINGS -->
         <div class="tab-pane fade" id="settings">
           <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Election Controls</h3>
           <div class="card content-card shadow-sm p-4 p-md-5">
@@ -208,7 +203,6 @@
           </div>
         </div>
 
-        <!-- DANGER ZONE -->
         <div class="tab-pane fade" id="danger">
           <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Danger Zone</h3>
           <div class="card content-card border-danger shadow-sm p-4 p-md-5 text-center">
@@ -230,7 +224,6 @@
   let globalStudents = []; 
 
   // --- MOBILE SIDEBAR FIX ---
-  // When a mobile button is clicked, manually close offcanvas and trigger the desktop tab
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       // 1. Hide the Offcanvas securely
@@ -246,7 +239,7 @@
         tab.show();
       }
 
-      // 3. Update the active blue visual style on mobile menu
+      // 3. Update the active blue visual style
       document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
       this.classList.add('active');
     });
@@ -259,9 +252,11 @@
     setTimeout(() => d.innerHTML = '', 4000);
   }
 
+  // --- MAIN ADMIN DATA LOADER ---
   async function loadAdminData() {
     try {
-      const statRes = await fetch('http://localhost:5000/api/admin/stats');
+      // 1. Load Stats
+      const statRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/stats');
       if(statRes.ok) {
         const s = await statRes.json();
         document.getElementById('stat-students').textContent = s.totalStudents;
@@ -269,13 +264,15 @@
         document.getElementById('stat-candidates').textContent = s.totalCandidates;
       }
 
-      const stuRes = await fetch('http://localhost:5000/api/admin/students');
+      // 2. Load Student Directory
+      const stuRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/students');
       if(stuRes.ok) {
         globalStudents = await stuRes.json();
         filterStudents(); 
       }
 
-      const setRes = await fetch('http://localhost:5000/api/admin/settings');
+      // 3. Load Settings & Update Banner
+      const setRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings');
       if(setRes.ok) {
         const settings = await setRes.json();
         const b = document.getElementById('electionStatusBadge'), t = document.getElementById('electionStatusText');
@@ -295,7 +292,8 @@
         }
       }
 
-      const candRes = await fetch('http://localhost:5000/api/candidates');
+      // 4. Load Candidates
+      const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
       const candidates = await candRes.json();
       const tbody = document.getElementById('candidatesTableBody');
       tbody.innerHTML = '';
@@ -306,7 +304,10 @@
         grouped[posting].forEach(cand => {
           tbody.innerHTML += `
             <tr class="bg-white">
-              <td class="px-3 py-2 d-flex align-items-center"><img src="http://localhost:5000${cand.photo}" class="candidate-thumb me-3"><span class="fw-bold">${cand.name}</span></td>
+              <td class="px-3 py-2 d-flex align-items-center">
+                <img src="https://fpc2k26-election.onrender.com${cand.photo}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
+                <span class="fw-bold">${cand.name}</span>
+              </td>
               <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
               <td class="text-center fw-bold text-success">${cand.votes}</td>
               <td class="text-end px-3">
@@ -318,6 +319,7 @@
     } catch (e) { console.log(e); }
   }
 
+  // --- SMART FILTER LOGIC ---
   function filterStudents() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const filterStatus = document.getElementById('statusFilter').value;
@@ -350,19 +352,20 @@
     });
   }
 
+  // --- ADMIN ACTIONS ---
   document.getElementById('newCandidateForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData();
     fd.append('name', document.getElementById('candName').value); fd.append('posting', document.getElementById('candPosting').value);
     fd.append('department', document.getElementById('candDept').value); fd.append('year', document.getElementById('candYear').value);
     fd.append('section', document.getElementById('candSection').value || 'None'); fd.append('photo', document.getElementById('candPhoto').files[0]);
-    const res = await fetch('http://localhost:5000/api/candidates', { method: 'POST', body: fd });
+    const res = await fetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
     if (res.ok) { showAlert('Added!', 'success'); e.target.reset(); document.getElementById('addCandidateForm').classList.remove('show'); loadAdminData(); }
   });
 
   async function deleteCandidate(id, name) {
     if (confirm(`Delete ${name}?`)) {
-      const res = await fetch(`http://localhost:5000/api/candidates/${id}`, { method: 'DELETE' });
+      const res = await fetch(`https://fpc2k26-election.onrender.com/api/candidates/${id}`, { method: 'DELETE' });
       if (res.ok) { showAlert('Deleted.', 'danger'); loadAdminData(); }
     }
   }
@@ -370,19 +373,20 @@
   document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = { isPublished: document.getElementById('isPublished').checked, startTime: document.getElementById('startTime').value, endTime: document.getElementById('endTime').value };
-    const res = await fetch('http://localhost:5000/api/admin/settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+    const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
     if(res.ok) { showAlert('Settings Updated!', 'success'); loadAdminData(); }
   });
 
   async function nuclearWipe() {
     if(confirm("NUCLEAR WARNING: This permanently deletes ALL candidates, photos, and resets ALL votes. Proceed?")) {
-      const res = await fetch('http://localhost:5000/api/admin/wipe-all', { method: 'DELETE' });
+      const res = await fetch('https://fpc2k26-election.onrender.com/api/admin/wipe-all', { method: 'DELETE' });
       if(res.ok) { showAlert('System Nuclear Wipe Complete.', 'danger'); loadAdminData(); }
     }
   }
 
-  function downloadResults() { window.location.href = 'http://localhost:5000/api/admin/download-results'; }
+  function downloadResults() { window.location.href = 'https://fpc2k26-election.onrender.com/api/admin/download-results'; }
   
+  // Initialize data
   loadAdminData();
 </script>
 </body>

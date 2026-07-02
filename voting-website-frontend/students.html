@@ -16,7 +16,8 @@
     
     .btn-yellow { background-color: #ffc107; color: #000; font-weight: 700; border-radius: 6px; padding: 6px 16px; border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; transition: all 0.2s; }
     .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; }
-    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; }
+    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; transition: all 0.2s; }
+    .avatar-circle:hover { background-color: #ffca2c; border-color: #ffffff; }
 
     .wizard-step { display: none; animation: fadeIn 0.4s ease; }
     .wizard-step.active { display: block; }
@@ -121,7 +122,6 @@
 </div>
 
 <script>
-  // Ensure we are using rollNumber properly
   const rollNumber = localStorage.getItem('rollNumber');
   const token = localStorage.getItem('voterToken');
   const studentName = localStorage.getItem('studentName');
@@ -163,9 +163,10 @@
     }
   }
 
+  // --- FETCH FROM LIVE SERVER ---
   async function fetchElectionData() {
     try {
-      const response = await fetch('http://localhost:5000/api/candidates');
+      const response = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
       const candidates = await response.json();
       
       if (candidates.length === 0) {
@@ -214,11 +215,12 @@
       const isSelected = candidate._id === selectedId;
       const sec = candidate.section !== 'None' ? `(${candidate.section})` : '';
       
+      // Image source uses live URL with a fallback SVGs
       grid.innerHTML += `
         <div class="col-6 col-md-4 col-lg-3 mb-3">
           <div class="card candidate-card ${isSelected ? 'selected' : ''}" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
             <div class="candidate-img-wrapper">
-              <img src="http://localhost:5000${candidate.photo}" class="candidate-img" alt="${candidate.name}">
+              <img src="https://fpc2k26-election.onrender.com${candidate.photo}" class="candidate-img" alt="${candidate.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
             </div>
             <div class="candidate-info">
               <h3 class="candidate-name" title="${candidate.name}">${candidate.name}</h3>
@@ -271,15 +273,15 @@
     }
   }
 
+  // --- SUBMIT VOTE TO LIVE SERVER ---
   async function submitFinalBallot() {
     const allSelectedIds = Object.values(userSelections);
     if (!confirm(`Are you sure you want to securely cast your final ballot? You cannot change these votes.`)) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/student/vote', {
+      const response = await fetch('https://fpc2k26-election.onrender.com/api/student/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Sending rollNumber instead of studentId
         body: JSON.stringify({ rollNumber, studentName, candidateIds: allSelectedIds }) 
       });
 
