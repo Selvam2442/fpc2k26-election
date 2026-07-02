@@ -189,11 +189,10 @@
           </div>
         </div>
 
-        <!-- NEW SEPARATED SETTINGS TAB -->
+        <!-- SETTINGS TAB -->
         <div class="tab-pane fade" id="settings">
           <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Election Controls</h3>
           
-          <!-- Master Switch Card -->
           <div class="card content-card shadow-sm mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center p-4">
               <div>
@@ -206,7 +205,6 @@
             </div>
           </div>
 
-          <!-- Timer Settings Card -->
           <div class="card content-card shadow-sm p-4 p-md-5">
             <h5 class="fw-bold mb-4">Set Voting Window</h5>
             <form id="settingsForm">
@@ -240,7 +238,6 @@
   if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
   let globalStudents = []; 
 
-  // Mobile Menu Fix
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       const offcanvasEl = document.getElementById('mobileSidebar');
@@ -288,14 +285,12 @@
         const b = document.getElementById('electionStatusBadge');
         const t = document.getElementById('electionStatusText');
         
-        // Fix: Toggle is ONLY based on database state, regardless of time
         document.getElementById('isPublished').checked = settings.isPublished === true;
 
         const now = new Date();
         const start = settings.startTime ? new Date(settings.startTime) : null;
         const end = settings.endTime ? new Date(settings.endTime) : null;
         
-        // Format for inputs
         const fmt = (d) => {
            if (!d) return '';
            const date = new Date(d);
@@ -304,7 +299,6 @@
         document.getElementById('startTime').value = settings.startTime ? fmt(settings.startTime) : ''; 
         document.getElementById('endTime').value = settings.endTime ? fmt(settings.endTime) : '';
 
-        // Status Badge Logic
         if (settings.isPublished && start && end && now >= start && now <= end) {
           b.className = 'badge bg-success fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'LIVE';
           t.innerHTML = `<strong>Starts:</strong> ${start.toLocaleString()} <br> <strong>Ends:</strong> ${end.toLocaleString()}`;
@@ -319,6 +313,32 @@
 
       const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
       const candidates = await candRes.json();
+      
+      const dashboardContainer = document.getElementById('dashboard');
+      let leaderboardDiv = document.getElementById('liveLeaderboard');
+      if (!leaderboardDiv) {
+        leaderboardDiv = document.createElement('div');
+        leaderboardDiv.id = 'liveLeaderboard';
+        leaderboardDiv.className = 'card content-card mb-4 shadow-sm';
+        dashboardContainer.insertBefore(leaderboardDiv, dashboardContainer.lastElementChild);
+      }
+      
+      const sortedCandidates = [...candidates].sort((a, b) => b.votes - a.votes);
+      let leaderHTML = `
+        <div class="card-header bg-dark text-white fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i> Live Leaderboard</div>
+        <ul class="list-group list-group-flush">
+      `;
+      if (sortedCandidates.length === 0) leaderHTML += '<li class="list-group-item text-muted text-center py-3">No candidates added yet.</li>';
+      sortedCandidates.forEach(c => {
+        leaderHTML += `
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <div><span class="fw-bold fs-5">${c.name}</span><br><span class="badge bg-light text-dark border mt-1">${c.posting}</span></div>
+            <span class="badge bg-success rounded-pill fs-5 py-2 px-3">${c.votes} Votes</span>
+          </li>`;
+      });
+      leaderHTML += '</ul>';
+      leaderboardDiv.innerHTML = leaderHTML;
+
       const tbody = document.getElementById('candidatesTableBody');
       tbody.innerHTML = '';
       const grouped = candidates.reduce((acc, c) => { const p = c.posting.toUpperCase(); if(!acc[p]) acc[p] = []; acc[p].push(c); return acc; }, {});
@@ -326,10 +346,11 @@
       Object.keys(grouped).forEach(posting => {
         tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-2"><i class="fa-solid fa-user-tie me-2"></i> ${posting}</td></tr>`;
         grouped[posting].forEach(cand => {
+          let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `https://fpc2k26-election.onrender.com${cand.photo}`;
           tbody.innerHTML += `
             <tr class="bg-white">
               <td class="px-3 py-2 d-flex align-items-center">
-                <img src="https://fpc2k26-election.onrender.com${cand.photo}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
+                <img src="${imgSrc}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
                 <span class="fw-bold">${cand.name}</span>
               </td>
               <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
@@ -381,7 +402,16 @@
     fd.append('name', document.getElementById('candName').value); fd.append('posting', document.getElementById('candPosting').value);
     fd.append('department', document.getElementById('candDept').value); fd.append('year', document.getElementById('candYear').value);
     fd.append('section', document.getElementById('candSection').value || 'None'); fd.append('photo', document.getElementById('candPhoto').files[0]);
+    
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+    
     const res = await fetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
+    
+    btn.disabled = false;
+    btn.innerText = 'Save Candidate';
+    
     if (res.ok) { showAlert('Added!', 'success'); e.target.reset(); document.getElementById('addCandidateForm').classList.remove('show'); loadAdminData(); }
   });
 
@@ -392,7 +422,6 @@
     }
   }
 
-  // --- NEW: Separate Publish Action ---
   async function togglePublish() {
     const isPublished = document.getElementById('isPublished').checked;
     const payload = { 
@@ -413,7 +442,6 @@
     }
   }
 
-  // --- NEW: Separate Timer Action ---
   document.getElementById('settingsForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const payload = { 
