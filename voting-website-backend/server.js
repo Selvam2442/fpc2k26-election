@@ -16,6 +16,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// PASTE YOUR GOOGLE SHEET ID HERE
+const SHEET_ID = '1jbk3jOnvZKiiUf9AJaUc8pkExRPi6GFWnk_4h0CMn-o';
+const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' })); 
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -24,14 +28,17 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Successfully connected to MongoDB Atlas.'))
   .catch((error) => console.error('Database connection error:', error.message));
 
-function getExcelStudents() {
-  const excelPath = path.join(__dirname, 'data', 'students.xlsx');
-  if (!fs.existsSync(excelPath)) return [];
+// NEW LIVE GOOGLE SHEETS FETCHER
+async function getExcelStudents() {
   try {
-    const workbook = xlsx.readFile(excelPath);
+    const response = await fetch(GOOGLE_SHEET_URL);
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     return xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { raw: false });
   } catch (err) {
+    console.error('Error fetching Google Sheet:', err.message);
     return [];
   }
 }
@@ -88,7 +95,7 @@ app.delete('/api/candidates/:id', verifyAdmin, async (req, res) => {
 
 app.get('/api/admin/stats', verifyAdmin, async (req, res) => {
   try {
-    const excelStudents = getExcelStudents();
+    const excelStudents = await getExcelStudents();
     res.json({
       totalStudents: excelStudents.length,
       totalVotes: await Student.countDocuments(),
@@ -99,7 +106,7 @@ app.get('/api/admin/stats', verifyAdmin, async (req, res) => {
 
 app.get('/api/admin/students', verifyAdmin, async (req, res) => {
   try {
-    const excelStudents = getExcelStudents();
+    const excelStudents = await getExcelStudents();
     const votedStudents = await Student.find({}, 'rollNumber');
     const votedSet = new Set(votedStudents.map(s => String(s.rollNumber).toUpperCase()));
     const directory = excelStudents.map(stu => ({
@@ -118,7 +125,6 @@ app.get('/api/admin/settings', async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// REMOVED TIMER LOGIC HERE
 app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
     const { isPublished } = req.body;
@@ -168,7 +174,7 @@ app.post('/api/student/login', async (req, res) => {
        const existingVote = await Student.findOne({ rollNumber: cleanRoll });
        if (existingVote) return res.status(403).json({ message: 'You have already cast your ballot. Multiple votes are not allowed.' });
 
-       const students = getExcelStudents();
+       const students = await getExcelStudents();
        const student = students.find(s => 
            String(s.RollNumber).toUpperCase().trim() === cleanRoll &&
            String(s.DOB).trim() === String(dob).trim()
@@ -184,7 +190,6 @@ app.post('/api/student/login', async (req, res) => {
    } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// REMOVED TIMER LOGIC HERE
 app.post('/api/student/vote', async (req, res) => {
    try {
        const { rollNumber, studentName, candidateIds } = req.body; 
