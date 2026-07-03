@@ -83,8 +83,10 @@
       <i class="fa-solid fa-graduation-cap text-primary mb-3" style="font-size: 4rem; color: #0d6efd !important;"></i>
       <h2 class="fw-bold text-dark">Welcome, <span id="studentNameDisplay" style="color: #0d6efd;">Voter</span>!</h2>
       <p class="text-muted mt-3 fs-5">You are about to enter the official secure voting booth. You must select <strong>one candidate for every posting</strong> to complete your ballot.</p>
-      <button class="btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm" style="background-color: #0d6efd; border: none;" onclick="startVoting()" id="startBtn">
-        <i class="fa-solid fa-play me-2"></i> START VOTING
+      
+      <!-- DEFAULT DISABLED LOADING BUTTON -->
+      <button class="btn btn-secondary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm" id="startBtn" disabled>
+        <i class="fa-solid fa-spinner fa-spin me-2"></i> CONNECTING TO SECURE SERVER...
       </button>
     </div>
   </div>
@@ -164,18 +166,19 @@
   }
 
   async function fetchElectionData() {
+    const startBtn = document.getElementById('startBtn');
     try {
       const response = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
       const candidates = await response.json();
       
       if (candidates.length === 0) {
-        document.getElementById('startBtn').disabled = true;
-        document.getElementById('startBtn').innerHTML = '<i class="fa-solid fa-clock me-2"></i> Election Not Active';
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fa-solid fa-clock me-2"></i> No Candidates Found';
         return;
       }
 
       groupedCandidates = candidates.reduce((acc, candidate) => {
-        const posting = candidate.posting.trim().toUpperCase();
+        const posting = (candidate.posting || 'Unknown').trim().toUpperCase();
         if (!acc[posting]) acc[posting] = [];
         acc[posting].push(candidate);
         return acc;
@@ -187,10 +190,23 @@
         if (b === 'PRESIDENT') return 1;
         return a.localeCompare(b);
       });
-    } catch (error) { document.getElementById('startBtn').textContent = 'Server Connection Error'; }
+
+      // DATA SECURED - ENABLE THE BUTTON!
+      startBtn.disabled = false;
+      startBtn.className = "btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm";
+      startBtn.style.backgroundColor = "#0d6efd";
+      startBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> START VOTING';
+      startBtn.onclick = startVoting; // Only attach click event when ready
+
+    } catch (error) { 
+        startBtn.disabled = true;
+        startBtn.className = "btn btn-danger btn-lg w-100 fw-bold mt-4 py-3 rounded-pill";
+        startBtn.innerHTML = '<i class="fa-solid fa-wifi me-2"></i> Server Connection Error'; 
+    }
   }
 
   function startVoting() {
+    if (postingsArray.length === 0) return; // Ultimate safety net
     document.getElementById('introScreen').classList.remove('active');
     document.getElementById('votingWizard').classList.add('active');
     
@@ -200,7 +216,9 @@
 
   function renderCategory() {
     const postingTitle = postingsArray[currentCategoryIndex];
-    const candidates = groupedCandidates[postingTitle];
+    if (!postingTitle) return; // Failsafe
+    
+    const candidates = groupedCandidates[postingTitle] || [];
     const selectedId = userSelections[postingTitle];
     
     document.getElementById('categoryTitle').textContent = postingTitle;
@@ -212,21 +230,25 @@
     
     candidates.forEach(candidate => {
       const isSelected = candidate._id === selectedId;
-      const sec = candidate.section !== 'None' ? `(${candidate.section})` : '';
+      const sec = candidate.section && candidate.section !== 'None' ? `(${candidate.section})` : '';
       
-      const imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `https://fpc2k26-election.onrender.com${candidate.photo}`;
+      // EXTREME SAFETY NET FOR PHOTOS
+      let imgSrc = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23e9ecef\'/></svg>';
+      if (candidate.photo) {
+          imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `https://fpc2k26-election.onrender.com${candidate.photo}`;
+      }
       
       grid.innerHTML += `
         <div class="col-6 col-md-4 col-lg-3 mb-3">
           <div class="card candidate-card ${isSelected ? 'selected' : ''}" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
             <div class="candidate-img-wrapper">
-              <img src="${imgSrc}" class="candidate-img" alt="${candidate.name}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
+              <img src="${imgSrc}" class="candidate-img" alt="${candidate.name || 'Candidate'}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
             </div>
             <div class="candidate-info">
-              <h3 class="candidate-name" title="${candidate.name}">${candidate.name}</h3>
+              <h3 class="candidate-name" title="${candidate.name || 'Unknown'}">${candidate.name || 'Unknown'}</h3>
               <div class="mb-2">
-                <span class="meta-badge">${candidate.department} ${sec}</span>
-                <span class="meta-badge">Yr ${candidate.year}</span>
+                <span class="meta-badge">${candidate.department || ''} ${sec}</span>
+                <span class="meta-badge">Yr ${candidate.year || ''}</span>
               </div>
               <div class="mt-auto">
                 <button class="select-btn">${isSelected ? 'SELECTED' : 'SELECT'}</button>
