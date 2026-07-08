@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// PASTE YOUR GOOGLE SHEET ID HERE
+// YOUR GOOGLE SHEET ID
 const SHEET_ID = '1jbk3jOnvZKiiUf9AJaUc8pkExRPi6GFWnk_4h0CMn-o';
 const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
 
@@ -28,7 +28,6 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Successfully connected to MongoDB Atlas.'))
   .catch((error) => console.error('Database connection error:', error.message));
 
-// NEW LIVE GOOGLE SHEETS FETCHER
 async function getExcelStudents() {
   try {
     const response = await fetch(GOOGLE_SHEET_URL);
@@ -71,6 +70,7 @@ app.post('/api/admin/login', (req, res) => {
     }
 });
 
+// CREATE CANDIDATE
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
     const { name, posting, department, year, section } = req.body;
@@ -82,10 +82,28 @@ app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// GET CANDIDATES
 app.get('/api/candidates', async (req, res) => {
   try { res.json(await Candidate.find()); } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
+// NEW: UPDATE (EDIT) CANDIDATE
+app.put('/api/candidates/:id', verifyAdmin, upload.single('photo'), async (req, res) => {
+  try {
+    const { name, posting, department, year, section } = req.body;
+    let updateData = { name, posting, department, year: Number(year), section: section || 'None' };
+    
+    // Only update the photo if a new one was uploaded
+    if (req.file) {
+      updateData.photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+
+    const updatedCandidate = await Candidate.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.json({ message: 'Updated successfully!', candidate: updatedCandidate });
+  } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// DELETE CANDIDATE
 app.delete('/api/candidates/:id', verifyAdmin, async (req, res) => {
   try {
     await Candidate.findByIdAndDelete(req.params.id);

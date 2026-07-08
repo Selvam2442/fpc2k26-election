@@ -87,7 +87,6 @@
       
       <div class="tab-content">
         
-        <!-- TELEMETRY TAB -->
         <div class="tab-pane fade show active" id="dashboard">
           <div class="card content-card mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center">
@@ -117,11 +116,8 @@
             </div>
           </div>
           
-          <!-- CHART BASED LEADERBOARD -->
           <h4 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Live Analytics & Polling</h4>
-          <div id="leaderboardContainer" class="mb-4">
-             <!-- Live chart injected here -->
-          </div>
+          <div id="leaderboardContainer" class="mb-4"></div>
 
           <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
             <h5 class="fw-bold mb-3">Audit & Compliance Reporting</h5>
@@ -129,7 +125,6 @@
           </div>
         </div>
 
-        <!-- REGISTRY TAB -->
         <div class="tab-pane fade" id="studentsList">
           <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Official Voter Registry</h3>
           
@@ -162,7 +157,6 @@
           </div>
         </div>
 
-        <!-- CANDIDATES TAB -->
         <div class="tab-pane fade" id="candidates">
           <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Candidate Database</h3>
@@ -203,7 +197,6 @@
           </div>
         </div>
 
-        <!-- SETTINGS TAB -->
         <div class="tab-pane fade" id="settings">
           <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Deployment Protocols</h3>
           
@@ -220,7 +213,6 @@
           </div>
         </div>
 
-        <!-- DANGER ZONE -->
         <div class="tab-pane fade" id="danger">
           <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Critical Actions</h3>
           <div class="card content-card border-danger shadow-sm p-4 p-md-5 text-center">
@@ -236,10 +228,57 @@
   </div>
 </div>
 
+<div class="modal fade" id="editCandidateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i>Modify Candidate Profile</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="editCandidateForm">
+          <input type="hidden" id="editCandId">
+          <div class="mb-3">
+            <label class="fw-bold small text-muted">Legal Name</label>
+            <input type="text" class="form-control" id="editCandName" required>
+          </div>
+          <div class="mb-3">
+            <label class="fw-bold small text-muted">Target Portfolio</label>
+            <input type="text" class="form-control" id="editCandPosting" required>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="fw-bold small text-muted">Department</label>
+              <select class="form-select" id="editCandDept" required><option value="BCA">BCA</option><option value="BBA">BBA</option><option value="BCOM">BCOM</option></select>
+            </div>
+            <div class="col-6">
+              <label class="fw-bold small text-muted">Year</label>
+              <select class="form-select" id="editCandYear" required><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option></select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="fw-bold small text-muted">Section</label>
+            <select class="form-select" id="editCandSection"><option value="None">None</option><option value="A">A</option><option value="B">B</option></select>
+          </div>
+          <div class="mb-4">
+            <label class="fw-bold small text-muted">Update Photo Asset (Optional)</label>
+            <input class="form-control" type="file" id="editCandPhoto" accept="image/*">
+            <small class="text-muted">Leave blank to keep existing photo.</small>
+          </div>
+          <div class="text-end">
+             <button type="submit" class="btn btn-primary fw-bold px-4" id="editSubmitBtn">Save Modifications</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
   let globalStudents = []; 
+  let globalCandidates = []; // Stored to make editing easy
 
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -277,7 +316,6 @@
     return res;
   }
 
-  // CORE DATA LOAD
   async function loadAdminData() {
     try {
       const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
@@ -316,13 +354,12 @@
     } catch (e) { console.log(e); }
   }
 
-  // CHART-BASED LIVE POLLING ENGINE (Runs every 3 seconds)
   async function refreshLeaderboard() {
       try {
           const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
           const candidates = await candRes.json();
+          globalCandidates = candidates; // Save for Edit Modal
           
-          // Group by Portfolio (Posting)
           const grouped = candidates.reduce((acc, c) => { 
               const p = (c.posting || 'Unknown').toUpperCase(); 
               if(!acc[p]) acc[p] = []; 
@@ -352,10 +389,7 @@
               } else {
                   postingCandidates.forEach((c, index) => {
                       totalCurrentVotes += c.votes; 
-                      // Calculate percentage safely
                       let percent = totalPostingVotes === 0 ? 0 : Math.round((c.votes / totalPostingVotes) * 100);
-                      
-                      // Leader gets green, others get blue
                       let barColor = (index === 0 && c.votes > 0) ? 'bg-success' : 'bg-primary';
                       let animation = c.votes > 0 ? 'progress-bar-striped progress-bar-animated' : '';
                       
@@ -374,16 +408,11 @@
               }
               leaderHTML += `</div></div></div>`;
           });
-          
           leaderHTML += '</div>';
           
           const lbContainer = document.getElementById('leaderboardContainer');
-          // Only update DOM if HTML changes to prevent flicker
-          if (lbContainer.innerHTML !== leaderHTML) { 
-              lbContainer.innerHTML = leaderHTML; 
-          }
+          if (lbContainer.innerHTML !== leaderHTML) { lbContainer.innerHTML = leaderHTML; }
           
-          // Poll and update Top Stat Card if changed
           const totalVotesEl = document.getElementById('stat-votes');
           if (totalVotesEl && totalCurrentVotes > 0) {
               const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
@@ -401,6 +430,7 @@
       try {
           const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
           const candidates = await candRes.json();
+          globalCandidates = candidates; // Sync global list
           
           const tbody = document.getElementById('candidatesTableBody');
           tbody.innerHTML = '';
@@ -418,7 +448,8 @@
                   </td>
                   <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
                   <td class="text-center fw-bold text-success">${cand.votes} Logs</td>
-                  <td class="text-end px-3">
+                  <td class="text-end px-3" style="min-width: 100px;">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('${cand._id}')" title="Modify Profile"><i class="fa-solid fa-pen-to-square"></i></button>
                     <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate('${cand._id}', '${cand.name}')" title="Terminate Profile"><i class="fa-solid fa-trash"></i></button>
                   </td>
                 </tr>`;
@@ -426,6 +457,72 @@
           });
       } catch(e) {}
   }
+
+  // --- NEW: EDIT CANDIDATE LOGIC ---
+  let editModalInstance = null;
+
+  function openEditModal(candidateId) {
+      // Find candidate details from global array
+      const candidate = globalCandidates.find(c => c._id === candidateId);
+      if (!candidate) return alert('Error locating candidate record.');
+
+      // Pre-fill the form
+      document.getElementById('editCandId').value = candidate._id;
+      document.getElementById('editCandName').value = candidate.name;
+      document.getElementById('editCandPosting').value = candidate.posting;
+      document.getElementById('editCandDept').value = candidate.department;
+      document.getElementById('editCandYear').value = candidate.year;
+      document.getElementById('editCandSection').value = candidate.section || 'None';
+      document.getElementById('editCandPhoto').value = ''; // Reset file input
+
+      // Open Modal
+      if (!editModalInstance) {
+          editModalInstance = new bootstrap.Modal(document.getElementById('editCandidateModal'));
+      }
+      editModalInstance.show();
+  }
+
+  document.getElementById('editCandidateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const candidateId = document.getElementById('editCandId').value;
+      const btn = document.getElementById('editSubmitBtn');
+      
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving...';
+
+      const fd = new FormData();
+      fd.append('name', document.getElementById('editCandName').value);
+      fd.append('posting', document.getElementById('editCandPosting').value);
+      fd.append('department', document.getElementById('editCandDept').value);
+      fd.append('year', document.getElementById('editCandYear').value);
+      fd.append('section', document.getElementById('editCandSection').value);
+      
+      const photoFile = document.getElementById('editCandPhoto').files[0];
+      if (photoFile) fd.append('photo', photoFile); // Only append if they uploaded a new one
+
+      try {
+          const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${candidateId}`, { 
+              method: 'PUT', 
+              body: fd 
+          });
+          
+          if (res.ok) {
+              showAlert('Candidate profile updated successfully.', 'success');
+              editModalInstance.hide();
+              loadAdminData(); // Refresh UI
+          } else {
+              const data = await res.json();
+              showAlert(`Error: ${data.message || 'Failed to update.'}`, 'danger');
+          }
+      } catch (err) {
+          showAlert('Network error during update.', 'danger');
+      } finally {
+          btn.disabled = false;
+          btn.innerText = 'Save Modifications';
+      }
+  });
+  // ---------------------------------
 
   function filterStudents() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
