@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | Kamaraj College Election</title>
+  <title>Election Administration Console | Kamaraj College</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -11,9 +11,11 @@
     
     .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1050; }
     .face-logo { height: 38px; object-fit: contain; }
+    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
     .header-right { display: flex; align-items: center; gap: 24px; }
-    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; transition: all 0.2s; }
-    .avatar-circle:hover { background-color: #ffca2c; border-color: #ffffff; }
+    
+    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+    .btn-logout:hover { background-color: white; color: #0d6efd; }
     
     .sidebar-wrapper { background-color: #ffffff; min-height: calc(100vh - 65px); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
     .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; transition: all 0.2s; }
@@ -24,39 +26,45 @@
     .candidate-thumb { width: 42px; height: 55px; border-radius: 6px; object-fit: cover; object-position: top; border: 2px solid #dee2e6; }
     .table-group-header { background-color: #e3f2fd !important; color: #0d6efd; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
+    .progress { background-color: #e9ecef; }
+    .progress-bar { transition: width 0.5s ease-in-out; }
+
     .mobile-menu-btn { display: none; background: transparent; border: none; color: white; font-size: 1.5rem; }
     @media (max-width: 768px) {
       .face-header { padding: 10px 15px; }
+      .college-logo { height: 32px; width: 32px; }
       .face-logo { height: 30px; }
       .mobile-menu-btn { display: block; }
       .sidebar-wrapper { display: none; }
+      .header-right { gap: 10px; }
     }
   </style>
 </head>
 <body>
 
 <nav class="face-header sticky-top">
-  <div class="d-flex align-items-center gap-3">
+  <div class="d-flex align-items-center gap-2 gap-md-3">
     <button class="mobile-menu-btn" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar"><i class="fa-solid fa-bars"></i></button>
+    <img src="kc.jpg" alt="Kamaraj College Crest" class="college-logo" onerror="this.style.display='none'">
     <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="Face Prep Logo" class="face-logo" onerror="this.style.display='none'">
   </div>
   <div class="header-right">
-    <div class="avatar-circle shadow-sm" onclick="logout()" title="Log out safely">A</div>
+    <button class="btn-logout" onclick="logout()" title="Securely terminate session"><i class="fa-solid fa-power-off me-2"></i>Sign Out</button>
   </div>
 </nav>
 
 <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar">
   <div class="offcanvas-header border-bottom">
-    <h5 class="offcanvas-title fw-bold text-primary">Admin Menu</h5>
+    <h5 class="offcanvas-title fw-bold text-primary">System Menu</h5>
     <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
   </div>
   <div class="offcanvas-body p-0">
     <div class="nav flex-column nav-pills" role="tablist">
-       <button class="nav-link active text-start mobile-nav-btn" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> Dashboard</button>
-       <button class="nav-link text-start mobile-nav-btn" data-bs-target="#studentsList"><i class="fa-solid fa-address-book w-25"></i> Student Directory</button>
+       <button class="nav-link active text-start mobile-nav-btn" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> Telemetry</button>
+       <button class="nav-link text-start mobile-nav-btn" data-bs-target="#studentsList"><i class="fa-solid fa-address-book w-25"></i> Voter Registry</button>
        <button class="nav-link text-start mobile-nav-btn" data-bs-target="#candidates"><i class="fa-solid fa-users w-25"></i> Candidates</button>
-       <button class="nav-link text-start mobile-nav-btn" data-bs-target="#settings"><i class="fa-solid fa-sliders w-25"></i> Settings</button>
-       <button class="nav-link text-start text-danger mobile-nav-btn" data-bs-target="#danger"><i class="fa-solid fa-triangle-exclamation w-25"></i> Danger Zone</button>
+       <button class="nav-link text-start mobile-nav-btn" data-bs-target="#settings"><i class="fa-solid fa-sliders w-25"></i> Deployment</button>
+       <button class="nav-link text-start text-danger mobile-nav-btn" data-bs-target="#danger"><i class="fa-solid fa-triangle-exclamation w-25"></i> Critical Actions</button>
     </div>
   </div>
 </div>
@@ -66,11 +74,11 @@
     
     <div class="col-md-2 p-0 sidebar-wrapper d-none d-md-block">
       <div class="nav flex-column nav-pills mt-3" role="tablist">
-        <button class="nav-link active text-start" data-bs-toggle="pill" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> Dashboard</button>
-        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#studentsList"><i class="fa-solid fa-address-book w-25"></i> Student Directory</button>
-        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#candidates"><i class="fa-solid fa-users w-25"></i> Manage Candidates</button>
-        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#settings"><i class="fa-solid fa-sliders w-25"></i> Election Settings</button>
-        <button class="nav-link text-start text-danger" data-bs-toggle="pill" data-bs-target="#danger"><i class="fa-solid fa-triangle-exclamation w-25"></i> Danger Zone</button>
+        <button class="nav-link active text-start" data-bs-toggle="pill" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> System Telemetry</button>
+        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#studentsList"><i class="fa-solid fa-address-book w-25"></i> Voter Registry</button>
+        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#candidates"><i class="fa-solid fa-users w-25"></i> Candidate Profiles</button>
+        <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#settings"><i class="fa-solid fa-sliders w-25"></i> Deployment Settings</button>
+        <button class="nav-link text-start text-danger" data-bs-toggle="pill" data-bs-target="#danger"><i class="fa-solid fa-triangle-exclamation w-25"></i> Critical Actions</button>
       </div>
     </div>
 
@@ -79,12 +87,13 @@
       
       <div class="tab-content">
         
+        <!-- TELEMETRY TAB -->
         <div class="tab-pane fade show active" id="dashboard">
           <div class="card content-card mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center">
               <div>
-                <h5 class="fw-bold mb-2"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i>Live Election Status</h5>
-                <p class="mb-0 text-muted" id="electionStatusText">Loading status...</p>
+                <h5 class="fw-bold mb-2"><i class="fa-solid fa-satellite-dish me-2 text-primary"></i>Network Status & Deployment</h5>
+                <p class="mb-0 text-muted" id="electionStatusText">Fetching system state...</p>
               </div>
               <span class="badge bg-secondary fs-5 py-2 px-3 shadow-sm" id="electionStatusBadge">OFFLINE</span>
             </div>
@@ -93,39 +102,46 @@
           <div class="row mb-4">
             <div class="col-md-4 mb-3">
               <div class="card content-card bg-primary text-white h-100 p-3 shadow-sm">
-                <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Total Students Synced</h6><h1 class="display-5 fw-bold mb-0" id="stat-students">0</h1></div>
+                <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Authorized Electorate</h6><h1 class="display-5 fw-bold mb-0" id="stat-students">0</h1></div>
               </div>
             </div>
             <div class="col-md-4 mb-3">
               <div class="card content-card bg-success text-white h-100 p-3 shadow-sm">
-                <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Total Votes Cast</h6><h1 class="display-5 fw-bold mb-0" id="stat-votes">0</h1></div>
+                <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Ballots Processed</h6><h1 class="display-5 fw-bold mb-0" id="stat-votes">0</h1></div>
               </div>
             </div>
             <div class="col-md-4 mb-3">
-              <div class="card content-card bg-warning text-dark h-100 p-3 shadow-sm">
-                <div class="card-body"><h6 class="text-uppercase fw-bold text-dark-50">Active Candidates</h6><h1 class="display-5 fw-bold mb-0" id="stat-candidates">0</h1></div>
+              <div class="card content-card bg-dark text-white h-100 p-3 shadow-sm">
+                <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Registered Candidates</h6><h1 class="display-5 fw-bold mb-0" id="stat-candidates">0</h1></div>
               </div>
             </div>
           </div>
           
-          <div class="card content-card p-4 text-center shadow-sm">
-            <h5 class="fw-bold mb-3">Export Final Results</h5>
-            <button class="btn btn-success fw-bold px-4 py-2" onclick="downloadResults()"><i class="fa-solid fa-file-excel me-2"></i> Download Results (.xlsx)</button>
+          <!-- CHART BASED LEADERBOARD -->
+          <h4 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Live Analytics & Polling</h4>
+          <div id="leaderboardContainer" class="mb-4">
+             <!-- Live chart injected here -->
+          </div>
+
+          <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
+            <h5 class="fw-bold mb-3">Audit & Compliance Reporting</h5>
+            <button class="btn btn-success fw-bold px-4 py-2" onclick="downloadResults()"><i class="fa-solid fa-file-excel me-2"></i> Generate Official Audit Log (.xlsx)</button>
           </div>
         </div>
 
+        <!-- REGISTRY TAB -->
         <div class="tab-pane fade" id="studentsList">
-          <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Student Directory</h3>
+          <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Official Voter Registry</h3>
           
           <div class="row mb-3 g-2">
             <div class="col-md-8">
-              <input type="text" id="searchInput" class="form-control" placeholder="Search by Name or Roll Number..." onkeyup="filterStudents()">
+              <input type="text" id="searchInput" class="form-control" placeholder="Query by Student Name or Roll Identifier..." onkeyup="filterStudents()">
             </div>
             <div class="col-md-4">
               <select id="statusFilter" class="form-select" onchange="filterStudents()">
-                <option value="ALL">Show All Students</option>
-                <option value="VOTED">Only Voted (Green)</option>
-                <option value="PENDING">Only Pending / Unvoted (Red)</option>
+                <option value="ALL">Display Complete Database</option>
+                <option value="VOTED">Authenticated (Voted)</option>
+                <option value="PENDING">Pending Authorization</option>
               </select>
             </div>
           </div>
@@ -135,9 +151,9 @@
               <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light text-uppercase small fw-bold">
                   <tr>
-                    <th class="px-4 py-3">Roll Number</th>
-                    <th>Student Name</th>
-                    <th class="text-end px-4">Voting Status</th>
+                    <th class="px-4 py-3">Identifier (Roll No.)</th>
+                    <th>Full Name</th>
+                    <th class="text-end px-4">Cryptographic Status</th>
                   </tr>
                 </thead>
                 <tbody id="studentTableBody"></tbody>
@@ -146,34 +162,35 @@
           </div>
         </div>
 
+        <!-- CANDIDATES TAB -->
         <div class="tab-pane fade" id="candidates">
           <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Manage Candidates</h3>
-            <button class="btn btn-primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#addCandidateForm"><i class="fa-solid fa-plus me-2"></i>Add New</button>
+            <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Candidate Database</h3>
+            <button class="btn btn-primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#addCandidateForm"><i class="fa-solid fa-user-plus me-2"></i>Register Profile</button>
           </div>
 
           <div class="collapse mb-4" id="addCandidateForm">
             <div class="card content-card shadow-sm border-primary">
-              <div class="card-header bg-primary text-white fw-bold">New Candidate Details</div>
+              <div class="card-header bg-primary text-white fw-bold">Digital Profile Registration</div>
               <div class="card-body p-4">
                 <form id="newCandidateForm">
                   <div class="row mb-3">
-                    <div class="col-md-6"><label class="fw-bold">Name</label><input type="text" class="form-control" id="candName" required></div>
-                    <div class="col-md-6"><label class="fw-bold">Posting</label><input type="text" class="form-control" id="candPosting" required></div>
+                    <div class="col-md-6"><label class="fw-bold">Legal Name</label><input type="text" class="form-control" id="candName" required></div>
+                    <div class="col-md-6"><label class="fw-bold">Target Portfolio (Posting)</label><input type="text" class="form-control" id="candPosting" required></div>
                   </div>
                   <div class="row mb-3">
-                    <div class="col-md-4"><label class="fw-bold">Department</label>
+                    <div class="col-md-4"><label class="fw-bold">Academic Department</label>
                       <select class="form-select" id="candDept" required><option value="BCA">BCA</option><option value="BBA">BBA</option><option value="BCOM">BCOM</option></select>
                     </div>
-                    <div class="col-md-4"><label class="fw-bold">Year</label>
+                    <div class="col-md-4"><label class="fw-bold">Year of Study</label>
                       <select class="form-select" id="candYear" required><option value="1">1st Year</option><option value="2">2nd Year</option><option value="3">3rd Year</option></select>
                     </div>
-                    <div class="col-md-4" id="candSectionDiv"><label class="fw-bold">Section</label>
+                    <div class="col-md-4" id="candSectionDiv"><label class="fw-bold">Section Assignment</label>
                       <select class="form-select" id="candSection"><option value="None">None</option><option value="A">A</option><option value="B">B</option></select>
                     </div>
                   </div>
-                  <div class="mb-4"><label class="fw-bold">Passport Photo Upload</label><input class="form-control" type="file" id="candPhoto" accept="image/*" required></div>
-                  <div class="text-end"><button type="submit" class="btn btn-success fw-bold">Save Candidate</button></div>
+                  <div class="mb-4"><label class="fw-bold">Biometric / Passport Photo Asset</label><input class="form-control" type="file" id="candPhoto" accept="image/*" required></div>
+                  <div class="text-end"><button type="submit" class="btn btn-success fw-bold">Commit to Database</button></div>
                 </form>
               </div>
             </div>
@@ -186,30 +203,31 @@
           </div>
         </div>
 
-        <!-- UPDATED SETTINGS TAB (No Timer) -->
+        <!-- SETTINGS TAB -->
         <div class="tab-pane fade" id="settings">
-          <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Election Controls</h3>
+          <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Deployment Protocols</h3>
           
           <div class="card content-card shadow-sm mb-4 border-primary">
             <div class="card-body p-5 text-center">
-              <h4 class="fw-bold mb-2 text-primary">Master Publish Switch</h4>
-              <p class="text-muted mb-4">Turn the election ON or OFF globally. When ON, students can log in and cast their votes.</p>
+              <h4 class="fw-bold mb-2 text-primary">Master System Override</h4>
+              <p class="text-muted mb-4">Toggle network accessibility for the electorate. Engaging this protocol exposes the live voting interface to all authenticated students.</p>
               
               <div class="form-check form-switch d-flex justify-content-center align-items-center">
                 <input class="form-check-input cursor-pointer" type="checkbox" id="isPublished" style="transform: scale(2.5); margin-right: 20px;" onchange="togglePublish()">
-                <label class="form-check-label fw-bold fs-4 ms-3" for="isPublished">ELECTION STATUS</label>
+                <label class="form-check-label fw-bold fs-4 ms-3" for="isPublished">PORTAL DEPLOYMENT</label>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- DANGER ZONE -->
         <div class="tab-pane fade" id="danger">
-          <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Danger Zone</h3>
+          <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Critical Actions</h3>
           <div class="card content-card border-danger shadow-sm p-4 p-md-5 text-center">
             <i class="fa-solid fa-triangle-exclamation text-danger mb-3" style="font-size: 3rem;"></i>
-            <h4 class="fw-bold">Nuclear System Wipe</h4>
-            <p class="text-muted mb-4">This permanently deletes ALL candidates, deletes ALL photo files from the server, and resets ALL student voting records back to zero.</p>
-            <button class="btn btn-danger btn-lg fw-bold" onclick="nuclearWipe()"><i class="fa-solid fa-trash me-2"></i>EXECUTE WIPE</button>
+            <h4 class="fw-bold">System Data Purge</h4>
+            <p class="text-muted mb-4"><strong>WARNING:</strong> Executing this command will permanently erase all candidate profiles, associated media assets, and zero out all cryptographic voter logs. This action cannot be reversed.</p>
+            <button class="btn btn-danger btn-lg fw-bold" onclick="nuclearWipe()"><i class="fa-solid fa-trash me-2"></i>INITIALIZE SYSTEM PURGE</button>
           </div>
         </div>
 
@@ -259,6 +277,7 @@
     return res;
   }
 
+  // CORE DATA LOAD
   async function loadAdminData() {
     try {
       const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
@@ -275,7 +294,6 @@
         filterStudents(); 
       }
 
-      // REMOVED TIMER LOGIC HERE
       const setRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings');
       if(setRes.ok) {
         const settings = await setRes.json();
@@ -285,65 +303,128 @@
         document.getElementById('isPublished').checked = settings.isPublished === true;
 
         if (settings.isPublished) {
-          b.className = 'badge bg-success fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'LIVE';
-          t.innerHTML = `<strong>Election is Active:</strong> Students can currently log in and vote.`;
+          b.className = 'badge bg-success fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'DEPLOYED';
+          t.innerHTML = `<strong>System is Active:</strong> End-users can currently authenticate and submit ballots.`;
         } else {
-          b.className = 'badge bg-secondary fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'OFFLINE';
-          t.textContent = 'Ballot is currently hidden (Master Switch is OFF).';
+          b.className = 'badge bg-secondary fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'STANDBY';
+          t.textContent = 'Portal is secured. Network deployment is currently disabled.';
         }
       }
-
-      const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
-      const candidates = await candRes.json();
       
-      const dashboardContainer = document.getElementById('dashboard');
-      let leaderboardDiv = document.getElementById('liveLeaderboard');
-      if (!leaderboardDiv) {
-        leaderboardDiv = document.createElement('div');
-        leaderboardDiv.id = 'liveLeaderboard';
-        leaderboardDiv.className = 'card content-card mb-4 shadow-sm';
-        dashboardContainer.insertBefore(leaderboardDiv, dashboardContainer.lastElementChild);
-      }
-      
-      const sortedCandidates = [...candidates].sort((a, b) => b.votes - a.votes);
-      let leaderHTML = `
-        <div class="card-header bg-dark text-white fw-bold"><i class="fa-solid fa-trophy text-warning me-2"></i> Live Leaderboard</div>
-        <ul class="list-group list-group-flush">
-      `;
-      if (sortedCandidates.length === 0) leaderHTML += '<li class="list-group-item text-muted text-center py-3">No candidates added yet.</li>';
-      sortedCandidates.forEach(c => {
-        leaderHTML += `
-          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-            <div><span class="fw-bold fs-5">${c.name}</span><br><span class="badge bg-light text-dark border mt-1">${c.posting}</span></div>
-            <span class="badge bg-success rounded-pill fs-5 py-2 px-3">${c.votes} Votes</span>
-          </li>`;
-      });
-      leaderHTML += '</ul>';
-      leaderboardDiv.innerHTML = leaderHTML;
-
-      const tbody = document.getElementById('candidatesTableBody');
-      tbody.innerHTML = '';
-      const grouped = candidates.reduce((acc, c) => { const p = c.posting.toUpperCase(); if(!acc[p]) acc[p] = []; acc[p].push(c); return acc; }, {});
-
-      Object.keys(grouped).forEach(posting => {
-        tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-2"><i class="fa-solid fa-user-tie me-2"></i> ${posting}</td></tr>`;
-        grouped[posting].forEach(cand => {
-          let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `https://fpc2k26-election.onrender.com${cand.photo}`;
-          tbody.innerHTML += `
-            <tr class="bg-white">
-              <td class="px-3 py-2 d-flex align-items-center">
-                <img src="${imgSrc}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
-                <span class="fw-bold">${cand.name}</span>
-              </td>
-              <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
-              <td class="text-center fw-bold text-success">${cand.votes}</td>
-              <td class="text-end px-3">
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate('${cand._id}', '${cand.name}')"><i class="fa-solid fa-trash"></i></button>
-              </td>
-            </tr>`;
-        });
-      });
+      refreshLeaderboard();
+      renderCandidateTable();
     } catch (e) { console.log(e); }
+  }
+
+  // CHART-BASED LIVE POLLING ENGINE (Runs every 3 seconds)
+  async function refreshLeaderboard() {
+      try {
+          const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
+          const candidates = await candRes.json();
+          
+          // Group by Portfolio (Posting)
+          const grouped = candidates.reduce((acc, c) => { 
+              const p = (c.posting || 'Unknown').toUpperCase(); 
+              if(!acc[p]) acc[p] = []; 
+              acc[p].push(c); 
+              return acc; 
+          }, {});
+
+          let leaderHTML = '<div class="row g-4">';
+          let totalCurrentVotes = 0;
+          
+          Object.keys(grouped).forEach(posting => {
+              let postingCandidates = grouped[posting].sort((a, b) => b.votes - a.votes);
+              let totalPostingVotes = postingCandidates.reduce((sum, c) => sum + c.votes, 0);
+              
+              leaderHTML += `
+              <div class="col-lg-6">
+                  <div class="card content-card h-100 shadow-sm border-0">
+                      <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                          <span><i class="fa-solid fa-trophy text-warning me-2"></i> ${posting}</span>
+                          <span class="badge bg-light text-dark shadow-sm">${totalPostingVotes} Portoflio Votes</span>
+                      </div>
+                      <div class="card-body">
+              `;
+              
+              if (postingCandidates.length === 0) {
+                  leaderHTML += `<p class="text-muted text-center mb-0">No active records for this portfolio.</p>`;
+              } else {
+                  postingCandidates.forEach((c, index) => {
+                      totalCurrentVotes += c.votes; 
+                      // Calculate percentage safely
+                      let percent = totalPostingVotes === 0 ? 0 : Math.round((c.votes / totalPostingVotes) * 100);
+                      
+                      // Leader gets green, others get blue
+                      let barColor = (index === 0 && c.votes > 0) ? 'bg-success' : 'bg-primary';
+                      let animation = c.votes > 0 ? 'progress-bar-striped progress-bar-animated' : '';
+                      
+                      leaderHTML += `
+                      <div class="mb-4">
+                          <div class="d-flex justify-content-between align-items-end mb-1">
+                              <span class="fw-bold">${c.name}</span>
+                              <span class="badge bg-light text-dark border">${c.votes} Votes (${percent}%)</span>
+                          </div>
+                          <div class="progress shadow-sm" style="height: 14px; border-radius: 7px;">
+                              <div class="progress-bar ${barColor} ${animation}" role="progressbar" style="width: ${percent}%"></div>
+                          </div>
+                      </div>
+                      `;
+                  });
+              }
+              leaderHTML += `</div></div></div>`;
+          });
+          
+          leaderHTML += '</div>';
+          
+          const lbContainer = document.getElementById('leaderboardContainer');
+          // Only update DOM if HTML changes to prevent flicker
+          if (lbContainer.innerHTML !== leaderHTML) { 
+              lbContainer.innerHTML = leaderHTML; 
+          }
+          
+          // Poll and update Top Stat Card if changed
+          const totalVotesEl = document.getElementById('stat-votes');
+          if (totalVotesEl && totalCurrentVotes > 0) {
+              const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
+              if(statRes.ok) {
+                 const s = await statRes.json();
+                 totalVotesEl.textContent = s.totalVotes;
+              }
+          }
+      } catch (e) {}
+  }
+  
+  setInterval(refreshLeaderboard, 3000); 
+
+  async function renderCandidateTable() {
+      try {
+          const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
+          const candidates = await candRes.json();
+          
+          const tbody = document.getElementById('candidatesTableBody');
+          tbody.innerHTML = '';
+          const grouped = candidates.reduce((acc, c) => { const p = c.posting.toUpperCase(); if(!acc[p]) acc[p] = []; acc[p].push(c); return acc; }, {});
+
+          Object.keys(grouped).forEach(posting => {
+            tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-2"><i class="fa-solid fa-briefcase me-2"></i> PORTFOLIO: ${posting}</td></tr>`;
+            grouped[posting].forEach(cand => {
+              let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `https://fpc2k26-election.onrender.com${cand.photo}`;
+              tbody.innerHTML += `
+                <tr class="bg-white">
+                  <td class="px-3 py-2 d-flex align-items-center">
+                    <img src="${imgSrc}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
+                    <span class="fw-bold">${cand.name}</span>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
+                  <td class="text-center fw-bold text-success">${cand.votes} Logs</td>
+                  <td class="text-end px-3">
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate('${cand._id}', '${cand.name}')" title="Terminate Profile"><i class="fa-solid fa-trash"></i></button>
+                  </td>
+                </tr>`;
+            });
+          });
+      } catch(e) {}
   }
 
   function filterStudents() {
@@ -361,14 +442,14 @@
     });
 
     if (filtered.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">No students found matching your search.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">No directory entries matched the query parameters.</td></tr>`;
       return;
     }
 
     filtered.forEach(stu => {
       const badge = stu.hasVoted 
-        ? `<span class="badge bg-success px-3 py-2"><i class="fa-solid fa-check me-1"></i> Voted</span>` 
-        : `<span class="badge bg-danger px-3 py-2"><i class="fa-solid fa-xmark me-1"></i> Pending</span>`;
+        ? `<span class="badge bg-success px-3 py-2"><i class="fa-solid fa-check-double me-1"></i> Authenticated</span>` 
+        : `<span class="badge bg-danger px-3 py-2"><i class="fa-solid fa-clock me-1"></i> Pending</span>`;
       tbody.innerHTML += `
         <tr>
           <td class="px-4 py-3 fw-bold text-muted">${stu.rollNumber}</td>
@@ -387,20 +468,20 @@
     
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading...';
+    btn.innerHTML = '<i class="fa-solid fa-microchip fa-spin me-2"></i> Encoding Assets...';
     
     const res = await secureFetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
     
     btn.disabled = false;
-    btn.innerText = 'Save Candidate';
+    btn.innerText = 'Commit to Database';
     
-    if (res.ok) { showAlert('Added!', 'success'); e.target.reset(); document.getElementById('addCandidateForm').classList.remove('show'); loadAdminData(); }
+    if (res.ok) { showAlert('Profile successfully synchronized to the database.', 'success'); e.target.reset(); document.getElementById('addCandidateForm').classList.remove('show'); loadAdminData(); }
   });
 
   async function deleteCandidate(id, name) {
-    if (confirm(`Delete ${name}?`)) {
+    if (confirm(`Authorize termination of candidate profile for ${name}?`)) {
       const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${id}`, { method: 'DELETE' });
-      if (res.ok) { showAlert('Deleted.', 'danger'); loadAdminData(); }
+      if (res.ok) { showAlert('Profile purged from database.', 'warning'); loadAdminData(); }
     }
   }
 
@@ -414,15 +495,15 @@
     });
     
     if(res.ok) { 
-      showAlert(isPublished ? 'Election is now LIVE!' : 'Election Taken Offline!', 'success'); 
+      showAlert(isPublished ? 'Election Network Deployed!' : 'Election Network Terminated!', 'success'); 
       loadAdminData(); 
     }
   }
 
   async function nuclearWipe() {
-    if(confirm("NUCLEAR WARNING: This permanently deletes ALL candidates, photos, and resets ALL votes. Proceed?")) {
+    if(confirm("CRITICAL AUTHORIZATION REQUIRED: This action will permanently format the active database, zeroing all votes and deleting all candidate records. Do you wish to proceed?")) {
       const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/wipe-all', { method: 'DELETE' });
-      if(res.ok) { showAlert('System Nuclear Wipe Complete.', 'danger'); loadAdminData(); }
+      if(res.ok) { showAlert('System initialization and purge complete.', 'danger'); loadAdminData(); }
     }
   }
 

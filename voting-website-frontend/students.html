@@ -12,13 +12,15 @@
     
     .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
     .face-logo { height: 38px; object-fit: contain; }
-    .header-right { display: flex; align-items: center; gap: 24px; }
+    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
     
-    .btn-yellow { background-color: #ffc107; color: #000; font-weight: 700; border-radius: 6px; padding: 6px 16px; border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; transition: all 0.2s; }
-    .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; }
-    .avatar-circle { background-color: #ffc107; color: #000; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; cursor: pointer; border: 2px solid #ffc107; transition: all 0.2s; }
-    .avatar-circle:hover { background-color: #ffca2c; border-color: #ffffff; }
+    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+    .btn-logout:hover { background-color: white; color: #0d6efd; }
 
+    .btn-yellow { background-color: #ffc107; color: #000; font-weight: 700; border-radius: 6px; padding: 6px 16px; border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; transition: all 0.2s; }
+    .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; margin-right: 10px; }
+    
     .wizard-step { display: none; animation: fadeIn 0.4s ease; }
     .wizard-step.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -58,19 +60,23 @@
     
     @media (max-width: 768px) {
       .face-header { padding: 10px 15px; }
+      .college-logo { height: 32px; width: 32px; }
       .face-logo { height: 30px; }
       .candidate-info { padding: 8px; }
+      .header-right { gap: 10px; }
     }
   </style>
 </head>
 <body>
 
 <nav class="face-header sticky-top">
-  <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="Face Prep Logo" class="face-logo" onerror="this.style.display='none'">
+  <div class="d-flex align-items-center gap-2 gap-md-3">
+    <img src="kc.jpg" alt="Kamaraj College Crest" class="college-logo" onerror="this.style.display='none'">
+    <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="Face Prep Logo" class="face-logo" onerror="this.style.display='none'">
+  </div>
   <div class="header-right">
-    <button class="btn-yellow d-none d-md-flex"><i class="fa-solid fa-gauge-high"></i> My Ballot</button>
     <span class="nav-link-custom d-none d-lg-inline" id="headerNameDisplay">Voter</span>
-    <div class="avatar-circle shadow-sm" onclick="logout()" title="Log out safely" id="userAvatar">U</div>
+    <button class="btn-logout shadow-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket me-2 d-none d-md-inline"></i>Sign Out</button>
   </div>
 </nav>
 
@@ -137,7 +143,6 @@
   if (studentName) {
     document.getElementById('studentNameDisplay').textContent = studentName;
     document.getElementById('headerNameDisplay').textContent = studentName;
-    document.getElementById('userAvatar').textContent = studentName.charAt(0).toUpperCase(); 
   }
   if (localStorage.getItem('hasVoted') === 'true') showSuccessScreen();
 
@@ -191,12 +196,11 @@
         return a.localeCompare(b);
       });
 
-      // DATA SECURED - ENABLE THE BUTTON!
       startBtn.disabled = false;
       startBtn.className = "btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm";
       startBtn.style.backgroundColor = "#0d6efd";
       startBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> START VOTING';
-      startBtn.onclick = startVoting; // Only attach click event when ready
+      startBtn.onclick = startVoting; 
 
     } catch (error) { 
         startBtn.disabled = true;
@@ -206,7 +210,7 @@
   }
 
   function startVoting() {
-    if (postingsArray.length === 0) return; // Ultimate safety net
+    if (postingsArray.length === 0) return; 
     document.getElementById('introScreen').classList.remove('active');
     document.getElementById('votingWizard').classList.add('active');
     
@@ -216,7 +220,7 @@
 
   function renderCategory() {
     const postingTitle = postingsArray[currentCategoryIndex];
-    if (!postingTitle) return; // Failsafe
+    if (!postingTitle) return; 
     
     const candidates = groupedCandidates[postingTitle] || [];
     const selectedId = userSelections[postingTitle];
@@ -232,7 +236,6 @@
       const isSelected = candidate._id === selectedId;
       const sec = candidate.section && candidate.section !== 'None' ? `(${candidate.section})` : '';
       
-      // EXTREME SAFETY NET FOR PHOTOS
       let imgSrc = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23e9ecef\'/></svg>';
       if (candidate.photo) {
           imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `https://fpc2k26-election.onrender.com${candidate.photo}`;
