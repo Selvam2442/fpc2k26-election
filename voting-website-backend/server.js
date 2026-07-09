@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET;
 
-// YOUR GOOGLE SHEET ID
+// GOOGLE SHEET ID
 const SHEET_ID = '1jbk3jOnvZKiiUf9AJaUc8pkExRPi6GFWnk_4h0CMn-o';
 const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
 
