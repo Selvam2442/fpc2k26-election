@@ -10,60 +10,147 @@
   <style>
     body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
     
-    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 100; position: relative;}
     .face-logo { height: 38px; object-fit: contain; }
     .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
     .header-right { display: flex; align-items: center; gap: 15px; }
     
-    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
-    .btn-logout:hover { background-color: white; color: #0d6efd; }
+    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+    .btn-logout:hover { background-color: white; color: #0d6efd; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
-    .btn-yellow { background-color: #ffc107; color: #000; font-weight: 700; border-radius: 6px; padding: 6px 16px; border: none; display: flex; align-items: center; gap: 8px; font-size: 0.95rem; transition: all 0.2s; }
     .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; margin-right: 10px; }
     
     .wizard-step { display: none; animation: fadeIn 0.4s ease; }
     .wizard-step.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-    .intro-screen { background: white; border-radius: 20px; padding: 40px 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-top: 5vh; }
-    .progress-bar-custom { background-color: #e9ecef; border-radius: 10px; height: 8px; margin-bottom: 20px; overflow: hidden; }
-    .progress-fill { background-color: #0d6efd; height: 100%; transition: width 0.3s ease; }
-    .category-title { font-weight: 800; color: #0d6efd; text-transform: uppercase; letter-spacing: 1px; font-size: 1.5rem; }
+    .intro-screen { background: white; border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-top: 5vh; animation: fadeIn 0.6s ease-out; border: 1px solid rgba(0,0,0,0.05); }
+    .progress-bar-custom { background-color: #e9ecef; border-radius: 12px; height: 12px; margin-bottom: 25px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+    .progress-fill { background-color: #0d6efd; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 12px; position: relative; overflow: hidden; }
+    .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); animation: shimmerProgress 2s infinite; }
+    @keyframes shimmerProgress { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    
+    .category-title { font-weight: 800; color: #0d6efd; text-transform: uppercase; letter-spacing: 1px; font-size: 1.6rem; }
 
-    .candidate-card { border: 2px solid #e9ecef; border-radius: 12px; overflow: hidden; background: #ffffff; cursor: pointer; transition: all 0.2s; height: 100%; display: flex; flex-direction: column; }
-    .candidate-card:hover { border-color: #0d6efd; box-shadow: 0 8px 15px rgba(13, 110, 253, 0.15); }
-    .candidate-card.selected { border: 3px solid #198754; box-shadow: 0 8px 20px rgba(25, 135, 84, 0.25); background-color: #f8fff9; transform: scale(1.02); }
-    .candidate-card.selected .select-btn { background-color: #198754; color: white; }
+    /* ========================================= */
+    /* PERFECTED CANDIDATE CARD STYLES           */
+    /* ========================================= */
+    @keyframes popIn { 
+      0% { opacity: 0; transform: scale(0.9) translateY(20px); } 
+      100% { opacity: 1; transform: scale(1) translateY(0); } 
+    }
+    
+    .candidate-card { 
+        border: 2px solid transparent; 
+        border-radius: 20px; 
+        overflow: hidden; 
+        background: linear-gradient(145deg, #ffffff, #f8f9fa); 
+        cursor: pointer; 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        height: 100%; 
+        display: flex; 
+        flex-direction: column; 
+        box-shadow: 0 6px 15px rgba(0,0,0,0.04); 
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; 
+    }
+    
+    .candidate-card:hover { 
+        border-color: rgba(13, 110, 253, 0.3); 
+        box-shadow: 0 15px 35px rgba(13, 110, 253, 0.12); 
+        transform: translateY(-6px); 
+    }
+    
+    .candidate-card.selected { 
+        border: 3px solid #198754; 
+        box-shadow: 0 12px 35px rgba(25, 135, 84, 0.25); 
+        background: linear-gradient(145deg, #f8fff9, #eafff0); 
+        transform: translateY(-4px) scale(1.02); 
+    }
+    
+    /* Image and Selection Overlay */
+    .candidate-img-wrapper { 
+        width: 100%; 
+        aspect-ratio: 3 / 4; 
+        overflow: hidden; 
+        background-color: #f1f3f5; 
+        position: relative;
+    }
+    
+    .candidate-img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        object-position: top; 
+        transition: transform 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94); 
+    }
+    
+    .candidate-card:hover .candidate-img { transform: scale(1.08); }
+    
+    /* The Magical Checkmark Overlay */
+    .selection-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(25, 135, 84, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 2;
+        backdrop-filter: blur(2px);
+    }
+    
+    .selection-overlay i {
+        color: white;
+        font-size: 4rem;
+        transform: scale(0);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .candidate-card.selected .selection-overlay { opacity: 1; }
+    .candidate-card.selected .selection-overlay i { transform: scale(1); }
+    
+    /* Text and Badges */
+    .candidate-info { padding: 16px 12px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
+    .candidate-name { font-size: 1.15rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.5rem; transition: color 0.3s; line-height: 1.2; }
+    .candidate-card:hover .candidate-name { color: #0d6efd; }
+    
+    .badge-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; }
+    .meta-badge { background-color: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; border: 1px solid transparent; transition: all 0.3s; }
+    .candidate-card.selected .meta-badge { background-color: #e2f4e9; color: #198754; border-color: rgba(25,135,84,0.2); }
+    
+    /* Selection Button */
+    .select-btn { background-color: #e9ecef; color: #495057; border: none; padding: 10px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; text-transform: uppercase; margin-top: auto; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); letter-spacing: 0.5px; }
+    .candidate-card:hover .select-btn:not(.selected .select-btn) { background-color: #e3f2fd; color: #0d6efd; }
+    .candidate-card.selected .select-btn { background-color: #198754; color: white; box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3); }
     .candidate-card.selected .select-btn::after { content: ' \f00c'; font-family: "Font Awesome 6 Free"; font-weight: 900; }
     
-    .candidate-img-wrapper { width: 100%; aspect-ratio: 3 / 4; overflow: hidden; background-color: #f1f3f5; }
-    .candidate-img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
-    .candidate-info { padding: 10px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
-    .candidate-name { font-size: 1.1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.25rem; }
-    .meta-badge { background-color: #e9ecef; color: #495057; padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: 600; display: inline-block; margin: 2px; }
-    
-    .select-btn { background-color: #e9ecef; color: #495057; border: none; padding: 8px; font-size: 0.85rem; font-weight: 700; border-radius: 8px; text-transform: uppercase; margin-top: 10px; width: 100%; transition: all 0.2s; }
-    .nav-btn { border-radius: 50px; padding: 12px 30px; font-weight: 700; font-size: 1.1rem; }
+    /* Navigation Buttons */
+    .nav-btn { border-radius: 50px; padding: 12px 35px; font-weight: 800; font-size: 1.1rem; transition: all 0.3s; }
+    .nav-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
 
-    .skeleton {
-      background: #e9ecef;
-      background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 4px;
-    }
+    /* Skeleton Loading Enhancement */
+    .skeleton { background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-    .skeleton-img { width: 100%; aspect-ratio: 3/4; border-radius: 0; }
-    .skeleton-text { height: 20px; width: 80%; margin: 10px auto; }
-    .skeleton-badge { height: 15px; width: 40%; margin: 5px auto; display: inline-block; border-radius: 5px; }
-    .skeleton-btn { height: 35px; width: 100%; margin-top: 10px; border-radius: 8px; }
+    .skeleton-img { width: 100%; aspect-ratio: 3/4; border-radius: 20px 20px 0 0; }
+    .skeleton-text { height: 22px; width: 70%; margin: 10px auto; }
+    .skeleton-badge { height: 18px; width: 35%; margin: 5px auto; display: inline-block; border-radius: 6px; }
+    .skeleton-btn { height: 42px; width: 100%; margin-top: 10px; border-radius: 10px; }
     
+    /* ========================================= */
+    /* RESPONSIVE PERFECTION FOR MOBILE          */
+    /* ========================================= */
     @media (max-width: 768px) {
       .face-header { padding: 10px 15px; }
       .college-logo { height: 32px; width: 32px; }
-      .face-logo { height: 30px; }
-      .candidate-info { padding: 8px; }
-      .header-right { gap: 10px; }
+      .candidate-info { padding: 12px 8px; }
+      .candidate-name { font-size: 1rem; }
+      .meta-badge { font-size: 0.65rem; padding: 3px 6px; }
+      .select-btn { font-size: 0.8rem; padding: 8px; }
+      .nav-btn { padding: 10px 20px; font-size: 1rem; }
+      .category-title { font-size: 1.3rem; }
+      .selection-overlay i { font-size: 3rem; }
     }
   </style>
 </head>
@@ -86,13 +173,14 @@
   <!-- STEP 1: WELCOME SCREEN -->
   <div id="introScreen" class="wizard-step active">
     <div class="intro-screen mx-auto" style="max-width: 600px;">
-      <i class="fa-solid fa-graduation-cap text-primary mb-3" style="font-size: 4rem; color: #0d6efd !important;"></i>
+      <div class="mb-4" style="animation: float 3s ease-in-out infinite;">
+        <i class="fa-solid fa-user-shield text-primary" style="font-size: 4.5rem; color: #0d6efd !important;"></i>
+      </div>
       <h2 class="fw-bold text-dark">Welcome, <span id="studentNameDisplay" style="color: #0d6efd;">Voter</span>!</h2>
-      <p class="text-muted mt-3 fs-5">You are about to enter the official secure voting booth. You must select <strong>one candidate for every posting</strong> to complete your ballot.</p>
+      <p class="text-muted mt-3 fs-5">You are about to enter the official secure voting booth. You must select <strong>one candidate for every portfolio</strong> to complete your ballot.</p>
       
-      <!-- DEFAULT DISABLED LOADING BUTTON -->
-      <button class="btn btn-secondary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm" id="startBtn" disabled>
-        <i class="fa-solid fa-spinner fa-spin me-2"></i> CONNECTING TO SECURE SERVER...
+      <button class="btn btn-secondary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm nav-btn" id="startBtn" disabled style="transition: all 0.3s;">
+        <i class="fa-solid fa-spinner fa-spin me-2"></i> SECURING CONNECTION...
       </button>
     </div>
   </div>
@@ -103,17 +191,18 @@
     
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="category-title mb-0" id="categoryTitle">Loading...</h3>
-      <span class="badge bg-dark" id="stepCounter">1 of X</span>
+      <span class="badge bg-dark fs-6 py-2 px-3 rounded-pill shadow-sm" id="stepCounter">1 of X</span>
     </div>
 
-    <div class="row g-2" id="candidatesGrid"></div>
+    <!-- UPDATED: Grid breakpoints for absolute perfection -->
+    <div class="row g-3 g-md-4" id="candidatesGrid"></div>
 
-    <div class="d-flex justify-content-between mt-4 pb-5">
-      <button class="btn btn-outline-secondary nav-btn shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden;">
-        <i class="fa-solid fa-arrow-left me-1"></i> Prev
+    <div class="d-flex justify-content-between mt-5 pb-5">
+      <button class="btn btn-outline-secondary nav-btn bg-white shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden; border: 2px solid #dee2e6;">
+        <i class="fa-solid fa-arrow-left me-2"></i> Previous
       </button>
-      <button class="btn btn-primary nav-btn shadow" id="nextBtn" style="background-color: #0d6efd; border: none;" onclick="nextCategory()" disabled>
-        Next Category <i class="fa-solid fa-arrow-right ms-1"></i>
+      <button class="btn btn-primary nav-btn shadow text-white" id="nextBtn" style="background-color: #0d6efd; border: none;" onclick="nextCategory()" disabled>
+        Next Category <i class="fa-solid fa-arrow-right ms-2"></i>
       </button>
     </div>
   </div>
@@ -121,13 +210,24 @@
   <!-- STEP 3: SUCCESS SCREEN -->
   <div id="successScreen" class="wizard-step">
     <div class="intro-screen mx-auto text-center" style="max-width: 600px;">
-      <i class="fa-solid fa-check-circle text-success mb-4" style="font-size: 5rem;"></i>
-      <h1 class="fw-bold text-dark mb-3">Ballot Cast!</h1>
-      <p class="text-muted fs-5 mb-0">Thank you for participating. Your votes have been securely recorded.</p>
-      <button class="btn btn-dark mt-5 px-4 rounded-pill fw-bold" onclick="logout()">Close Session</button>
+      <div style="animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+         <i class="fa-solid fa-certificate text-success mb-4" style="font-size: 6rem; text-shadow: 0 10px 20px rgba(25,135,84,0.3);"></i>
+      </div>
+      <h1 class="fw-bold text-dark mb-3">Ballot Secured!</h1>
+      <p class="text-muted fs-5 mb-0">Thank you for fulfilling your democratic duty. Your cryptographic votes have been recorded.</p>
+      <button class="btn btn-dark mt-5 px-5 py-3 rounded-pill fw-bold nav-btn shadow-sm" onclick="logout()">Terminate Session</button>
     </div>
   </div>
 </div>
+
+<style>
+  /* Define float animation used in welcome screen */
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+</style>
 
 <script>
   const rollNumber = localStorage.getItem('rollNumber');
@@ -156,13 +256,14 @@
     const grid = document.getElementById('candidatesGrid');
     grid.innerHTML = '';
     for(let i=0; i<4; i++) {
+      // Perfect responsive skeleton grid
       grid.innerHTML += `
-        <div class="col-6 col-md-4 col-lg-3 mb-3">
-          <div class="card candidate-card" style="border: 2px solid #e9ecef; cursor: default;">
+        <div class="col-6 col-md-4 col-lg-3 mb-2">
+          <div class="card candidate-card" style="border: 2px solid #e9ecef; cursor: default; animation: none;">
             <div class="skeleton skeleton-img"></div>
             <div class="candidate-info">
               <div class="skeleton skeleton-text"></div>
-              <div><div class="skeleton skeleton-badge"></div><div class="skeleton skeleton-badge"></div></div>
+              <div class="badge-container"><div class="skeleton skeleton-badge"></div><div class="skeleton skeleton-badge"></div></div>
               <div class="skeleton skeleton-btn"></div>
             </div>
           </div>
@@ -197,9 +298,9 @@
       });
 
       startBtn.disabled = false;
-      startBtn.className = "btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm";
+      startBtn.className = "btn btn-primary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-lg nav-btn text-white";
       startBtn.style.backgroundColor = "#0d6efd";
-      startBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> START VOTING';
+      startBtn.innerHTML = '<i class="fa-solid fa-play me-2"></i> COMMENCE VOTING';
       startBtn.onclick = startVoting; 
 
     } catch (error) { 
@@ -226,13 +327,13 @@
     const selectedId = userSelections[postingTitle];
     
     document.getElementById('categoryTitle').textContent = postingTitle;
-    document.getElementById('stepCounter').textContent = `${currentCategoryIndex + 1} of ${postingsArray.length}`;
+    document.getElementById('stepCounter').textContent = `Step ${currentCategoryIndex + 1} of ${postingsArray.length}`;
     document.getElementById('wizardProgress').style.width = `${((currentCategoryIndex + 1) / postingsArray.length) * 100}%`;
     
     const grid = document.getElementById('candidatesGrid');
     grid.innerHTML = '';
     
-    candidates.forEach(candidate => {
+    candidates.forEach((candidate, index) => {
       const isSelected = candidate._id === selectedId;
       const sec = candidate.section && candidate.section !== 'None' ? `(${candidate.section})` : '';
       
@@ -241,22 +342,32 @@
           imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `https://fpc2k26-election.onrender.com${candidate.photo}`;
       }
       
+      const delay = index * 0.1;
+
+      // PERFECTED RESPONSIVE GRID (col-6 keeps 2 cards per row on mobile, col-md-4 is 3 on tablet, col-lg-3 is 4 on desktop)
       grid.innerHTML += `
-        <div class="col-6 col-md-4 col-lg-3 mb-3">
-          <div class="card candidate-card ${isSelected ? 'selected' : ''}" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
+        <div class="col-6 col-md-4 col-lg-3 mb-2">
+          <div class="card candidate-card ${isSelected ? 'selected' : ''}" style="animation-delay: ${delay}s;" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
+            
             <div class="candidate-img-wrapper">
               <img src="${imgSrc}" class="candidate-img" alt="${candidate.name || 'Candidate'}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
+              <!-- THE MAGIC GREEN CHECKMARK OVERLAY -->
+              <div class="selection-overlay">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
             </div>
+
             <div class="candidate-info">
               <h3 class="candidate-name" title="${candidate.name || 'Unknown'}">${candidate.name || 'Unknown'}</h3>
-              <div class="mb-2">
+              <div class="badge-container">
                 <span class="meta-badge">${candidate.department || ''} ${sec}</span>
                 <span class="meta-badge">Yr ${candidate.year || ''}</span>
               </div>
-              <div class="mt-auto">
+              <div class="mt-auto pt-1">
                 <button class="select-btn">${isSelected ? 'SELECTED' : 'SELECT'}</button>
               </div>
             </div>
+            
           </div>
         </div>
       `;
@@ -269,11 +380,13 @@
     nextBtn.disabled = !selectedId;
     
     if (currentCategoryIndex === postingsArray.length - 1) {
-      nextBtn.innerHTML = '<i class="fa-solid fa-check-to-slot me-2"></i> Cast Final Ballot';
+      nextBtn.innerHTML = '<i class="fa-solid fa-lock me-2"></i> Secure Final Ballot';
       nextBtn.style.backgroundColor = '#198754';
+      nextBtn.style.boxShadow = '0 8px 20px rgba(25,135,84,0.3)';
     } else {
-      nextBtn.innerHTML = 'Next Category <i class="fa-solid fa-arrow-right ms-1"></i>';
+      nextBtn.innerHTML = 'Next Category <i class="fa-solid fa-arrow-right ms-2"></i>';
       nextBtn.style.backgroundColor = '#0d6efd';
+      nextBtn.style.boxShadow = '0 8px 20px rgba(13,110,253,0.3)';
     }
   }
 
@@ -286,7 +399,7 @@
   function changeCategory(direction) {
     currentCategoryIndex += direction;
     renderSkeletons();
-    setTimeout(renderCategory, 300);
+    setTimeout(renderCategory, 250);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -300,7 +413,7 @@
 
   async function submitFinalBallot() {
     const allSelectedIds = Object.values(userSelections);
-    if (!confirm(`Are you sure you want to securely cast your final ballot? You cannot change these votes.`)) return;
+    if (!confirm(`Are you certain you wish to cryptographically seal and cast this ballot? This action is irreversible.`)) return;
 
     try {
       const response = await fetch('https://fpc2k26-election.onrender.com/api/student/vote', {
@@ -313,9 +426,13 @@
       if (response.ok || data.message === 'You have already voted!') {
         localStorage.setItem('hasVoted', 'true');
         
-        triggerHaptic([100, 50, 100, 50, 200]); 
-        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#0d6efd', '#ffc107', '#198754'] });
+        triggerHaptic([100, 50, 100, 50, 200, 50, 400]); 
         
+        confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#0d6efd', '#ffffff', '#ffc107', '#198754'], zIndex: 1000 });
+        setTimeout(() => {
+            confetti({ particleCount: 100, spread: 120, origin: { y: 0.5 }, colors: ['#0d6efd', '#ffc107'], zIndex: 1000 });
+        }, 400);
+
         showSuccessScreen();
       } else { 
         alert(`Error: ${data.message || data.error || 'Unknown Server Error'}`); 

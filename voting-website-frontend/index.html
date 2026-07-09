@@ -4,48 +4,59 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <!-- Primary Meta Tags -->
   <title>Campus Election | Kamaraj College</title>
   <meta name="title" content="Campus Election | Kamaraj College">
   <meta name="description" content="Official secure student voting portal for Kamaraj College campus elections. Log in to cast your ballot!">
-
-  <!-- Open Graph / WhatsApp / Facebook -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://fpc2k26-election.vercel.app/">
   <meta property="og:title" content="Campus Election | Kamaraj College">
   <meta property="og:description" content="Official secure student voting portal for Kamaraj College campus elections. Log in to cast your ballot!">
   <meta property="og:image" content="https://fpc2k26-election.vercel.app/FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png">
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://fpc2k26-election.vercel.app/">
-  <meta property="twitter:title" content="Campus Election | Kamaraj College">
-  <meta property="twitter:description" content="Official secure student voting portal for Kamaraj College campus elections. Log in to cast your ballot!">
-  <meta property="twitter:image" content="https://fpc2k26-election.vercel.app/FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png">
-
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background-color: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; }
+    body { background-color: #f0f2f5; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
     
-    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; }
     .face-logo { height: 38px; object-fit: contain; }
     .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
     .header-right { display: flex; align-items: center; gap: 20px; }
     .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; }
 
-    .login-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 15px; }
-    .login-card { width: 100%; max-width: 450px; border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: #ffffff; }
+    .login-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 15px; perspective: 1000px; }
     
-    .crest-container { text-align: center; margin-top: -50px; margin-bottom: 20px; }
-    .college-crest-main { height: 90px; width: 90px; border-radius: 50%; object-fit: cover; border: 4px solid #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background-color: white; }
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(40px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .login-card { width: 100%; max-width: 450px; border-radius: 20px; border: none; box-shadow: 0 15px 35px rgba(0,0,0,0.1); background: #ffffff; animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
     
-    .input-group-text { background-color: transparent; border-right: none; color: #0d6efd; }
-    .form-control { border-left: none; }
-    .form-control:focus { box-shadow: none; border-color: #dee2e6; }
+    @keyframes float {
+      0% { transform: translateY(0px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+      50% { transform: translateY(-8px); box-shadow: 0 12px 20px rgba(0,0,0,0.15); }
+      100% { transform: translateY(0px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    }
+    .crest-container { text-align: center; margin-top: -55px; margin-bottom: 25px; }
+    .college-crest-main { height: 96px; width: 96px; border-radius: 50%; object-fit: cover; border: 5px solid #ffffff; background-color: white; animation: float 4s ease-in-out infinite; }
+    
+    .input-group-text { background-color: transparent; border-right: none; color: #0d6efd; transition: all 0.3s; }
+    .form-control { border-left: none; transition: all 0.3s; }
+    
+    .form-control:focus { box-shadow: none; border-color: #0d6efd; }
+    .form-control:focus + .input-group-text, .input-group:focus-within .input-group-text { color: #0d6efd; border-color: #0d6efd; }
+    .input-group:focus-within { box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15); border-radius: 8px; }
+    
+    .btn-primary { transition: all 0.3s ease; }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3) !important; }
+    .btn-dark { transition: all 0.3s ease; }
+    .btn-dark:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(33, 37, 41, 0.3) !important; }
+    
+    /* Disabled button styling so it looks intentional when loading */
+    .btn:disabled { opacity: 0.8; cursor: not-allowed; }
+
     .admin-link { cursor: pointer; color: #adb5bd; transition: color 0.3s ease; }
     .admin-link:hover { color: #0d6efd; }
-    
     .status-banner { font-size: 0.9rem; letter-spacing: 1px; font-weight: 800; transition: all 0.3s ease; border-radius: 8px; }
     
     @media (max-width: 768px) {
@@ -70,18 +81,15 @@
   <div class="card login-card mt-4">
     <div class="card-body p-4 p-md-5 pt-3">
       
-      <!-- Prominent College Crest -->
       <div class="crest-container">
          <img src="kc.png" alt="Kamaraj College Crest" class="college-crest-main" onerror="this.style.display='none'">
       </div>
 
-      <!-- STUDENT VIEW -->
       <div id="studentView">
         <div class="text-center mb-4">
           <div id="publicStatusBadge" class="badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm">
             <i class="fa-solid fa-spinner fa-spin me-1"></i> Authenticating Telemetry...
           </div>
-          
           <h4 class="fw-bold text-dark"><i class="fa-solid fa-check-to-slot text-primary me-2"></i>Official Voting Portal</h4>
           <p class="text-muted small">Please verify your identity to proceed</p>
         </div>
@@ -98,17 +106,15 @@
             <label class="form-label text-muted small fw-bold">VERIFICATION (DATE OF BIRTH)</label>
             <div class="input-group mb-1">
               <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
-              <!-- UPDATED: type="date" creates a native calendar picker -->
               <input type="date" class="form-control form-control-lg" id="dob" required>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" style="background-color: #0d6efd;">
+          <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="studentLoginBtn" style="background-color: #0d6efd; border: none;">
             Secure Login <i class="fa-solid fa-arrow-right ms-2"></i>
           </button>
         </form>
       </div>
 
-      <!-- ADMIN VIEW -->
       <div id="adminView" class="d-none">
         <div class="text-center mb-4">
           <h4 class="fw-bold text-dark"><i class="fa-solid fa-shield-halved text-danger me-2"></i>Admin Dashboard</h4>
@@ -130,7 +136,7 @@
               <input type="password" class="form-control form-control-lg" id="adminPassword" required>
             </div>
           </div>
-          <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm">
+          <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm border-0" id="adminLoginBtn">
             Authenticate <i class="fa-solid fa-unlock-keyhole ms-2"></i>
           </button>
         </form>
@@ -154,7 +160,6 @@
       if (res.ok) {
         const data = await res.json();
         const badge = document.getElementById('publicStatusBadge');
-
         if (data.isPublished) {
           badge.innerHTML = '<i class="fa-solid fa-signal me-1"></i> SECURE NETWORK ACTIVE';
           badge.className = 'badge bg-success status-banner mb-3 p-2 w-100 shadow-sm';
@@ -186,13 +191,18 @@
     }
   });
 
+  // PROTECTED STUDENT LOGIN
   document.getElementById('studentLoginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const alertBox = document.getElementById('studentAlert');
-    const rollNumber = document.getElementById('rollNumber').value.trim();
+    const submitBtn = document.getElementById('studentLoginBtn');
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // Secure the button to prevent multiple clicks
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Fetching Credentials...';
     
-    // --- DATE FORMATTER ---
-    // Grabs the YYYY-MM-DD from the calendar and flips it to DD-MM-YYYY
+    const rollNumber = document.getElementById('rollNumber').value.trim();
     const rawDob = document.getElementById('dob').value.trim();
     const parts = rawDob.split('-');
     const formattedDob = `${parts[2]}-${parts[1]}-${parts[0]}`; 
@@ -209,26 +219,43 @@
         localStorage.setItem('voterToken', data.token);
         localStorage.setItem('rollNumber', data.student.rollNumber); 
         localStorage.setItem('studentName', data.student.name);
-        
         alertBox.className = 'alert alert-success mb-3';
         alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Handshake verified! Securing connection...';
         alertBox.classList.remove('d-none');
+        
+        submitBtn.innerHTML = '<i class="fa-solid fa-shield-check me-2"></i> Redirecting...';
         setTimeout(() => window.location.href = 'students.html', 1000);
       } else {
         alertBox.className = 'alert alert-danger mb-3';
         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message || 'Invalid Credentials.'}`;
         alertBox.classList.remove('d-none');
+        
+        // Restore button if failed
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHTML;
       }
     } catch (error) {
       alertBox.className = 'alert alert-danger mb-3';
       alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
       alertBox.classList.remove('d-none');
+      
+      // Restore button if error
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHTML;
     }
   });
 
+  // PROTECTED ADMIN LOGIN
   document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     const alertBox = document.getElementById('adminAlert');
+    const submitBtn = document.getElementById('adminLoginBtn');
+    const originalBtnHTML = submitBtn.innerHTML;
+
+    // Secure the button to prevent multiple clicks
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Authenticating...';
+
     const username = document.getElementById('adminId').value;
     const password = document.getElementById('adminPassword').value;
 
@@ -243,20 +270,29 @@
       if (response.ok) {
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('isAdmin', 'true');
-        
         alertBox.className = 'alert alert-success mb-3';
         alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Access granted! Booting dashboard...';
         alertBox.classList.remove('d-none');
+        
+        submitBtn.innerHTML = '<i class="fa-solid fa-lock-open me-2"></i> Unlocking...';
         setTimeout(() => window.location.href = 'admin.html', 1000);
       } else {
         alertBox.className = 'alert alert-danger mb-3';
         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}`;
         alertBox.classList.remove('d-none');
+        
+        // Restore button if failed
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHTML;
       }
     } catch (error) {
       alertBox.className = 'alert alert-danger mb-3';
       alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
       alertBox.classList.remove('d-none');
+      
+      // Restore button if error
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalBtnHTML;
     }
   });
 </script>
