@@ -6,6 +6,8 @@
   <title>Election Administration Console | Kamaraj College</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- NEW: Professional Charting Library -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { background-color: #f4f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
@@ -14,20 +16,32 @@
     .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
     .header-right { display: flex; align-items: center; gap: 24px; }
     
-    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
-    .btn-logout:hover { background-color: white; color: #0d6efd; }
+    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease; }
+    .btn-logout:hover { background-color: white; color: #0d6efd; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     
     .sidebar-wrapper { background-color: #ffffff; min-height: calc(100vh - 65px); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-    .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; transition: all 0.2s; }
-    .nav-pills .nav-link:hover { background-color: #f8f9fa; color: #0d6efd; }
+    .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; transition: all 0.3s ease; }
+    .nav-pills .nav-link:hover { background-color: #f8f9fa; color: #0d6efd; transform: translateX(5px); }
     .nav-pills .nav-link.active { background-color: #e3f2fd; color: #0d6efd; border-left: 4px solid #0d6efd; }
     
-    .content-card { border: none; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-    .candidate-thumb { width: 42px; height: 55px; border-radius: 6px; object-fit: cover; object-position: top; border: 2px solid #dee2e6; }
+    /* NEW: Ultra-smooth Hover Effects for Cards */
+    .content-card { border: none; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; background: #ffffff; }
+    .content-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+    
+    /* NEW: Smooth Button Hover Effects */
+    .btn { transition: all 0.3s ease; }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+    
+    /* NEW: Table Row Hover Effects */
+    .table-hover tbody tr { transition: all 0.2s ease; cursor: default; }
+    .table-hover tbody tr:hover { background-color: #f8f9fa; transform: scale(1.01); box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-radius: 8px; }
+
+    .candidate-thumb { width: 42px; height: 55px; border-radius: 6px; object-fit: cover; object-position: top; border: 2px solid #dee2e6; transition: transform 0.3s ease; }
+    .candidate-thumb:hover { transform: scale(1.1); border-color: #0d6efd; }
     .table-group-header { background-color: #e3f2fd !important; color: #0d6efd; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
     .progress { background-color: #e9ecef; }
-    .progress-bar { transition: width 0.5s ease-in-out; }
+    .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
 
     .mobile-menu-btn { display: none; background: transparent; border: none; color: white; font-size: 1.5rem; }
     @media (max-width: 768px) {
@@ -87,6 +101,7 @@
       
       <div class="tab-content">
         
+        <!-- TELEMETRY TAB -->
         <div class="tab-pane fade show active" id="dashboard">
           <div class="card content-card mb-4 border-primary">
             <div class="card-body d-flex justify-content-between align-items-center">
@@ -116,7 +131,15 @@
             </div>
           </div>
           
-          <h4 class="fw-bold mb-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Live Analytics & Polling</h4>
+          <!-- NEW: GRAPHICAL COMPARISON CHART -->
+          <div class="card content-card mb-4 shadow-sm">
+            <div class="card-header bg-white fw-bold py-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Graphical Vote Comparison</div>
+            <div class="card-body">
+              <canvas id="voteComparisonChart" height="80"></canvas>
+            </div>
+          </div>
+
+          <h4 class="fw-bold mb-3 mt-5"><i class="fa-solid fa-bars-progress text-primary me-2"></i>Live Portfolio Progress</h4>
           <div id="leaderboardContainer" class="mb-4"></div>
 
           <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
@@ -125,15 +148,16 @@
           </div>
         </div>
 
+        <!-- REGISTRY TAB -->
         <div class="tab-pane fade" id="studentsList">
           <h3 class="fw-bold text-dark mb-4"><i class="fa-solid fa-address-book me-2"></i>Official Voter Registry</h3>
           
           <div class="row mb-3 g-2">
             <div class="col-md-8">
-              <input type="text" id="searchInput" class="form-control" placeholder="Query by Student Name or Roll Identifier..." onkeyup="filterStudents()">
+              <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Query by Student Name or Roll Identifier..." onkeyup="filterStudents()">
             </div>
             <div class="col-md-4">
-              <select id="statusFilter" class="form-select" onchange="filterStudents()">
+              <select id="statusFilter" class="form-select shadow-sm" onchange="filterStudents()">
                 <option value="ALL">Display Complete Database</option>
                 <option value="VOTED">Authenticated (Voted)</option>
                 <option value="PENDING">Pending Authorization</option>
@@ -157,6 +181,7 @@
           </div>
         </div>
 
+        <!-- CANDIDATES TAB -->
         <div class="tab-pane fade" id="candidates">
           <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
             <h3 class="fw-bold text-dark mb-0"><i class="fa-solid fa-users me-2"></i>Candidate Database</h3>
@@ -197,6 +222,7 @@
           </div>
         </div>
 
+        <!-- SETTINGS TAB -->
         <div class="tab-pane fade" id="settings">
           <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-sliders me-2"></i>Deployment Protocols</h3>
           
@@ -213,6 +239,7 @@
           </div>
         </div>
 
+        <!-- DANGER ZONE -->
         <div class="tab-pane fade" id="danger">
           <h3 class="fw-bold mb-4 text-danger"><i class="fa-solid fa-skull-crossbones me-2"></i>Critical Actions</h3>
           <div class="card content-card border-danger shadow-sm p-4 p-md-5 text-center">
@@ -228,10 +255,11 @@
   </div>
 </div>
 
+<!-- EDIT CANDIDATE MODAL -->
 <div class="modal fade" id="editCandidateModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-    <div class="modal-content border-0 shadow">
-      <div class="modal-header bg-primary text-white">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+      <div class="modal-header bg-primary text-white" style="border-radius: 12px 12px 0 0;">
         <h5 class="modal-title fw-bold"><i class="fa-solid fa-pen-to-square me-2"></i>Modify Candidate Profile</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
@@ -278,7 +306,8 @@
 <script>
   if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
   let globalStudents = []; 
-  let globalCandidates = []; // Stored to make editing easy
+  let globalCandidates = []; 
+  let comparisonChart = null; // Holds the Chart.js instance
 
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -354,12 +383,75 @@
     } catch (e) { console.log(e); }
   }
 
+  // --- NEW: RENDER CHART FUNCTION ---
+  function updateChart(candidates) {
+      const ctx = document.getElementById('voteComparisonChart').getContext('2d');
+      
+      // Sort candidates by Posting, then by votes so it looks organized
+      const sortedChartCandidates = [...candidates].sort((a, b) => {
+          if (a.posting < b.posting) return -1;
+          if (a.posting > b.posting) return 1;
+          return b.votes - a.votes;
+      });
+
+      const labels = sortedChartCandidates.map(c => `${c.name} (${c.posting})`);
+      const data = sortedChartCandidates.map(c => c.votes);
+      
+      // Generate unique professional colors for the bars
+      const bgColors = sortedChartCandidates.map((c, i) => `hsl(${(i * 50) % 360}, 75%, 55%)`);
+
+      if (comparisonChart) {
+          // If chart exists, just update the data so it animates beautifully
+          comparisonChart.data.labels = labels;
+          comparisonChart.data.datasets[0].data = data;
+          comparisonChart.data.datasets[0].backgroundColor = bgColors;
+          comparisonChart.update();
+      } else {
+          // If chart doesn't exist yet, create it
+          comparisonChart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: 'Total Votes Received',
+                      data: data,
+                      backgroundColor: bgColors,
+                      borderRadius: 6,
+                      borderWidth: 0
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  animation: { duration: 1000, easing: 'easeOutQuart' },
+                  scales: {
+                      y: { beginAtZero: true, ticks: { stepSize: 1, font: { weight: 'bold' } }, grid: { borderDash: [5, 5] } },
+                      x: { ticks: { font: { weight: '600' } }, grid: { display: false } }
+                  },
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          backgroundColor: 'rgba(0,0,0,0.8)',
+                          titleFont: { size: 14, weight: 'bold' },
+                          bodyFont: { size: 14 },
+                          padding: 12,
+                          cornerRadius: 8
+                      }
+                  }
+              }
+          });
+      }
+  }
+
   async function refreshLeaderboard() {
       try {
           const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
           const candidates = await candRes.json();
-          globalCandidates = candidates; // Save for Edit Modal
+          globalCandidates = candidates; 
           
+          // Update the Chart.js visual graph
+          updateChart(candidates);
+          
+          // Update the Portfolio Progress Bars
           const grouped = candidates.reduce((acc, c) => { 
               const p = (c.posting || 'Unknown').toUpperCase(); 
               if(!acc[p]) acc[p] = []; 
@@ -377,9 +469,9 @@
               leaderHTML += `
               <div class="col-lg-6">
                   <div class="card content-card h-100 shadow-sm border-0">
-                      <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
+                      <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0;">
                           <span><i class="fa-solid fa-trophy text-warning me-2"></i> ${posting}</span>
-                          <span class="badge bg-light text-dark shadow-sm">${totalPostingVotes} Portoflio Votes</span>
+                          <span class="badge bg-light text-dark shadow-sm">${totalPostingVotes} Total Portfolio Votes</span>
                       </div>
                       <div class="card-body">
               `;
@@ -397,9 +489,9 @@
                       <div class="mb-4">
                           <div class="d-flex justify-content-between align-items-end mb-1">
                               <span class="fw-bold">${c.name}</span>
-                              <span class="badge bg-light text-dark border">${c.votes} Votes (${percent}%)</span>
+                              <span class="badge bg-light text-dark border shadow-sm">${c.votes} Votes (${percent}%)</span>
                           </div>
-                          <div class="progress shadow-sm" style="height: 14px; border-radius: 7px;">
+                          <div class="progress shadow-sm" style="height: 16px; border-radius: 8px;">
                               <div class="progress-bar ${barColor} ${animation}" role="progressbar" style="width: ${percent}%"></div>
                           </div>
                       </div>
@@ -430,14 +522,14 @@
       try {
           const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
           const candidates = await candRes.json();
-          globalCandidates = candidates; // Sync global list
+          globalCandidates = candidates; 
           
           const tbody = document.getElementById('candidatesTableBody');
           tbody.innerHTML = '';
           const grouped = candidates.reduce((acc, c) => { const p = c.posting.toUpperCase(); if(!acc[p]) acc[p] = []; acc[p].push(c); return acc; }, {});
 
           Object.keys(grouped).forEach(posting => {
-            tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-2"><i class="fa-solid fa-briefcase me-2"></i> PORTFOLIO: ${posting}</td></tr>`;
+            tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-3"><i class="fa-solid fa-briefcase me-2"></i> PORTFOLIO: ${posting}</td></tr>`;
             grouped[posting].forEach(cand => {
               let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `https://fpc2k26-election.onrender.com${cand.photo}`;
               tbody.innerHTML += `
@@ -446,11 +538,11 @@
                     <img src="${imgSrc}" class="candidate-thumb me-3" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
                     <span class="fw-bold">${cand.name}</span>
                   </td>
-                  <td><span class="badge bg-light text-dark border">${cand.department} | Yr ${cand.year}</span></td>
+                  <td><span class="badge bg-light text-dark border shadow-sm">${cand.department} | Yr ${cand.year}</span></td>
                   <td class="text-center fw-bold text-success">${cand.votes} Logs</td>
                   <td class="text-end px-3" style="min-width: 100px;">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="openEditModal('${cand._id}')" title="Modify Profile"><i class="fa-solid fa-pen-to-square"></i></button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCandidate('${cand._id}', '${cand.name}')" title="Terminate Profile"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn btn-sm btn-primary me-1 shadow-sm" onclick="openEditModal('${cand._id}')" title="Modify Profile"><i class="fa-solid fa-pen-to-square"></i></button>
+                    <button class="btn btn-sm btn-danger shadow-sm" onclick="deleteCandidate('${cand._id}', '${cand.name}')" title="Terminate Profile"><i class="fa-solid fa-trash"></i></button>
                   </td>
                 </tr>`;
             });
@@ -458,24 +550,20 @@
       } catch(e) {}
   }
 
-  // --- NEW: EDIT CANDIDATE LOGIC ---
   let editModalInstance = null;
 
   function openEditModal(candidateId) {
-      // Find candidate details from global array
       const candidate = globalCandidates.find(c => c._id === candidateId);
       if (!candidate) return alert('Error locating candidate record.');
 
-      // Pre-fill the form
       document.getElementById('editCandId').value = candidate._id;
       document.getElementById('editCandName').value = candidate.name;
       document.getElementById('editCandPosting').value = candidate.posting;
       document.getElementById('editCandDept').value = candidate.department;
       document.getElementById('editCandYear').value = candidate.year;
       document.getElementById('editCandSection').value = candidate.section || 'None';
-      document.getElementById('editCandPhoto').value = ''; // Reset file input
+      document.getElementById('editCandPhoto').value = ''; 
 
-      // Open Modal
       if (!editModalInstance) {
           editModalInstance = new bootstrap.Modal(document.getElementById('editCandidateModal'));
       }
@@ -499,7 +587,7 @@
       fd.append('section', document.getElementById('editCandSection').value);
       
       const photoFile = document.getElementById('editCandPhoto').files[0];
-      if (photoFile) fd.append('photo', photoFile); // Only append if they uploaded a new one
+      if (photoFile) fd.append('photo', photoFile); 
 
       try {
           const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${candidateId}`, { 
@@ -510,7 +598,7 @@
           if (res.ok) {
               showAlert('Candidate profile updated successfully.', 'success');
               editModalInstance.hide();
-              loadAdminData(); // Refresh UI
+              loadAdminData(); 
           } else {
               const data = await res.json();
               showAlert(`Error: ${data.message || 'Failed to update.'}`, 'danger');
@@ -522,7 +610,6 @@
           btn.innerText = 'Save Modifications';
       }
   });
-  // ---------------------------------
 
   function filterStudents() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -545,8 +632,8 @@
 
     filtered.forEach(stu => {
       const badge = stu.hasVoted 
-        ? `<span class="badge bg-success px-3 py-2"><i class="fa-solid fa-check-double me-1"></i> Authenticated</span>` 
-        : `<span class="badge bg-danger px-3 py-2"><i class="fa-solid fa-clock me-1"></i> Pending</span>`;
+        ? `<span class="badge bg-success px-3 py-2 shadow-sm"><i class="fa-solid fa-check-double me-1"></i> Authenticated</span>` 
+        : `<span class="badge bg-danger px-3 py-2 shadow-sm"><i class="fa-solid fa-clock me-1"></i> Pending</span>`;
       tbody.innerHTML += `
         <tr>
           <td class="px-4 py-3 fw-bold text-muted">${stu.rollNumber}</td>
