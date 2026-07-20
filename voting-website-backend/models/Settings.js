@@ -18,6 +18,18 @@ const settingsSchema = new mongoose.Schema({
   endTime: {
     type: Date,
     default: null
+  },
+  cardTitle: {
+    type: String,
+    default: ''
+  },
+  cardDescription: {
+    type: String,
+    default: ''
+  },
+  isCardVisible: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

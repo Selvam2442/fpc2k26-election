@@ -145,10 +145,16 @@ app.get('/api/admin/settings', async (req, res) => {
 
 app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   try {
-    const { isPublished } = req.body;
+    const { isPublished, cardTitle, cardDescription, isCardVisible } = req.body;
     let settings = await Settings.findOne({ settingsId: 'master_config' });
-    if (!settings) settings = new Settings({ isPublished });
-    else { settings.isPublished = isPublished; }
+    if (!settings) {
+      settings = new Settings({ isPublished, cardTitle, cardDescription, isCardVisible });
+    } else {
+      if (isPublished !== undefined) settings.isPublished = isPublished;
+      if (cardTitle !== undefined) settings.cardTitle = cardTitle;
+      if (cardDescription !== undefined) settings.cardDescription = cardDescription;
+      if (isCardVisible !== undefined) settings.isCardVisible = isCardVisible;
+    }
     await settings.save();
     res.json({ message: 'Updated', settings });
   } catch (error) { res.status(500).json({ error: error.message }); }

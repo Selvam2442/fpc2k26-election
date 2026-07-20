@@ -8,32 +8,146 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+    body { 
+      background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%); 
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      overflow-x: hidden; 
+      position: relative;
+      min-height: 100vh;
+    }
     
-    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.15); z-index: 100; position: relative;}
-    .face-logo { height: 38px; object-fit: contain; }
-    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
+    /* Glowing background blobs */
+    .glow-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      opacity: 0.12;
+      animation: float-blob 22s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+    .blob-1 {
+      width: 450px;
+      height: 450px;
+      background: radial-gradient(circle, #0d6efd 0%, transparent 80%);
+      top: 5%;
+      left: 5%;
+    }
+    .blob-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #00f2fe 0%, transparent 80%);
+      bottom: 5%;
+      right: 5%;
+      animation-duration: 28s;
+    }
+    .blob-3 {
+      width: 350px;
+      height: 350px;
+      background: radial-gradient(circle, #7928ca 0%, transparent 80%);
+      top: 40%;
+      left: 35%;
+      animation-duration: 18s;
+    }
+    @keyframes float-blob {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(50px, 60px) scale(1.1); }
+    }
+    
+    .face-header { 
+      background: rgba(13, 110, 253, 0.03); 
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      padding: 12px 25px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+      z-index: 100; 
+      position: relative;
+    }
+    .face-logo { height: 38px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(13, 110, 253, 0.3)); }
+    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.15); background-color: white; box-shadow: 0 0 10px rgba(13, 110, 253, 0.2); }
     .header-right { display: flex; align-items: center; gap: 15px; }
     
-    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 8px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-    .btn-logout:hover { background-color: white; color: #0d6efd; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .btn-logout { 
+      background-color: rgba(255, 255, 255, 0.03); 
+      color: rgba(255, 255, 255, 0.85); 
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      border-radius: 50px; 
+      padding: 6px 18px; 
+      font-weight: 600; 
+      font-size: 0.9rem; 
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    }
+    .btn-logout:hover { 
+      background-color: rgba(220, 53, 69, 0.1); 
+      color: #ff4d6d; 
+      border-color: rgba(220, 53, 69, 0.3);
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 15px rgba(220,53,69,0.2); 
+    }
 
-    .nav-link-custom { color: #ffffff; text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; margin-right: 10px; }
+    .nav-link-custom { color: rgba(255, 255, 255, 0.85); text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; margin-right: 10px; text-shadow: 0 0 10px rgba(13, 110, 253, 0.3); }
     
-    .wizard-step { display: none; animation: fadeIn 0.4s ease; }
+    .wizard-step { display: none; animation: fadeIn 0.4s ease; position: relative; z-index: 10; }
     .wizard-step.active { display: block; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-    .intro-screen { background: white; border-radius: 24px; padding: 40px 20px; text-align: center; box-shadow: 0 15px 35px rgba(0,0,0,0.05); margin-top: 5vh; animation: fadeIn 0.6s ease-out; border: 1px solid rgba(0,0,0,0.05); }
-    .progress-bar-custom { background-color: #e9ecef; border-radius: 12px; height: 12px; margin-bottom: 25px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
-    .progress-fill { background-color: #0d6efd; height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 12px; position: relative; overflow: hidden; }
-    .progress-fill::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; right: 0; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); animation: shimmerProgress 2s infinite; }
+    
+    /* Welcome Liquid Glass Card */
+    .intro-screen { 
+      background: rgba(255, 255, 255, 0.02); 
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.08); 
+      border-radius: 24px; 
+      padding: 40px 30px; 
+      text-align: center; 
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+      margin-top: 5vh; 
+      animation: fadeIn 0.6s ease-out; 
+    }
+    
+    /* Cyber Progress Indicator */
+    .progress-bar-custom { 
+      background-color: rgba(255, 255, 255, 0.05); 
+      border-radius: 50px; 
+      height: 10px; 
+      margin-bottom: 25px; 
+      overflow: hidden; 
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); 
+    }
+    .progress-fill { 
+      background: linear-gradient(90deg, #0d6efd 0%, #00f2fe 100%); 
+      height: 100%; 
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); 
+      border-radius: 50px; 
+      position: relative; 
+      overflow: hidden; 
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+    }
+    .progress-fill::after { 
+      content: ''; 
+      position: absolute; 
+      top: 0; left: 0; bottom: 0; right: 0; 
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%); 
+      animation: shimmerProgress 2s infinite; 
+    }
     @keyframes shimmerProgress { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
     
-    .category-title { font-weight: 800; color: #0d6efd; text-transform: uppercase; letter-spacing: 1px; font-size: 1.6rem; }
+    .category-title { 
+      font-weight: 800; 
+      color: #00f2fe; 
+      text-transform: uppercase; 
+      letter-spacing: 1.5px; 
+      font-size: 1.6rem; 
+      text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
 
     /* ========================================= */
-    /* PERFECTED CANDIDATE CARD STYLES           */
+    /* FUTURISTIC CYBER-GLASS CANDIDATE CARD     */
     /* ========================================= */
     @keyframes popIn { 
       0% { opacity: 0; transform: scale(0.9) translateY(20px); } 
@@ -41,29 +155,31 @@
     }
     
     .candidate-card { 
-        border: 2px solid transparent; 
+        border: 1px solid rgba(255, 255, 255, 0.08); 
         border-radius: 20px; 
         overflow: hidden; 
-        background: linear-gradient(145deg, #ffffff, #f8f9fa); 
+        background: rgba(255, 255, 255, 0.02); 
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         cursor: pointer; 
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.15); 
         height: 100%; 
         display: flex; 
         flex-direction: column; 
-        box-shadow: 0 6px 15px rgba(0,0,0,0.04); 
-        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; 
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+        animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) backwards; 
     }
     
     .candidate-card:hover { 
-        border-color: rgba(13, 110, 253, 0.3); 
-        box-shadow: 0 15px 35px rgba(13, 110, 253, 0.12); 
+        border-color: rgba(0, 242, 254, 0.3); 
+        box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
         transform: translateY(-6px); 
     }
     
     .candidate-card.selected { 
-        border: 3px solid #198754; 
-        box-shadow: 0 12px 35px rgba(25, 135, 84, 0.25); 
-        background: linear-gradient(145deg, #f8fff9, #eafff0); 
+        border: 2px solid #00ff87; 
+        box-shadow: 0 15px 35px rgba(0, 255, 135, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); 
+        background: rgba(0, 255, 135, 0.03); 
         transform: translateY(-4px) scale(1.02); 
     }
     
@@ -72,7 +188,7 @@
         width: 100%; 
         aspect-ratio: 3 / 4; 
         overflow: hidden; 
-        background-color: #f1f3f5; 
+        background-color: rgba(255, 255, 255, 0.03); 
         position: relative;
     }
     
@@ -86,11 +202,11 @@
     
     .candidate-card:hover .candidate-img { transform: scale(1.08); }
     
-    /* The Magical Checkmark Overlay */
+    /* The Cyber Checkmark Overlay */
     .selection-overlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(25, 135, 84, 0.45);
+        background: rgba(0, 255, 135, 0.2);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -101,11 +217,11 @@
     }
     
     .selection-overlay i {
-        color: white;
+        color: #00ff87;
         font-size: 4rem;
         transform: scale(0);
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+        text-shadow: 0 0 20px rgba(0, 255, 135, 0.6);
     }
     
     .candidate-card.selected .selection-overlay { opacity: 1; }
@@ -113,25 +229,89 @@
     
     /* Text and Badges */
     .candidate-info { padding: 16px 12px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
-    .candidate-name { font-size: 1.15rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.5rem; transition: color 0.3s; line-height: 1.2; }
-    .candidate-card:hover .candidate-name { color: #0d6efd; }
+    .candidate-name { font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem; transition: color 0.3s; line-height: 1.2; }
+    .candidate-card:hover .candidate-name { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.3); }
     
     .badge-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; }
-    .meta-badge { background-color: #e9ecef; color: #495057; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; border: 1px solid transparent; transition: all 0.3s; }
-    .candidate-card.selected .meta-badge { background-color: #e2f4e9; color: #198754; border-color: rgba(25,135,84,0.2); }
+    .meta-badge { 
+      background-color: rgba(255, 255, 255, 0.05); 
+      color: rgba(255, 255, 255, 0.7); 
+      padding: 4px 8px; 
+      border-radius: 6px; 
+      font-size: 0.7rem; 
+      font-weight: 700; 
+      display: inline-flex; 
+      align-items: center; 
+      border: 1px solid rgba(255, 255, 255, 0.05); 
+      transition: all 0.3s; 
+    }
+    .candidate-card.selected .meta-badge { 
+      background-color: rgba(0, 255, 135, 0.08); 
+      color: #00ff87; 
+      border-color: rgba(0, 255, 135, 0.2); 
+    }
     
-    /* Selection Button */
-    .select-btn { background-color: #e9ecef; color: #495057; border: none; padding: 10px; font-size: 0.85rem; font-weight: 800; border-radius: 10px; text-transform: uppercase; margin-top: auto; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); letter-spacing: 0.5px; }
-    .candidate-card:hover .select-btn:not(.selected .select-btn) { background-color: #e3f2fd; color: #0d6efd; }
-    .candidate-card.selected .select-btn { background-color: #198754; color: white; box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3); }
+    /* Cyber Selection Button */
+    .select-btn { 
+      background-color: rgba(255, 255, 255, 0.05); 
+      color: rgba(255, 255, 255, 0.7); 
+      border: 1px solid rgba(255, 255, 255, 0.05); 
+      padding: 10px; 
+      font-size: 0.85rem; 
+      font-weight: 700; 
+      border-radius: 10px; 
+      text-transform: uppercase; 
+      margin-top: auto; 
+      width: 100%; 
+      transition: all 0.3s ease; 
+      letter-spacing: 0.5px; 
+    }
+    .candidate-card:hover .select-btn:not(.selected .select-btn) { 
+      background: linear-gradient(135deg, #0d6efd 0%, #00f2fe 100%); 
+      color: white; 
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(0, 242, 254, 0.3);
+    }
+    .candidate-card.selected .select-btn { 
+      background: #00ff87; 
+      color: #05070f; 
+      font-weight: 800;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 255, 135, 0.4); 
+    }
     .candidate-card.selected .select-btn::after { content: ' \f00c'; font-family: "Font Awesome 6 Free"; font-weight: 900; }
     
     /* Navigation Buttons */
     .nav-btn { border-radius: 50px; padding: 12px 35px; font-weight: 800; font-size: 1.1rem; transition: all 0.3s; }
-    .nav-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.15); }
+    .nav-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,242,254,0.3); }
+ 
+    .btn-outline-secondary {
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.85);
+      background-color: transparent !important;
+    }
+    .btn-outline-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Cyber-Glass Notice Card styling */
+    .glass-notice {
+      background: rgba(255, 255, 255, 0.02) !important;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-left: 5px solid #ffc107 !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .glass-notice h5 {
+      color: #ffc107 !important;
+      text-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+    }
 
     /* Skeleton Loading Enhancement */
-    .skeleton { background: linear-gradient(90deg, #e9ecef 25%, #f8f9fa 50%, #e9ecef 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
+    .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
     @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .skeleton-img { width: 100%; aspect-ratio: 3/4; border-radius: 20px 20px 0 0; }
     .skeleton-text { height: 22px; width: 70%; margin: 10px auto; }
@@ -152,9 +332,14 @@
       .category-title { font-size: 1.3rem; }
       .selection-overlay i { font-size: 3rem; }
     }
+    body .text-muted, body .text-secondary { color: rgba(255, 255, 255, 0.65) !important; }
   </style>
 </head>
 <body>
+
+<div class="glow-blob blob-1"></div>
+<div class="glow-blob blob-2"></div>
+<div class="glow-blob blob-3"></div>
 
 <nav class="face-header sticky-top">
   <div class="d-flex align-items-center gap-2 gap-md-3">
@@ -174,12 +359,25 @@
   <div id="introScreen" class="wizard-step active">
     <div class="intro-screen mx-auto" style="max-width: 600px;">
       <div class="mb-4" style="animation: float 3s ease-in-out infinite;">
-        <i class="fa-solid fa-user-shield text-primary" style="font-size: 4.5rem; color: #0d6efd !important;"></i>
+        <i class="fa-solid fa-user-shield text-primary" style="font-size: 4.5rem; color: #00f2fe !important; text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);"></i>
       </div>
-      <h2 class="fw-bold text-dark">Welcome, <span id="studentNameDisplay" style="color: #0d6efd;">Voter</span>!</h2>
-      <p class="text-muted mt-3 fs-5">You are about to enter the official secure voting booth. You must select <strong>one candidate for every portfolio</strong> to complete your ballot.</p>
+      <h2 class="fw-bold text-white">Welcome, <span id="studentNameDisplay" style="color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.3);">Voter</span>!</h2>
+      <p class="text-muted mt-3 fs-5 mb-4">You are about to enter the official secure voting booth. You must select <strong>one candidate for every portfolio</strong> to complete your ballot.</p>
       
-      <button class="btn btn-secondary btn-lg w-100 fw-bold mt-4 py-3 rounded-pill shadow-sm nav-btn" id="startBtn" disabled style="transition: all 0.3s;">
+      <!-- Info/Announcement Card (Visible if configured by admin) -->
+      <div id="announcementCard" class="card text-start mb-4 border-0 d-none glass-notice" style="border-radius: 16px;">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; flex-shrink: 0;">
+              <i class="fa-solid fa-bullhorn"></i>
+            </div>
+            <h5 class="fw-bold mb-0 text-dark" id="announcementTitle"></h5>
+          </div>
+          <p class="text-secondary mb-0 fs-6" id="announcementDesc" style="white-space: pre-line; line-height: 1.6;"></p>
+        </div>
+      </div>
+
+      <button class="btn btn-secondary btn-lg w-100 fw-bold py-3 rounded-pill shadow-sm nav-btn" id="startBtn" disabled style="transition: all 0.3s;">
         <i class="fa-solid fa-spinner fa-spin me-2"></i> SECURING CONNECTION...
       </button>
     </div>
@@ -213,7 +411,7 @@
       <div style="animation: popIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
          <i class="fa-solid fa-certificate text-success mb-4" style="font-size: 6rem; text-shadow: 0 10px 20px rgba(25,135,84,0.3);"></i>
       </div>
-      <h1 class="fw-bold text-dark mb-3">Ballot Secured!</h1>
+      <h1 class="fw-bold text-white mb-3">Ballot Secured!</h1>
       <p class="text-muted fs-5 mb-0">Thank you for fulfilling your democratic duty. Your cryptographic votes have been recorded.</p>
       <button class="btn btn-dark mt-5 px-5 py-3 rounded-pill fw-bold nav-btn shadow-sm" onclick="logout()">Terminate Session</button>
     </div>
@@ -230,6 +428,10 @@
 </style>
 
 <script>
+  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://fpc2k26-election.onrender.com';
+
   const rollNumber = localStorage.getItem('rollNumber');
   const token = localStorage.getItem('voterToken');
   const studentName = localStorage.getItem('studentName');
@@ -271,10 +473,29 @@
     }
   }
 
+  async function loadSettings() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/admin/settings`);
+      if (response.ok) {
+        const settings = await response.json();
+        const announcementCard = document.getElementById('announcementCard');
+        if (settings.isCardVisible && settings.cardTitle && settings.cardDescription) {
+          document.getElementById('announcementTitle').textContent = settings.cardTitle;
+          document.getElementById('announcementDesc').textContent = settings.cardDescription;
+          announcementCard.classList.remove('d-none');
+        } else {
+          announcementCard.classList.add('d-none');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    }
+  }
+
   async function fetchElectionData() {
     const startBtn = document.getElementById('startBtn');
     try {
-      const response = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
+      const response = await fetch(`${API_BASE_URL}/api/candidates`);
       const candidates = await response.json();
       
       if (candidates.length === 0) {
@@ -339,7 +560,7 @@
       
       let imgSrc = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23e9ecef\'/></svg>';
       if (candidate.photo) {
-          imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `https://fpc2k26-election.onrender.com${candidate.photo}`;
+          imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `${API_BASE_URL}${candidate.photo}`;
       }
       
       const delay = index * 0.1;
@@ -416,7 +637,7 @@
     if (!confirm(`Are you certain you wish to cryptographically seal and cast this ballot? This action is irreversible.`)) return;
 
     try {
-      const response = await fetch('https://fpc2k26-election.onrender.com/api/student/vote', {
+      const response = await fetch(`${API_BASE_URL}/api/student/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rollNumber, studentName, candidateIds: allSelectedIds }) 
@@ -446,6 +667,7 @@
     document.getElementById('successScreen').classList.add('active');
   }
 
+  loadSettings();
   fetchElectionData();
 </script>
 </body>

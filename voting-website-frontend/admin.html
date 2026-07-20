@@ -9,39 +9,217 @@
   <!-- NEW: Professional Charting Library -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { background-color: #f4f7fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { 
+      background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%); 
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
     
-    .face-header { background-color: #0d6efd; padding: 12px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1050; }
-    .face-logo { height: 38px; object-fit: contain; }
-    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid white; background-color: white; }
+    /* Glowing background blobs */
+    .glow-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      z-index: 0;
+      opacity: 0.1;
+      animation: float-blob 22s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+    .blob-1 {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, #0d6efd 0%, transparent 80%);
+      top: 5%;
+      left: 10%;
+    }
+    .blob-2 {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, #00f2fe 0%, transparent 80%);
+      bottom: 5%;
+      right: 10%;
+      animation-duration: 25s;
+    }
+    .blob-3 {
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, #7928ca 0%, transparent 80%);
+      top: 45%;
+      left: 45%;
+      animation-duration: 15s;
+    }
+    @keyframes float-blob {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(60px, 40px) scale(1.15); }
+    }
+    
+    .face-header { 
+      background: rgba(13, 110, 253, 0.03); 
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      padding: 12px 25px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
+      z-index: 1050; 
+    }
+    .face-logo { height: 38px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(13, 110, 253, 0.3)); }
+    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.15); background-color: white; box-shadow: 0 0 10px rgba(13, 110, 253, 0.2); }
     .header-right { display: flex; align-items: center; gap: 24px; }
     
-    .btn-logout { background-color: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); border-radius: 6px; padding: 6px 16px; font-weight: 600; font-size: 0.9rem; transition: all 0.3s ease; }
-    .btn-logout:hover { background-color: white; color: #0d6efd; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .btn-logout { 
+      background-color: rgba(255, 255, 255, 0.03); 
+      color: rgba(255, 255, 255, 0.85); 
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      border-radius: 50px; 
+      padding: 6px 18px; 
+      font-weight: 600; 
+      font-size: 0.9rem; 
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    }
+    .btn-logout:hover { 
+      background-color: rgba(220, 53, 69, 0.1); 
+      color: #ff4d6d; 
+      border-color: rgba(220, 53, 69, 0.3);
+      transform: translateY(-2px); 
+      box-shadow: 0 4px 15px rgba(220,53,69,0.2); 
+    }
     
-    .sidebar-wrapper { background-color: #ffffff; min-height: calc(100vh - 65px); box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-    .nav-pills .nav-link { color: #495057; font-weight: 600; padding: 15px 20px; border-radius: 0; border-left: 4px solid transparent; cursor: pointer; transition: all 0.3s ease; }
-    .nav-pills .nav-link:hover { background-color: #f8f9fa; color: #0d6efd; transform: translateX(5px); }
-    .nav-pills .nav-link.active { background-color: #e3f2fd; color: #0d6efd; border-left: 4px solid #0d6efd; }
+    .sidebar-wrapper { 
+      background-color: rgba(255, 255, 255, 0.01); 
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      min-height: calc(100vh - 65px); 
+      border-right: 1px solid rgba(255, 255, 255, 0.08); 
+      position: relative;
+      z-index: 10;
+    }
+    .nav-pills .nav-link { 
+      color: rgba(255, 255, 255, 0.6); 
+      font-weight: 600; 
+      padding: 15px 20px; 
+      border-radius: 0; 
+      border-left: 4px solid transparent; 
+      cursor: pointer; 
+      transition: all 0.3s ease; 
+    }
+    .nav-pills .nav-link:hover { 
+      background-color: rgba(255, 255, 255, 0.03); 
+      color: #00f2fe; 
+      transform: translateX(5px); 
+    }
+    .nav-pills .nav-link.active { 
+      background-color: rgba(0, 242, 254, 0.05); 
+      color: #00f2fe; 
+      border-left: 4px solid #00f2fe; 
+      text-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+    }
     
-    /* NEW: Ultra-smooth Hover Effects for Cards */
-    .content-card { border: none; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; background: #ffffff; }
-    .content-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+    /* Liquid glass cards */
+    .content-card { 
+      border: 1px solid rgba(255, 255, 255, 0.08); 
+      border-radius: 16px; 
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05); 
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease; 
+      background: rgba(255, 255, 255, 0.02); 
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      color: #ffffff;
+    }
+    .content-card:hover { 
+      transform: translateY(-4px); 
+      box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+      border-color: rgba(0, 242, 254, 0.2);
+    }
     
-    /* NEW: Smooth Button Hover Effects */
-    .btn { transition: all 0.3s ease; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+    .card-header {
+      background-color: rgba(255, 255, 255, 0.03) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+    }
     
-    /* NEW: Table Row Hover Effects */
+    /* High-tech inputs */
+    .form-control, .form-select {
+      background-color: rgba(255, 255, 255, 0.03) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+    }
+    .form-control:focus, .form-select:focus {
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.25) !important;
+      border-color: #00f2fe !important;
+      background-color: rgba(255, 255, 255, 0.06) !important;
+    }
+    
+    /* Cyber buttons */
+    .btn { 
+      transition: all 0.3s ease; 
+      border-radius: 50px;
+    }
+    .btn:hover { 
+      transform: translateY(-2px); 
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0d6efd 0%, #00f2fe 100%);
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 8px 25px rgba(0, 242, 254, 0.45) !important;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #198754 0%, #00ff87 100%);
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 255, 135, 0.25);
+    }
+    .btn-success:hover {
+      box-shadow: 0 8px 25px rgba(0, 255, 135, 0.45) !important;
+    }
+    .btn-info {
+      background: linear-gradient(135deg, #0dcaf0 0%, #00c6ff 100%);
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 198, 255, 0.25);
+    }
+    .btn-info:hover {
+      box-shadow: 0 8px 25px rgba(0, 198, 255, 0.45) !important;
+    }
+    
+    /* Glass tables */
+    .table {
+      color: #ffffff !important;
+    }
     .table-hover tbody tr { transition: all 0.2s ease; cursor: default; }
-    .table-hover tbody tr:hover { background-color: #f8f9fa; transform: scale(1.01); box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-radius: 8px; }
+    .table-hover tbody tr:hover { 
+      background-color: rgba(255, 255, 255, 0.04) !important; 
+      transform: scale(1.005); 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+    }
+    .table-light {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: rgba(255, 255, 255, 0.8) !important;
+    }
 
-    .candidate-thumb { width: 42px; height: 55px; border-radius: 6px; object-fit: cover; object-position: top; border: 2px solid #dee2e6; transition: transform 0.3s ease; }
-    .candidate-thumb:hover { transform: scale(1.1); border-color: #0d6efd; }
-    .table-group-header { background-color: #e3f2fd !important; color: #0d6efd; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+    .candidate-thumb { width: 42px; height: 55px; border-radius: 6px; object-fit: cover; object-position: top; border: 2px solid rgba(255,255,255,0.1); transition: transform 0.3s ease; }
+    .candidate-thumb:hover { transform: scale(1.1); border-color: #00f2fe; box-shadow: 0 0 10px rgba(0,242,254,0.4); }
+    .table-group-header { background-color: rgba(0, 242, 254, 0.05) !important; color: #00f2fe; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-    .progress { background-color: #e9ecef; }
+    .progress { background-color: rgba(255, 255, 255, 0.05); }
     .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    .offcanvas {
+      background-color: #070a13 !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+    }
+    .offcanvas-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
 
     .mobile-menu-btn { display: none; background: transparent; border: none; color: white; font-size: 1.5rem; }
     @media (max-width: 768px) {
@@ -52,9 +230,26 @@
       .sidebar-wrapper { display: none; }
       .header-right { gap: 10px; }
     }
+    
+    /* Futuristic Cyber Modal */
+    .modal-content {
+      background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%) !important;
+      border: 1px solid rgba(0, 242, 254, 0.2) !important;
+      box-shadow: 0 25px 60px rgba(0, 242, 254, 0.15) !important;
+      border-radius: 20px !important;
+      color: #ffffff !important;
+    }
+    .modal-header {
+      background: rgba(13, 110, 253, 0.03) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
   </style>
 </head>
 <body>
+
+<div class="glow-blob blob-1"></div>
+<div class="glow-blob blob-2"></div>
+<div class="glow-blob blob-3"></div>
 
 <nav class="face-header sticky-top">
   <div class="d-flex align-items-center gap-2 gap-md-3">
@@ -237,6 +432,36 @@
               </div>
             </div>
           </div>
+
+          <div class="card content-card shadow-sm mb-4 border-info">
+            <div class="card-header bg-info text-white fw-bold">
+              <i class="fa-solid fa-circle-info me-2"></i>Announcement / Information Card
+            </div>
+            <div class="card-body p-4">
+              <p class="text-muted mb-4">Configure an information card that will be displayed to students on their voting dashboard. Useful for announcements, rules, or system details.</p>
+              
+              <form id="infoCardForm">
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input cursor-pointer" type="checkbox" id="isCardVisible" style="transform: scale(1.2); margin-right: 10px;">
+                  <label class="form-check-label fw-bold" for="isCardVisible">Display Card to Students</label>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Card Title</label>
+                  <input type="text" class="form-control" id="cardTitle" placeholder="e.g., Voting Instructions & Guidelines" required>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Card Description</label>
+                  <textarea class="form-control" id="cardDescription" rows="4" placeholder="Enter instructions or announcements here..." required></textarea>
+                </div>
+                
+                <div class="text-end">
+                  <button type="submit" class="btn btn-info text-white fw-bold px-4" id="saveCardBtn">Save Card Configuration</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
 
         <!-- DANGER ZONE -->
@@ -305,6 +530,10 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   if (localStorage.getItem('isAdmin') !== 'true') window.location.href = 'index.html';
+  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000'
+    : 'https://fpc2k26-election.onrender.com';
+
   let globalStudents = []; 
   let globalCandidates = []; 
   let comparisonChart = null; // Holds the Chart.js instance
@@ -347,7 +576,7 @@
 
   async function loadAdminData() {
     try {
-      const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
+      const statRes = await secureFetch(`${API_BASE_URL}/api/admin/stats`);
       if(statRes.ok) {
         const s = await statRes.json();
         document.getElementById('stat-students').textContent = s.totalStudents;
@@ -355,19 +584,22 @@
         document.getElementById('stat-candidates').textContent = s.totalCandidates;
       }
 
-      const stuRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/students');
+      const stuRes = await secureFetch(`${API_BASE_URL}/api/admin/students`);
       if(stuRes.ok) {
         globalStudents = await stuRes.json();
         filterStudents(); 
       }
 
-      const setRes = await fetch('https://fpc2k26-election.onrender.com/api/admin/settings');
+      const setRes = await fetch(`${API_BASE_URL}/api/admin/settings`);
       if(setRes.ok) {
         const settings = await setRes.json();
         const b = document.getElementById('electionStatusBadge');
         const t = document.getElementById('electionStatusText');
         
         document.getElementById('isPublished').checked = settings.isPublished === true;
+        document.getElementById('isCardVisible').checked = settings.isCardVisible === true;
+        document.getElementById('cardTitle').value = settings.cardTitle || '';
+        document.getElementById('cardDescription').value = settings.cardDescription || '';
 
         if (settings.isPublished) {
           b.className = 'badge bg-success fs-6 py-2 px-3 shadow-sm'; b.innerHTML = 'DEPLOYED';
@@ -397,8 +629,8 @@
       const labels = sortedChartCandidates.map(c => `${c.name} (${c.posting})`);
       const data = sortedChartCandidates.map(c => c.votes);
       
-      // Generate unique professional colors for the bars
-      const bgColors = sortedChartCandidates.map((c, i) => `hsl(${(i * 50) % 360}, 75%, 55%)`);
+      // Generate glowing neon colors for the bars
+      const bgColors = sortedChartCandidates.map((c, i) => `hsla(${(i * 65) % 360}, 90%, 65%, 0.85)`);
 
       if (comparisonChart) {
           // If chart exists, just update the data so it animates beautifully
@@ -416,7 +648,7 @@
                       label: 'Total Votes Received',
                       data: data,
                       backgroundColor: bgColors,
-                      borderRadius: 6,
+                      borderRadius: 8,
                       borderWidth: 0
                   }]
               },
@@ -424,17 +656,28 @@
                   responsive: true,
                   animation: { duration: 1000, easing: 'easeOutQuart' },
                   scales: {
-                      y: { beginAtZero: true, ticks: { stepSize: 1, font: { weight: 'bold' } }, grid: { borderDash: [5, 5] } },
-                      x: { ticks: { font: { weight: '600' } }, grid: { display: false } }
+                      y: { 
+                          beginAtZero: true, 
+                          ticks: { stepSize: 1, color: 'rgba(255, 255, 255, 0.7)', font: { weight: 'bold' } }, 
+                          grid: { color: 'rgba(255, 255, 255, 0.08)', borderDash: [5, 5] } 
+                      },
+                      x: { 
+                          ticks: { color: 'rgba(255, 255, 255, 0.7)', font: { weight: '600' } }, 
+                          grid: { display: false } 
+                      }
                   },
                   plugins: {
                       legend: { display: false },
                       tooltip: {
-                          backgroundColor: 'rgba(0,0,0,0.8)',
+                          backgroundColor: 'rgba(12, 16, 32, 0.9)',
+                          borderColor: 'rgba(0, 242, 254, 0.25)',
+                          borderWidth: 1,
+                          titleColor: '#00f2fe',
                           titleFont: { size: 14, weight: 'bold' },
+                          bodyColor: '#ffffff',
                           bodyFont: { size: 14 },
                           padding: 12,
-                          cornerRadius: 8
+                          cornerRadius: 12
                       }
                   }
               }
@@ -444,7 +687,7 @@
 
   async function refreshLeaderboard() {
       try {
-          const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
+          const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
           const candidates = await candRes.json();
           globalCandidates = candidates; 
           
@@ -507,10 +750,10 @@
           
           const totalVotesEl = document.getElementById('stat-votes');
           if (totalVotesEl && totalCurrentVotes > 0) {
-              const statRes = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/stats');
+              const statRes = await secureFetch(`${API_BASE_URL}/api/admin/stats`);
               if(statRes.ok) {
-                 const s = await statRes.json();
-                 totalVotesEl.textContent = s.totalVotes;
+                  const s = await statRes.json();
+                  totalVotesEl.textContent = s.totalVotes;
               }
           }
       } catch (e) {}
@@ -520,7 +763,7 @@
 
   async function renderCandidateTable() {
       try {
-          const candRes = await fetch('https://fpc2k26-election.onrender.com/api/candidates');
+          const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
           const candidates = await candRes.json();
           globalCandidates = candidates; 
           
@@ -531,7 +774,7 @@
           Object.keys(grouped).forEach(posting => {
             tbody.innerHTML += `<tr class="table-group-header"><td colspan="4" class="px-4 py-3"><i class="fa-solid fa-briefcase me-2"></i> PORTFOLIO: ${posting}</td></tr>`;
             grouped[posting].forEach(cand => {
-              let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `https://fpc2k26-election.onrender.com${cand.photo}`;
+              let imgSrc = cand.photo.startsWith('data:') ? cand.photo : `${API_BASE_URL}${cand.photo}`;
               tbody.innerHTML += `
                 <tr class="bg-white">
                   <td class="px-3 py-2 d-flex align-items-center">
@@ -590,7 +833,7 @@
       if (photoFile) fd.append('photo', photoFile); 
 
       try {
-          const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${candidateId}`, { 
+          const res = await secureFetch(`${API_BASE_URL}/api/candidates/${candidateId}`, { 
               method: 'PUT', 
               body: fd 
           });
@@ -654,7 +897,7 @@
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-microchip fa-spin me-2"></i> Encoding Assets...';
     
-    const res = await secureFetch('https://fpc2k26-election.onrender.com/api/candidates', { method: 'POST', body: fd });
+    const res = await secureFetch(`${API_BASE_URL}/api/candidates`, { method: 'POST', body: fd });
     
     btn.disabled = false;
     btn.innerText = 'Commit to Database';
@@ -662,9 +905,41 @@
     if (res.ok) { showAlert('Profile successfully synchronized to the database.', 'success'); e.target.reset(); document.getElementById('addCandidateForm').classList.remove('show'); loadAdminData(); }
   });
 
+  document.getElementById('infoCardForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const isCardVisible = document.getElementById('isCardVisible').checked;
+    const cardTitle = document.getElementById('cardTitle').value;
+    const cardDescription = document.getElementById('cardDescription').value;
+    
+    const btn = document.getElementById('saveCardBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving...';
+    
+    try {
+      const res = await secureFetch(`${API_BASE_URL}/api/admin/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCardVisible, cardTitle, cardDescription })
+      });
+      
+      if (res.ok) {
+        showAlert('Information card configuration updated successfully.', 'success');
+        loadAdminData();
+      } else {
+        const data = await res.json();
+        showAlert(`Error: ${data.message || 'Failed to save.'}`, 'danger');
+      }
+    } catch (err) {
+      showAlert('Network error saving card configuration.', 'danger');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = 'Save Card Configuration';
+    }
+  });
+
   async function deleteCandidate(id, name) {
     if (confirm(`Authorize termination of candidate profile for ${name}?`)) {
-      const res = await secureFetch(`https://fpc2k26-election.onrender.com/api/candidates/${id}`, { method: 'DELETE' });
+      const res = await secureFetch(`${API_BASE_URL}/api/candidates/${id}`, { method: 'DELETE' });
       if (res.ok) { showAlert('Profile purged from database.', 'warning'); loadAdminData(); }
     }
   }
@@ -672,7 +947,7 @@
   async function togglePublish() {
     const isPublished = document.getElementById('isPublished').checked;
     
-    const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/settings', { 
+    const res = await secureFetch(`${API_BASE_URL}/api/admin/settings`, { 
       method: 'POST', 
       headers: {'Content-Type': 'application/json'}, 
       body: JSON.stringify({ isPublished }) 
@@ -686,14 +961,14 @@
 
   async function nuclearWipe() {
     if(confirm("CRITICAL AUTHORIZATION REQUIRED: This action will permanently format the active database, zeroing all votes and deleting all candidate records. Do you wish to proceed?")) {
-      const res = await secureFetch('https://fpc2k26-election.onrender.com/api/admin/wipe-all', { method: 'DELETE' });
+      const res = await secureFetch(`${API_BASE_URL}/api/admin/wipe-all`, { method: 'DELETE' });
       if(res.ok) { showAlert('System initialization and purge complete.', 'danger'); loadAdminData(); }
     }
   }
 
   function downloadResults() { 
     const token = localStorage.getItem('adminToken');
-    window.location.href = `https://fpc2k26-election.onrender.com/api/admin/download-results?token=${token}`; 
+    window.location.href = `${API_BASE_URL}/api/admin/download-results?token=${token}`; 
   }
   
   loadAdminData();
