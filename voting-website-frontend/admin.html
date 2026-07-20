@@ -191,7 +191,15 @@
     /* Glass tables */
     .table {
       color: #ffffff !important;
+      --bs-table-color: #f8fafc;
+      --bs-table-bg: transparent;
+      --bs-table-striped-color: #f8fafc;
+      --bs-table-hover-color: #ffffff;
+      --bs-table-hover-bg: rgba(255, 255, 255, 0.05);
     }
+    .table > :not(caption) > * > * { color: #f8fafc !important; background-color: transparent !important; border-color: rgba(255,255,255,.1); }
+    .table thead th { color: #cbd5e1 !important; background: rgba(255,255,255,.055) !important; }
+    #studentTableBody td { color: #ffffff !important; text-shadow: 0 1px 2px rgba(0,0,0,.75); }
     .table-hover tbody tr { transition: all 0.2s ease; cursor: default; }
     .table-hover tbody tr:hover { 
       background-color: rgba(255, 255, 255, 0.04) !important; 

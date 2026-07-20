@@ -26,6 +26,12 @@ const candidateSchema = new mongoose.Schema({
     enum: ['A', 'B', 'None'],
     default: 'None' // Default to 'None' for BBA/BCOM unless BCA admin chooses A or B
   },
+  description: {
+    type: String,
+    trim: true,
+    maxlength: 500,
+    default: ''
+  },
   photo: {
     type: String,
     required: true // Stores the file path string of the uploaded image

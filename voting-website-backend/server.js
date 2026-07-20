@@ -73,10 +73,10 @@ app.post('/api/admin/login', (req, res) => {
 // CREATE CANDIDATE
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const { name, posting, department, year, section } = req.body;
+    const { name, posting, department, year, section, description } = req.body;
     if (!req.file) return res.status(400).json({ message: 'Photo required.' });
     const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const newCandidate = new Candidate({ name, posting, department, year: Number(year), section: section || 'None', photo: base64Image });
+    const newCandidate = new Candidate({ name, posting, department, year: Number(year), section: section || 'None', description: (description || '').trim(), photo: base64Image });
     await newCandidate.save();
     res.status(201).json({ message: 'Added successfully!', candidate: newCandidate });
   } catch (error) { res.status(500).json({ error: error.message }); }
@@ -90,8 +90,8 @@ app.get('/api/candidates', async (req, res) => {
 // NEW: UPDATE (EDIT) CANDIDATE
 app.put('/api/candidates/:id', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
-    const { name, posting, department, year, section } = req.body;
-    let updateData = { name, posting, department, year: Number(year), section: section || 'None' };
+    const { name, posting, department, year, section, description } = req.body;
+    let updateData = { name, posting, department, year: Number(year), section: section || 'None', description: (description || '').trim() };
     
     // Only update the photo if a new one was uploaded
     if (req.file) {
