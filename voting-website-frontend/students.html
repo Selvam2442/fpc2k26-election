@@ -16,6 +16,8 @@
       position: relative;
       min-height: 100vh;
     }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0; background:linear-gradient(115deg,transparent 35%,rgba(36,170,255,.025) 50%,transparent 65%); background-size:220% 100%; animation:ambientSweep 12s linear infinite; }
+    @keyframes ambientSweep { to { background-position:-220% 0; } }
     
     /* Glowing background blobs */
     .glow-blob {
@@ -166,7 +168,11 @@
         flex-direction: column; 
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05); 
         animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.15) backwards; 
+        transform-style:preserve-3d;
+        will-change:transform;
     }
+    .candidate-card::before { content:''; position:absolute; inset:0; z-index:4; pointer-events:none; background:linear-gradient(120deg,transparent 25%,rgba(255,255,255,.09),transparent 65%); transform:translateX(-120%); transition:transform .8s ease; }
+    .candidate-card:hover::before { transform:translateX(120%); }
     
     .candidate-card:hover { 
         border-color: rgba(0, 242, 254, 0.3); 
@@ -179,7 +185,9 @@
         box-shadow: 0 15px 35px rgba(0, 255, 135, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); 
         background: rgba(0, 255, 135, 0.03); 
         transform: translateY(-4px) scale(1.02); 
+        animation:selectedPulse 2.4s ease-in-out infinite;
     }
+    @keyframes selectedPulse { 50% { box-shadow:0 18px 45px rgba(0,255,135,.38),0 0 0 5px rgba(0,255,135,.05); } }
     
     /* Image and Selection Overlay */
     .candidate-img-wrapper { 
@@ -345,7 +353,12 @@
       .nav-btn { padding: 10px 20px; font-size: 0.95rem; }
       .category-title { font-size: 1.25rem; }
       .selection-overlay i { font-size: 2.8rem; }
+      .container { padding-left:12px; padding-right:12px; }
+      .intro-screen { padding:26px 18px; margin-top:2vh; border-radius:18px; }
+      .candidate-card:hover { transform:none; }
+      .candidate-img-wrapper { aspect-ratio:4/3; }
     }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
 
     /* Global Text Contrast Rules */
     body .text-muted, body .text-secondary { color: rgba(255, 255, 255, 0.7) !important; }

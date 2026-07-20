@@ -16,6 +16,8 @@
       position: relative;
       overflow-x: hidden;
     }
+    body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0; background-image:linear-gradient(rgba(78,140,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(78,140,255,.025) 1px,transparent 1px); background-size:42px 42px; mask-image:linear-gradient(to bottom,black,transparent 80%); animation:grid-drift 22s linear infinite; }
+    @keyframes grid-drift { to { background-position:42px 42px; } }
     
     /* Glowing background blobs */
     .glow-blob {
@@ -65,6 +67,7 @@
       justify-content: space-between; 
       border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
       z-index: 1050; 
+      box-shadow: 0 8px 30px rgba(0,0,0,.18);
     }
     .face-logo { height: 38px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(13, 110, 253, 0.3)); }
     .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.15); background-color: white; box-shadow: 0 0 10px rgba(13, 110, 253, 0.2); }
@@ -96,7 +99,9 @@
       border-right: 1px solid rgba(255, 255, 255, 0.08); 
       position: relative;
       z-index: 10;
+      flex: 0 0 270px; width:270px; position:sticky; top:65px; align-self:flex-start;
     }
+    .admin-main { flex:1 1 0; min-width:0; position:relative; z-index:2; }
     .nav-pills .nav-link { 
       color: rgba(255, 255, 255, 0.65); 
       font-weight: 600; 
@@ -105,7 +110,9 @@
       border-left: 4px solid transparent; 
       cursor: pointer; 
       transition: all 0.3s ease; 
+      display:flex; align-items:center; min-height:58px; white-space:nowrap;
     }
+    .sidebar-wrapper .nav-link i, .offcanvas .nav-link i { width:42px !important; flex:0 0 42px; }
     .nav-pills .nav-link:hover { 
       background-color: rgba(255, 255, 255, 0.03); 
       color: #00f2fe; 
@@ -128,7 +135,12 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       color: #ffffff;
+      overflow:hidden;
+      animation:card-rise .65s cubic-bezier(.2,.8,.2,1) both;
     }
+    .content-card::after { content:''; position:absolute; inset:-2px; pointer-events:none; background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.07),transparent 70%); transform:translateX(-120%); transition:transform .8s ease; }
+    .content-card:hover::after { transform:translateX(120%); }
+    @keyframes card-rise { from { opacity:0; transform:translateY(18px) scale(.985); } to { opacity:1; transform:none; } }
     .content-card:hover { 
       transform: translateY(-4px); 
       box-shadow: 0 15px 35px rgba(0, 242, 254, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
@@ -229,14 +241,17 @@
     }
 
     .mobile-menu-btn { display: none; background: transparent; border: none; color: white; font-size: 1.5rem; }
-    @media (max-width: 768px) {
+    @media (max-width: 991.98px) {
       .face-header { padding: 10px 15px; }
       .college-logo { height: 32px; width: 32px; }
       .face-logo { height: 30px; }
       .mobile-menu-btn { display: block; }
       .sidebar-wrapper { display: none; }
       .header-right { gap: 10px; }
+      .admin-main { width:100%; }
     }
+    @media (max-width:575.98px) { .admin-main{padding:16px 12px!important}.face-logo{max-width:125px;height:27px}.btn-logout{width:40px;height:40px;padding:0;font-size:0}.btn-logout i{margin:0!important;font-size:1rem}.content-card .card-body.d-flex{align-items:flex-start!important;gap:14px;flex-direction:column}h3{font-size:1.25rem}.table{min-width:680px} }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
     
     /* Futuristic Cyber Modal */
     .modal-content {
@@ -288,7 +303,7 @@
 <div class="container-fluid">
   <div class="row">
     
-    <div class="col-md-2 p-0 sidebar-wrapper d-none d-md-block">
+    <div class="p-0 sidebar-wrapper d-none d-lg-block">
       <div class="nav flex-column nav-pills mt-3" role="tablist">
         <button class="nav-link active text-start" data-bs-toggle="pill" data-bs-target="#dashboard"><i class="fa-solid fa-chart-pie w-25"></i> System Telemetry</button>
         <button class="nav-link text-start" data-bs-toggle="pill" data-bs-target="#studentsList"><i class="fa-solid fa-address-book w-25"></i> Voter Registry</button>
@@ -298,7 +313,7 @@
       </div>
     </div>
 
-    <div class="col-md-10 p-4">
+    <main class="admin-main p-4">
       <div id="globalAlert"></div>
       
       <div class="tab-content">
@@ -491,7 +506,7 @@
         </div>
 
       </div>
-    </div>
+    </main>
   </div>
 </div>
 
