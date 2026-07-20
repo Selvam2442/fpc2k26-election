@@ -210,7 +210,7 @@
 
     .admin-link { 
       cursor: pointer; 
-      color: rgba(255, 255, 255, 0.4); 
+      color: rgba(255, 255, 255, 0.5); 
       transition: all 0.3s ease; 
       font-size: 0.85rem;
       letter-spacing: 0.5px;
@@ -231,21 +231,21 @@
       border: 1px solid transparent;
     }
     .status-banner.bg-success {
-      background-color: rgba(25, 135, 84, 0.1) !important;
+      background-color: rgba(25, 135, 84, 0.15) !important;
       color: #00ff87 !important;
-      border-color: rgba(25, 135, 84, 0.25) !important;
-      box-shadow: 0 0 15px rgba(25, 135, 84, 0.1);
+      border-color: rgba(25, 135, 84, 0.3) !important;
+      box-shadow: 0 0 15px rgba(25, 135, 84, 0.15);
     }
     .status-banner.bg-secondary {
-      background-color: rgba(255, 255, 255, 0.03) !important;
-      color: rgba(255, 255, 255, 0.6) !important;
-      border-color: rgba(255, 255, 255, 0.08) !important;
+      background-color: rgba(255, 255, 255, 0.05) !important;
+      color: rgba(255, 255, 255, 0.7) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
     }
     .status-banner.bg-danger {
-      background-color: rgba(220, 53, 69, 0.1) !important;
+      background-color: rgba(220, 53, 69, 0.15) !important;
       color: #ff4d6d !important;
-      border-color: rgba(220, 53, 69, 0.25) !important;
-      box-shadow: 0 0 15px rgba(220, 53, 69, 0.1);
+      border-color: rgba(220, 53, 69, 0.3) !important;
+      box-shadow: 0 0 15px rgba(220, 53, 69, 0.15);
     }
     
     @media (max-width: 768px) {
@@ -283,20 +283,20 @@
           <div id="publicStatusBadge" class="badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm">
             <i class="fa-solid fa-spinner fa-spin me-1"></i> Authenticating Telemetry...
           </div>
-          <h4 class="fw-bold text-dark"><i class="fa-solid fa-check-to-slot text-primary me-2"></i>Official Voting Portal</h4>
-          <p class="text-muted small">Please verify your identity to proceed</p>
+          <h4 class="fw-bold text-white"><i class="fa-solid fa-check-to-slot text-primary me-2"></i>Official Voting Portal</h4>
+          <p class="text-secondary small">Please verify your identity to proceed</p>
         </div>
         <div id="studentAlert" class="alert d-none" role="alert"></div>
         <form id="studentLoginForm">
           <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">INSTITUTIONAL ROLL NUMBER</label>
+            <label class="form-label text-secondary small fw-bold">INSTITUTIONAL ROLL NUMBER</label>
             <div class="input-group mb-3">
               <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
               <input type="text" class="form-control form-control-lg" id="rollNumber" placeholder="e.g. 26BCA001" required>
             </div>
           </div>
           <div class="mb-4">
-            <label class="form-label text-muted small fw-bold">VERIFICATION (DATE OF BIRTH)</label>
+            <label class="form-label text-secondary small fw-bold">VERIFICATION (DATE OF BIRTH)</label>
             <div class="input-group mb-1">
               <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
               <input type="date" class="form-control form-control-lg" id="dob" required>
@@ -310,20 +310,20 @@
 
       <div id="adminView" class="d-none">
         <div class="text-center mb-4">
-          <h4 class="fw-bold text-dark"><i class="fa-solid fa-shield-halved text-danger me-2"></i>Admin Dashboard</h4>
-          <p class="text-muted small">Authorized personnel only</p>
+          <h4 class="fw-bold text-white"><i class="fa-solid fa-shield-halved text-danger me-2"></i>Admin Dashboard</h4>
+          <p class="text-secondary small">Authorized personnel only</p>
         </div>
         <div id="adminAlert" class="alert d-none" role="alert"></div>
         <form id="adminLoginForm">
           <div class="mb-3">
-            <label class="form-label text-muted small fw-bold">ADMIN ID</label>
+            <label class="form-label text-secondary small fw-bold">ADMIN ID</label>
             <div class="input-group mb-3">
               <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
               <input type="text" class="form-control form-control-lg" id="adminId" required>
             </div>
           </div>
           <div class="mb-4">
-            <label class="form-label text-muted small fw-bold">ENCRYPTION KEY (PASSWORD)</label>
+            <label class="form-label text-secondary small fw-bold">ENCRYPTION KEY (PASSWORD)</label>
             <div class="input-group mb-3">
               <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
               <input type="password" class="form-control form-control-lg" id="adminPassword" required>
@@ -395,7 +395,6 @@
     const submitBtn = document.getElementById('studentLoginBtn');
     const originalBtnHTML = submitBtn.innerHTML;
 
-    // Secure the button to prevent multiple clicks
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Fetching Credentials...';
     
@@ -427,7 +426,6 @@
         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message || 'Invalid Credentials.'}`;
         alertBox.classList.remove('d-none');
         
-        // Restore button if failed
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnHTML;
       }
@@ -436,7 +434,6 @@
       alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
       alertBox.classList.remove('d-none');
       
-      // Restore button if error
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalBtnHTML;
     }
@@ -449,7 +446,6 @@
     const submitBtn = document.getElementById('adminLoginBtn');
     const originalBtnHTML = submitBtn.innerHTML;
 
-    // Secure the button to prevent multiple clicks
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Authenticating...';
 
@@ -478,7 +474,6 @@
         alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}`;
         alertBox.classList.remove('d-none');
         
-        // Restore button if failed
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnHTML;
       }
@@ -487,7 +482,6 @@
       alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
       alertBox.classList.remove('d-none');
       
-      // Restore button if error
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalBtnHTML;
     }

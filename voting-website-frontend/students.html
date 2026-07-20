@@ -146,9 +146,7 @@
       text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
     }
 
-    /* ========================================= */
-    /* FUTURISTIC CYBER-GLASS CANDIDATE CARD     */
-    /* ========================================= */
+    /* FUTURISTIC CYBER-GLASS CANDIDATE CARD */
     @keyframes popIn { 
       0% { opacity: 0; transform: scale(0.9) translateY(20px); } 
       100% { opacity: 1; transform: scale(1) translateY(0); } 
@@ -202,7 +200,7 @@
     
     .candidate-card:hover .candidate-img { transform: scale(1.08); }
     
-    /* The Cyber Checkmark Overlay */
+    /* Cyber Checkmark Overlay */
     .selection-overlay {
         position: absolute;
         top: 0; left: 0; right: 0; bottom: 0;
@@ -218,7 +216,7 @@
     
     .selection-overlay i {
         color: #00ff87;
-        font-size: 4rem;
+        font-size: 3.5rem;
         transform: scale(0);
         transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.2);
         text-shadow: 0 0 20px rgba(0, 255, 135, 0.6);
@@ -227,35 +225,51 @@
     .candidate-card.selected .selection-overlay { opacity: 1; }
     .candidate-card.selected .selection-overlay i { transform: scale(1); }
     
-    /* Text and Badges */
-    .candidate-info { padding: 16px 12px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
-    .candidate-name { font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 0.5rem; transition: color 0.3s; line-height: 1.2; }
+    /* Text, Badges & Candidate Description */
+    .candidate-info { padding: 16px 14px; text-align: center; display: flex; flex-direction: column; flex-grow: 1; }
+    .candidate-name { font-size: 1.15rem; font-weight: 700; color: #ffffff; margin-bottom: 0.4rem; transition: color 0.3s; line-height: 1.25; word-break: break-word; }
     .candidate-card:hover .candidate-name { color: #00f2fe; text-shadow: 0 0 10px rgba(0, 242, 254, 0.3); }
     
     .badge-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; }
     .meta-badge { 
-      background-color: rgba(255, 255, 255, 0.05); 
-      color: rgba(255, 255, 255, 0.7); 
+      background-color: rgba(255, 255, 255, 0.06); 
+      color: rgba(255, 255, 255, 0.85); 
       padding: 4px 8px; 
       border-radius: 6px; 
-      font-size: 0.7rem; 
+      font-size: 0.72rem; 
       font-weight: 700; 
       display: inline-flex; 
       align-items: center; 
-      border: 1px solid rgba(255, 255, 255, 0.05); 
+      border: 1px solid rgba(255, 255, 255, 0.08); 
       transition: all 0.3s; 
     }
     .candidate-card.selected .meta-badge { 
       background-color: rgba(0, 255, 135, 0.08); 
       color: #00ff87; 
-      border-color: rgba(0, 255, 135, 0.2); 
+      border-color: rgba(0, 255, 135, 0.25); 
+    }
+
+    /* Candidate Description Formatting */
+    .candidate-desc {
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.75) !important;
+      line-height: 1.4;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      text-align: center;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
     }
     
     /* Cyber Selection Button */
     .select-btn { 
       background-color: rgba(255, 255, 255, 0.05); 
-      color: rgba(255, 255, 255, 0.7); 
-      border: 1px solid rgba(255, 255, 255, 0.05); 
+      color: rgba(255, 255, 255, 0.85); 
+      border: 1px solid rgba(255, 255, 255, 0.08); 
       padding: 10px; 
       font-size: 0.85rem; 
       font-weight: 700; 
@@ -286,12 +300,12 @@
     .nav-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,242,254,0.3); }
  
     .btn-outline-secondary {
-      border: 2px solid rgba(255, 255, 255, 0.15);
-      color: rgba(255, 255, 255, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
       background-color: transparent !important;
     }
     .btn-outline-secondary:hover {
-      border-color: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.4);
       color: #ffffff;
       box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
     }
@@ -318,21 +332,23 @@
     .skeleton-badge { height: 18px; width: 35%; margin: 5px auto; display: inline-block; border-radius: 6px; }
     .skeleton-btn { height: 42px; width: 100%; margin-top: 10px; border-radius: 10px; }
     
-    /* ========================================= */
-    /* RESPONSIVE PERFECTION FOR MOBILE          */
-    /* ========================================= */
-    @media (max-width: 768px) {
+    /* RESPONSIVE PERFECTION FOR MOBILE */
+    @media (max-width: 576px) {
       .face-header { padding: 10px 15px; }
-      .college-logo { height: 32px; width: 32px; }
-      .candidate-info { padding: 12px 8px; }
+      .college-logo { height: 34px; width: 34px; }
+      .face-logo { height: 30px; }
+      .candidate-info { padding: 12px 10px; }
       .candidate-name { font-size: 1rem; }
+      .candidate-desc { font-size: 0.78rem; -webkit-line-clamp: 2; margin-bottom: 8px; }
       .meta-badge { font-size: 0.65rem; padding: 3px 6px; }
-      .select-btn { font-size: 0.8rem; padding: 8px; }
-      .nav-btn { padding: 10px 20px; font-size: 1rem; }
-      .category-title { font-size: 1.3rem; }
-      .selection-overlay i { font-size: 3rem; }
+      .select-btn { font-size: 0.78rem; padding: 8px; }
+      .nav-btn { padding: 10px 20px; font-size: 0.95rem; }
+      .category-title { font-size: 1.25rem; }
+      .selection-overlay i { font-size: 2.8rem; }
     }
-    body .text-muted, body .text-secondary { color: rgba(255, 255, 255, 0.65) !important; }
+
+    /* Global Text Contrast Rules */
+    body .text-muted, body .text-secondary { color: rgba(255, 255, 255, 0.7) !important; }
   </style>
 </head>
 <body>
@@ -359,19 +375,19 @@
   <div id="introScreen" class="wizard-step active">
     <div class="intro-screen mx-auto" style="max-width: 600px;">
       <div class="mb-4" style="animation: float 3s ease-in-out infinite;">
-        <i class="fa-solid fa-user-shield text-primary" style="font-size: 4.5rem; color: #00f2fe !important; text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);"></i>
+        <i class="fa-solid fa-user-shield" style="font-size: 4.5rem; color: #00f2fe !important; text-shadow: 0 0 15px rgba(0, 242, 254, 0.4);"></i>
       </div>
       <h2 class="fw-bold text-white">Welcome, <span id="studentNameDisplay" style="color: #00f2fe; text-shadow: 0 0 10px rgba(0,242,254,0.3);">Voter</span>!</h2>
-      <p class="text-muted mt-3 fs-5 mb-4">You are about to enter the official secure voting booth. You must select <strong>one candidate for every portfolio</strong> to complete your ballot.</p>
+      <p class="text-secondary mt-3 fs-5 mb-4">You are about to enter the official secure voting booth. You must select <strong>one candidate for every portfolio</strong> to complete your ballot.</p>
       
-      <!-- Info/Announcement Card (Visible if configured by admin) -->
+      <!-- Info/Announcement Card -->
       <div id="announcementCard" class="card text-start mb-4 border-0 d-none glass-notice" style="border-radius: 16px;">
         <div class="card-body p-4">
           <div class="d-flex align-items-center gap-3 mb-2">
             <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; flex-shrink: 0;">
               <i class="fa-solid fa-bullhorn"></i>
             </div>
-            <h5 class="fw-bold mb-0 text-dark" id="announcementTitle"></h5>
+            <h5 class="fw-bold mb-0 text-warning" id="announcementTitle"></h5>
           </div>
           <p class="text-secondary mb-0 fs-6" id="announcementDesc" style="white-space: pre-line; line-height: 1.6;"></p>
         </div>
@@ -389,14 +405,14 @@
     
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="category-title mb-0" id="categoryTitle">Loading...</h3>
-      <span class="badge bg-dark fs-6 py-2 px-3 rounded-pill shadow-sm" id="stepCounter">1 of X</span>
+      <span class="badge bg-dark fs-6 py-2 px-3 rounded-pill shadow-sm border border-secondary" id="stepCounter">1 of X</span>
     </div>
 
-    <!-- UPDATED: Grid breakpoints for absolute perfection -->
+    <!-- Responsive Candidate Grid -->
     <div class="row g-3 g-md-4" id="candidatesGrid"></div>
 
     <div class="d-flex justify-content-between mt-5 pb-5">
-      <button class="btn btn-outline-secondary nav-btn bg-white shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden; border: 2px solid #dee2e6;">
+      <button class="btn btn-outline-secondary nav-btn bg-transparent shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden;">
         <i class="fa-solid fa-arrow-left me-2"></i> Previous
       </button>
       <button class="btn btn-primary nav-btn shadow text-white" id="nextBtn" style="background-color: #0d6efd; border: none;" onclick="nextCategory()" disabled>
@@ -412,14 +428,13 @@
          <i class="fa-solid fa-certificate text-success mb-4" style="font-size: 6rem; text-shadow: 0 10px 20px rgba(25,135,84,0.3);"></i>
       </div>
       <h1 class="fw-bold text-white mb-3">Ballot Secured!</h1>
-      <p class="text-muted fs-5 mb-0">Thank you for fulfilling your democratic duty. Your cryptographic votes have been recorded.</p>
-      <button class="btn btn-dark mt-5 px-5 py-3 rounded-pill fw-bold nav-btn shadow-sm" onclick="logout()">Terminate Session</button>
+      <p class="text-secondary fs-5 mb-0">Thank you for fulfilling your democratic duty. Your cryptographic votes have been recorded.</p>
+      <button class="btn btn-outline-light mt-5 px-5 py-3 rounded-pill fw-bold nav-btn shadow-sm" onclick="logout()">Terminate Session</button>
     </div>
   </div>
 </div>
 
 <style>
-  /* Define float animation used in welcome screen */
   @keyframes float {
     0% { transform: translateY(0px); }
     50% { transform: translateY(-10px); }
@@ -458,10 +473,9 @@
     const grid = document.getElementById('candidatesGrid');
     grid.innerHTML = '';
     for(let i=0; i<4; i++) {
-      // Perfect responsive skeleton grid
       grid.innerHTML += `
-        <div class="col-6 col-md-4 col-lg-3 mb-2">
-          <div class="card candidate-card" style="border: 2px solid #e9ecef; cursor: default; animation: none;">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
+          <div class="card candidate-card" style="border: 1px solid rgba(255,255,255,0.08); cursor: default; animation: none;">
             <div class="skeleton skeleton-img"></div>
             <div class="candidate-info">
               <div class="skeleton skeleton-text"></div>
@@ -558,21 +572,23 @@
       const isSelected = candidate._id === selectedId;
       const sec = candidate.section && candidate.section !== 'None' ? `(${candidate.section})` : '';
       
-      let imgSrc = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%23e9ecef\'/></svg>';
+      let imgSrc = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'%231a2035\'/></svg>';
       if (candidate.photo) {
           imgSrc = candidate.photo.startsWith('data:') ? candidate.photo : `${API_BASE_URL}${candidate.photo}`;
       }
       
-      const delay = index * 0.1;
+      const delay = index * 0.08;
 
-      // PERFECTED RESPONSIVE GRID (col-6 keeps 2 cards per row on mobile, col-md-4 is 3 on tablet, col-lg-3 is 4 on desktop)
+      const descriptionText = candidate.description && candidate.description.trim() !== '' 
+        ? candidate.description.trim() 
+        : 'Dedicated to serving student body excellence and campus progress.';
+
       grid.innerHTML += `
-        <div class="col-6 col-md-4 col-lg-3 mb-2">
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-2">
           <div class="card candidate-card ${isSelected ? 'selected' : ''}" style="animation-delay: ${delay}s;" onclick="selectCandidate('${candidate._id}', '${postingTitle}')">
             
             <div class="candidate-img-wrapper">
-              <img src="${imgSrc}" class="candidate-img" alt="${candidate.name || 'Candidate'}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%23e9ecef\\'/></svg>'">
-              <!-- THE MAGIC GREEN CHECKMARK OVERLAY -->
+              <img src="${imgSrc}" class="candidate-img" alt="${candidate.name || 'Candidate'}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 100 100\\'><rect width=\\'100\\' height=\\'100\\' fill=\\'%231a2035\\'/></svg>'">
               <div class="selection-overlay">
                 <i class="fa-solid fa-circle-check"></i>
               </div>
@@ -584,6 +600,7 @@
                 <span class="meta-badge">${candidate.department || ''} ${sec}</span>
                 <span class="meta-badge">Yr ${candidate.year || ''}</span>
               </div>
+              <p class="candidate-desc" title="${descriptionText}">${descriptionText}</p>
               <div class="mt-auto pt-1">
                 <button class="select-btn">${isSelected ? 'SELECTED' : 'SELECT'}</button>
               </div>
