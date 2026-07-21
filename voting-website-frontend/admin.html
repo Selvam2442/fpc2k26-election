@@ -230,6 +230,14 @@
 
     .progress { background-color: rgba(255, 255, 255, 0.05); }
     .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .portfolio-results-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+    .portfolio-result-card { min-width:0; }
+    .portfolio-result-card .card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .portfolio-total { white-space:nowrap; }
+    .posting-chart-wrap { position:relative; height:clamp(180px,24vw,260px); margin-bottom:22px; padding:8px 4px 14px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .candidate-progress-row:last-child { margin-bottom:0 !important; }
+    .candidate-progress-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:7px; }
+    .candidate-progress-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
     .offcanvas {
       background-color: #070a13 !important;
@@ -249,8 +257,9 @@
       .sidebar-wrapper { display: none; }
       .header-right { gap: 10px; }
       .admin-main { width:100%; }
+      .portfolio-results-grid { grid-template-columns:1fr; }
     }
-    @media (max-width:575.98px) { .admin-main{padding:16px 12px!important}.face-logo{max-width:125px;height:27px}.btn-logout{width:40px;height:40px;padding:0;font-size:0}.btn-logout i{margin:0!important;font-size:1rem}.content-card .card-body.d-flex{align-items:flex-start!important;gap:14px;flex-direction:column}h3{font-size:1.25rem}.table{min-width:680px} }
+    @media (max-width:575.98px) { .admin-main{padding:12px 8px!important}.face-header{padding:8px 10px}.college-logo{width:30px;height:30px}.face-logo{max-width:105px;height:24px}.btn-logout{width:38px;height:38px;padding:0;font-size:0}.btn-logout i{margin:0!important;font-size:1rem}.content-card .card-body.d-flex{align-items:flex-start!important;gap:12px;flex-direction:column}.content-card{border-radius:13px}h3{font-size:1.2rem}.table{min-width:680px}.portfolio-results-grid{gap:14px}.portfolio-result-card .card-header{align-items:flex-start;flex-direction:column;padding:14px!important}.portfolio-result-card .card-body{padding:14px!important}.posting-chart-wrap{height:210px;margin-bottom:16px}.candidate-progress-head{align-items:flex-start}.candidate-progress-head .badge{font-size:.67rem;flex-shrink:0}.stat-card-row .col-md-4{margin-bottom:10px!important} }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
     
     /* Futuristic Cyber Modal */
@@ -330,7 +339,7 @@
             </div>
           </div>
 
-          <div class="row mb-4">
+          <div class="row mb-4 stat-card-row">
             <div class="col-md-4 mb-3">
               <div class="card content-card bg-primary text-white h-100 p-3 shadow-sm">
                 <div class="card-body"><h6 class="text-uppercase fw-bold text-white-50">Authorized Electorate</h6><h1 class="display-5 fw-bold mb-0" id="stat-students">0</h1></div>
@@ -348,15 +357,7 @@
             </div>
           </div>
           
-          <!-- GRAPHICAL COMPARISON CHART -->
-          <div class="card content-card mb-4 shadow-sm">
-            <div class="card-header bg-transparent fw-bold py-3"><i class="fa-solid fa-chart-column text-primary me-2"></i>Graphical Vote Comparison</div>
-            <div class="card-body">
-              <canvas id="voteComparisonChart" height="80"></canvas>
-            </div>
-          </div>
-
-          <h4 class="fw-bold mb-3 mt-5 text-white"><i class="fa-solid fa-bars-progress text-primary me-2"></i>Live Progress</h4>
+          <h4 class="fw-bold mb-3 mt-4 text-white"><i class="fa-solid fa-chart-simple text-primary me-2"></i>Results by Portfolio</h4>
           <div id="leaderboardContainer" class="mb-4"></div>
 
           <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
@@ -573,7 +574,8 @@
 
   let globalStudents = []; 
   let globalCandidates = []; 
-  let comparisonChart = null; 
+  let postingCharts = {};
+  let lastLeaderboardSignature = '';
 
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -652,69 +654,27 @@
     } catch (e) { console.log(e); }
   }
 
-  function updateChart(candidates) {
-      const ctx = document.getElementById('voteComparisonChart').getContext('2d');
-      
-      const sortedChartCandidates = [...candidates].sort((a, b) => {
-          if (a.posting < b.posting) return -1;
-          if (a.posting > b.posting) return 1;
-          return b.votes - a.votes;
-      });
-
-      const labels = sortedChartCandidates.map(c => `${c.name} (${c.posting})`);
-      const data = sortedChartCandidates.map(c => c.votes);
-      
-      const bgColors = sortedChartCandidates.map((c, i) => `hsla(${(i * 65) % 360}, 90%, 65%, 0.85)`);
-
-      if (comparisonChart) {
-          comparisonChart.data.labels = labels;
-          comparisonChart.data.datasets[0].data = data;
-          comparisonChart.data.datasets[0].backgroundColor = bgColors;
-          comparisonChart.update();
-      } else {
-          comparisonChart = new Chart(ctx, {
+  function renderPostingCharts(grouped) {
+      Object.values(postingCharts).forEach(chart => chart.destroy());
+      postingCharts = {};
+      Object.entries(grouped).forEach(([posting, candidates], postingIndex) => {
+          const canvas = document.getElementById(`postingChart-${postingIndex}`);
+          if (!canvas) return;
+          const colors = candidates.map((candidate, index) => index === 0 && candidate.votes > 0 ? 'rgba(32, 201, 151, .88)' : `hsla(${205 + index * 35}, 88%, 60%, .86)`);
+          postingCharts[posting] = new Chart(canvas, {
               type: 'bar',
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      label: 'Total Votes Received',
-                      data: data,
-                      backgroundColor: bgColors,
-                      borderRadius: 8,
-                      borderWidth: 0
-                  }]
-              },
+              data: { labels: candidates.map(c => c.name), datasets: [{ data: candidates.map(c => c.votes), backgroundColor: colors, borderRadius: 8, barThickness: 17 }] },
               options: {
-                  responsive: true,
-                  animation: { duration: 1000, easing: 'easeOutQuart' },
+                  indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                  animation: { duration: 650, easing: 'easeOutQuart' },
                   scales: {
-                      y: { 
-                          beginAtZero: true, 
-                          ticks: { stepSize: 1, color: 'rgba(255, 255, 255, 0.7)', font: { weight: 'bold' } }, 
-                          grid: { color: 'rgba(255, 255, 255, 0.08)', borderDash: [5, 5] } 
-                      },
-                      x: { 
-                          ticks: { color: 'rgba(255, 255, 255, 0.7)', font: { weight: '600' } }, 
-                          grid: { display: false } 
-                      }
+                      x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: 'rgba(255,255,255,.7)' }, grid: { color: 'rgba(255,255,255,.07)' } },
+                      y: { ticks: { color: '#eef5ff', font: { weight: '600', size: window.innerWidth < 576 ? 10 : 12 } }, grid: { display: false } }
                   },
-                  plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                          backgroundColor: 'rgba(12, 16, 32, 0.9)',
-                          borderColor: 'rgba(0, 242, 254, 0.25)',
-                          borderWidth: 1,
-                          titleColor: '#00f2fe',
-                          titleFont: { size: 14, weight: 'bold' },
-                          bodyColor: '#ffffff',
-                          bodyFont: { size: 14 },
-                          padding: 12,
-                          cornerRadius: 12
-                      }
-                  }
+                  plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(7,12,25,.96)', borderColor: 'rgba(0,242,254,.3)', borderWidth: 1, titleColor: '#00f2fe', bodyColor: '#fff', padding: 10 } }
               }
           });
-      }
+      });
   }
 
   async function refreshLeaderboard() {
@@ -722,8 +682,9 @@
           const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
           const candidates = await candRes.json();
           globalCandidates = candidates; 
-          
-          updateChart(candidates);
+          const leaderboardSignature = JSON.stringify(candidates.map(c => [c._id, c.name, c.posting, c.votes]));
+          if (leaderboardSignature === lastLeaderboardSignature) return;
+          lastLeaderboardSignature = leaderboardSignature;
           
           const grouped = candidates.reduce((acc, c) => { 
               const p = (c.posting || 'Unknown').toUpperCase(); 
@@ -732,21 +693,22 @@
               return acc; 
           }, {});
 
-          let leaderHTML = '<div class="row g-4">';
+          Object.keys(grouped).forEach(posting => grouped[posting].sort((a, b) => b.votes - a.votes));
+          let leaderHTML = '<div class="portfolio-results-grid">';
           let totalCurrentVotes = 0;
           
-          Object.keys(grouped).forEach(posting => {
-              let postingCandidates = grouped[posting].sort((a, b) => b.votes - a.votes);
+          Object.keys(grouped).forEach((posting, postingIndex) => {
+              let postingCandidates = grouped[posting];
               let totalPostingVotes = postingCandidates.reduce((sum, c) => sum + c.votes, 0);
               
               leaderHTML += `
-              <div class="col-lg-6">
-                  <div class="card content-card h-100 shadow-sm border-0">
-                      <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center" style="border-radius: 12px 12px 0 0;">
+              <div class="card content-card portfolio-result-card h-100 shadow-sm border-0">
+                      <div class="card-header bg-dark text-white fw-bold p-3">
                           <span><i class="fa-solid fa-trophy text-warning me-2"></i> ${posting}</span>
-                          <span class="badge bg-light text-dark shadow-sm">${totalPostingVotes} Total Portfolio Votes</span>
+                          <span class="badge bg-light text-dark shadow-sm portfolio-total">${totalPostingVotes} Total Votes</span>
                       </div>
                       <div class="card-body">
+                        <div class="posting-chart-wrap"><canvas id="postingChart-${postingIndex}" aria-label="${posting} vote chart"></canvas></div>
               `;
               
               if (postingCandidates.length === 0) {
@@ -759,9 +721,9 @@
                       let animation = c.votes > 0 ? 'progress-bar-striped progress-bar-animated' : '';
                       
                       leaderHTML += `
-                      <div class="mb-4">
-                          <div class="d-flex justify-content-between align-items-end mb-1">
-                              <span class="fw-bold text-white">${c.name}</span>
+                      <div class="candidate-progress-row mb-4">
+                          <div class="candidate-progress-head">
+                              <span class="candidate-progress-name fw-bold text-white">${c.name}</span>
                               <span class="badge bg-light text-dark border shadow-sm">${c.votes} Votes (${percent}%)</span>
                           </div>
                           <div class="progress shadow-sm" style="height: 16px; border-radius: 8px;">
@@ -771,12 +733,13 @@
                       `;
                   });
               }
-              leaderHTML += `</div></div></div>`;
+              leaderHTML += `</div></div>`;
           });
           leaderHTML += '</div>';
           
           const lbContainer = document.getElementById('leaderboardContainer');
-          if (lbContainer.innerHTML !== leaderHTML) { lbContainer.innerHTML = leaderHTML; }
+          lbContainer.innerHTML = leaderHTML;
+          renderPostingCharts(grouped);
           
           const totalVotesEl = document.getElementById('stat-votes');
           if (totalVotesEl && totalCurrentVotes > 0) {

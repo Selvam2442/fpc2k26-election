@@ -357,6 +357,12 @@
       .intro-screen { padding:26px 18px; margin-top:2vh; border-radius:18px; }
       .candidate-card:hover { transform:none; }
       .candidate-img-wrapper { aspect-ratio:4/3; }
+      .header-right { gap:6px; }
+      .nav-link-custom { display:none !important; }
+      .btn-logout { width:40px; height:40px; padding:0; font-size:0; }
+      .btn-logout i { display:inline-block !important; margin:0 !important; font-size:1rem; }
+      .wizard-actions { position:sticky; bottom:8px; z-index:50; gap:8px; margin-top:24px!important; padding:10px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:rgba(5,9,20,.86); backdrop-filter:blur(18px); }
+      .wizard-actions .nav-btn { flex:1; min-width:0; padding:11px 8px; font-size:.82rem; white-space:nowrap; }
     }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
 
@@ -424,7 +430,7 @@
     <!-- Responsive Candidate Grid -->
     <div class="row g-3 g-md-4" id="candidatesGrid"></div>
 
-    <div class="d-flex justify-content-between mt-5 pb-5">
+    <div class="d-flex justify-content-between mt-5 pb-5 wizard-actions">
       <button class="btn btn-outline-secondary nav-btn bg-transparent shadow-sm" id="prevBtn" onclick="changeCategory(-1)" style="visibility: hidden;">
         <i class="fa-solid fa-arrow-left me-2"></i> Previous
       </button>
