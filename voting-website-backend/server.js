@@ -160,13 +160,34 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.delete('/api/admin/wipe-all', verifyAdmin, async (req, res) => {
-   try {
-       await Student.deleteMany({});
-       await Candidate.deleteMany({});
-       res.json({ message: 'System completely wiped.' });
-   } catch(error) { res.status(500).json({ error: error.message }); }
-});
+const resetElectionData = async (req, res) => {
+  try {
+    const confirmationCode = String(req.body?.confirmationCode || '').trim().toUpperCase();
+    if (confirmationCode !== 'PURGE') {
+      return res.status(400).json({ message: 'Invalid confirmation code. Type PURGE to continue.' });
+    }
+
+    const [studentResult, candidateResult] = await Promise.all([
+      Student.deleteMany({}),
+      Candidate.deleteMany({})
+    ]);
+
+    res.json({
+      message: 'Election data was completely wiped.',
+      deletedStudents: studentResult.deletedCount,
+      deletedCandidates: candidateResult.deletedCount
+    });
+  } catch (error) {
+    console.error('Election reset failed:', error);
+    res.status(500).json({ message: 'Database reset failed.', error: error.message });
+  }
+};
+
+// Current endpoint used by the administration portal.
+app.post('/api/admin/reset-election', verifyAdmin, resetElectionData);
+
+// Legacy alias; it uses the same authorization and PURGE verification.
+app.delete('/api/admin/wipe-all', verifyAdmin, resetElectionData);
 
 app.get('/api/admin/download-results', async (req, res) => {
   try {

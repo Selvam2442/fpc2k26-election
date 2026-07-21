@@ -537,7 +537,7 @@
             <i class="fa-solid fa-triangle-exclamation text-danger mb-3" style="font-size: 3rem;"></i>
             <h4 class="fw-bold">System Data Purge</h4>
             <p class="text-secondary mb-4"><strong>WARNING:</strong> Executing this command will permanently erase all candidate profiles, associated media assets, and zero out all cryptographic voter logs. This action cannot be reversed.</p>
-            <button class="btn btn-danger btn-lg fw-bold" onclick="nuclearWipe()"><i class="fa-solid fa-trash me-2"></i>INITIALIZE SYSTEM PURGE</button>
+            <button class="btn btn-danger btn-lg fw-bold" id="purgeBtn" onclick="nuclearWipe()"><i class="fa-solid fa-trash me-2"></i>INITIALIZE SYSTEM PURGE</button>
           </div>
         </div>
 
@@ -991,18 +991,42 @@
 
   async function nuclearWipe() {
     if (!confirm("FINAL WARNING: Execute complete purge of candidate records and reset all voter logs?")) return;
-    const code = prompt('Type "PURGE" to verify nuclear wipe sequence:');
-    if (code !== 'PURGE') return alert('Purge sequence aborted.');
+    const enteredCode = prompt('Type "PURGE" to verify nuclear wipe sequence:');
+    if (enteredCode === null) return;
+
+    const confirmationCode = enteredCode.trim().toUpperCase();
+    if (confirmationCode !== 'PURGE') {
+      alert('Incorrect confirmation code. Type PURGE exactly to continue.');
+      return;
+    }
+
+    const purgeBtn = document.getElementById('purgeBtn');
+    const originalButton = purgeBtn.innerHTML;
+    purgeBtn.disabled = true;
+    purgeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>PURGING DATA...';
 
     try {
-      const res = await secureFetch(`${API_BASE_URL}/api/admin/reset-election`, { method: 'POST' });
+      const res = await secureFetch(`${API_BASE_URL}/api/admin/reset-election`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmationCode })
+      });
+      const data = await res.json().catch(() => ({}));
+
       if (res.ok) {
-        alert('System successfully wiped and restored to baseline.');
-        loadAdminData();
+        lastLeaderboardSignature = '';
+        alert(`System successfully wiped. Removed ${data.deletedCandidates || 0} candidates and ${data.deletedStudents || 0} voter logs.`);
+        await loadAdminData();
       } else {
-        alert('Failed to execute nuclear wipe.');
+        alert(data.message || `Failed to execute purge (server returned ${res.status}).`);
       }
-    } catch (e) { alert('Network error during wipe operation.'); }
+    } catch (error) {
+      console.error('Purge request failed:', error);
+      alert('Unable to reach the election server. Please check the backend deployment and try again.');
+    } finally {
+      purgeBtn.disabled = false;
+      purgeBtn.innerHTML = originalButton;
+    }
   }
 
   loadAdminData();
