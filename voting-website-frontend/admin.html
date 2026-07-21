@@ -169,6 +169,9 @@
       border-color: #00f2fe !important;
       background-color: rgba(255, 255, 255, 0.08) !important;
     }
+    .form-select { color-scheme:dark; }
+    .form-select option { background-color:#111827 !important; color:#f8fafc !important; }
+    .form-select option:checked { background-color:#176ee8 !important; color:#ffffff !important; }
     
     /* Cyber buttons */
     .btn { 
@@ -253,6 +256,16 @@
     @keyframes barShine { 55%,100%{transform:translateX(180%)} }
     @keyframes resultRowIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
     .mobile-bottom-nav { display:none; }
+    .final-results-panel { border:1px solid rgba(255,193,7,.3); background:linear-gradient(145deg,rgba(255,193,7,.06),rgba(13,110,253,.04)); }
+    .winner-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+    .winner-card { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:18px; background:rgba(8,15,30,.78); box-shadow:0 14px 34px rgba(0,0,0,.25); animation:winnerReveal .7s cubic-bezier(.2,.8,.2,1) both; }
+    .winner-card::before { content:''; position:absolute; inset:0; pointer-events:none; background:linear-gradient(120deg,transparent 30%,rgba(255,215,75,.12),transparent 68%); transform:translateX(-120%); animation:winnerShine 3.5s ease-in-out infinite; }
+    .winner-photo { width:100%; height:230px; object-fit:cover; object-position:top; background:#111827; }
+    .winner-details { padding:16px; }
+    .winner-posting { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(255,193,7,.12); color:#ffd75e; border:1px solid rgba(255,193,7,.22); font-size:.72rem; font-weight:900; letter-spacing:.05em; }
+    .winner-votes { color:#43e6ad; font-weight:900; }
+    @keyframes winnerReveal { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
+    @keyframes winnerShine { 50%,100%{transform:translateX(160%)} }
 
     .offcanvas {
       background-color: #070a13 !important;
@@ -394,6 +407,15 @@
           
           <h4 class="fw-bold mb-3 mt-4 text-white"><i class="fa-solid fa-bars-progress text-primary me-2"></i>Results by Portfolio</h4>
           <div id="leaderboardContainer" class="mb-4"></div>
+
+          <section id="finalResultsAdmin" class="card content-card final-results-panel p-3 p-md-4 mb-4 d-none" aria-live="polite">
+            <div class="text-center mb-4">
+              <span class="winner-posting mb-3"><i class="fa-solid fa-trophy"></i> FINAL RESULTS RELEASED</span>
+              <h3 class="fw-bold text-white mb-2">Elected Student Leaders</h3>
+              <p class="text-secondary mb-0">Every eligible student has voted. The final winners are now officially available.</p>
+            </div>
+            <div id="adminWinnerGrid" class="winner-grid"></div>
+          </section>
 
           <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
             <h5 class="fw-bold mb-3">Audit & Compliance Reporting</h5>
@@ -638,6 +660,49 @@
     setTimeout(() => d.innerHTML = '', 4000);
   }
 
+  function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = String(value ?? '');
+    return element.innerHTML;
+  }
+
+  function winnerCardsHtml(winners) {
+    return winners.map((winner, index) => {
+      const photo = winner.photo && winner.photo.startsWith('data:') ? winner.photo : `${API_BASE_URL}${winner.photo || ''}`;
+      const section = winner.section && winner.section !== 'None' ? ` · Section ${escapeHtml(winner.section)}` : '';
+      return `
+        <article class="winner-card" style="animation-delay:${index * .1}s">
+          <img class="winner-photo" src="${escapeHtml(photo)}" alt="${escapeHtml(winner.name)}" onerror="this.style.display='none'">
+          <div class="winner-details">
+            <span class="winner-posting"><i class="fa-solid fa-crown"></i>${escapeHtml(winner.posting)}${winner.isTie ? ' · TIE' : ''}</span>
+            <h4 class="fw-bold text-white mt-3 mb-1">${escapeHtml(winner.name)}</h4>
+            <p class="text-secondary small mb-2">${escapeHtml(winner.department)} · Year ${escapeHtml(winner.year)}${section}</p>
+            ${winner.description ? `<p class="text-secondary small mb-3">${escapeHtml(winner.description)}</p>` : ''}
+            <div class="winner-votes"><i class="fa-solid fa-check-to-slot me-2"></i>${escapeHtml(winner.votes)} votes</div>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  async function loadFinalResults() {
+    const panel = document.getElementById('finalResultsAdmin');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/results/final`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Results request failed: ${response.status}`);
+      const results = await response.json();
+      if (!results.isComplete || !Array.isArray(results.winners) || results.winners.length === 0) {
+        panel.classList.add('d-none');
+        document.getElementById('adminWinnerGrid').innerHTML = '';
+        return;
+      }
+      document.getElementById('adminWinnerGrid').innerHTML = winnerCardsHtml(results.winners);
+      panel.classList.remove('d-none');
+    } catch (error) {
+      console.error('Unable to load final results:', error);
+      panel.classList.add('d-none');
+    }
+  }
+
   async function secureFetch(url, options = {}) {
     const token = localStorage.getItem('adminToken');
     if (!options.headers) options.headers = {};
@@ -684,13 +749,14 @@
       }
       
       refreshLeaderboard();
+      loadFinalResults();
       renderCandidateTable();
     } catch (e) { console.log(e); }
   }
 
   async function refreshLeaderboard() {
       try {
-          const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
+          const candRes = await secureFetch(`${API_BASE_URL}/api/admin/candidates`);
           const candidates = await candRes.json();
           globalCandidates = candidates; 
           const leaderboardSignature = JSON.stringify(candidates.map(c => [c._id, c.name, c.posting, c.votes]));
@@ -728,10 +794,10 @@
                       totalCurrentVotes += c.votes; 
                       let percent = totalPostingVotes === 0 ? 0 : Math.round((c.votes / totalPostingVotes) * 100);
                       leaderHTML += `
-                      <div class="candidate-progress-row ${index === 0 && c.votes > 0 ? 'winner' : ''} mb-3" style="--delay:${index * 0.08}s;--progress:${percent}%">
+                      <div class="candidate-progress-row mb-3" style="--delay:${index * 0.08}s;--progress:${percent}%">
                           <div class="candidate-progress-head">
                               <div class="candidate-identity">
-                                <span class="progress-rank">${index === 0 && c.votes > 0 ? '<i class="fa-solid fa-crown"></i>' : index + 1}</span>
+                                <span class="progress-rank">${index + 1}</span>
                                 <span class="candidate-progress-name fw-bold text-white">${c.name}</span>
                               </div>
                               <span class="badge bg-light text-dark border shadow-sm">${c.votes} Votes (${percent}%)</span>
@@ -762,10 +828,11 @@
   }
   
   setInterval(refreshLeaderboard, 3000); 
+  setInterval(loadFinalResults, 30000);
 
   async function renderCandidateTable() {
       try {
-          const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
+          const candRes = await secureFetch(`${API_BASE_URL}/api/admin/candidates`);
           const candidates = await candRes.json();
           globalCandidates = candidates; 
           

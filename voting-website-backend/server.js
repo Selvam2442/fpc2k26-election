@@ -84,6 +84,11 @@ app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res
 
 // GET CANDIDATES
 app.get('/api/candidates', async (req, res) => {
+  try { res.json(await Candidate.find().select('-votes')); } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// Vote totals remain available only to an authenticated administrator.
+app.get('/api/admin/candidates', verifyAdmin, async (req, res) => {
   try { res.json(await Candidate.find()); } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
@@ -134,6 +139,64 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
     }));
     res.json(directory);
   } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+// Public final results are released only after every eligible student has voted.
+app.get('/api/results/final', async (req, res) => {
+  try {
+    const excelStudents = await getExcelStudents();
+    const eligibleRolls = new Set(
+      excelStudents
+        .map(student => String(student.RollNumber || '').trim().toUpperCase())
+        .filter(Boolean)
+    );
+
+    const recordedRolls = await Student.distinct('rollNumber');
+    const completedRolls = new Set(
+      recordedRolls
+        .map(roll => String(roll || '').trim().toUpperCase())
+        .filter(roll => eligibleRolls.has(roll))
+    );
+
+    const totalStudents = eligibleRolls.size;
+    const totalVotes = completedRolls.size;
+    const isComplete = totalStudents > 0 && totalVotes === totalStudents;
+
+    if (!isComplete) {
+      return res.json({ isComplete: false, totalStudents, totalVotes, winners: [] });
+    }
+
+    const candidates = await Candidate.find().sort({ posting: 1, votes: -1, name: 1 }).lean();
+    const grouped = candidates.reduce((groups, candidate) => {
+      const posting = String(candidate.posting || 'Unknown').trim().toUpperCase();
+      if (!groups[posting]) groups[posting] = [];
+      groups[posting].push(candidate);
+      return groups;
+    }, {});
+
+    const winners = Object.entries(grouped).flatMap(([posting, postingCandidates]) => {
+      const highestVotes = Math.max(...postingCandidates.map(candidate => Number(candidate.votes) || 0));
+      return postingCandidates
+        .filter(candidate => (Number(candidate.votes) || 0) === highestVotes)
+        .map(candidate => ({
+          id: candidate._id,
+          name: candidate.name,
+          posting,
+          department: candidate.department,
+          year: candidate.year,
+          section: candidate.section,
+          description: candidate.description || '',
+          photo: candidate.photo,
+          votes: candidate.votes,
+          isTie: postingCandidates.filter(item => (Number(item.votes) || 0) === highestVotes).length > 1
+        }));
+    });
+
+    res.json({ isComplete: true, totalStudents, totalVotes, winners });
+  } catch (error) {
+    console.error('Final results check failed:', error);
+    res.status(500).json({ message: 'Unable to verify final election results.' });
+  }
 });
 
 app.get('/api/admin/settings', async (req, res) => {

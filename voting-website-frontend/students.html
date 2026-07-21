@@ -334,6 +334,16 @@
       color: #ffc107 !important;
       text-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
     }
+    .final-results-student { max-width:1100px; margin:28px auto 0; padding:24px; border:1px solid rgba(255,193,7,.28); border-radius:22px; background:linear-gradient(145deg,rgba(255,193,7,.065),rgba(13,110,253,.045)); box-shadow:0 18px 46px rgba(0,0,0,.28); }
+    .winner-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+    .winner-card { position:relative; overflow:hidden; text-align:left; border:1px solid rgba(255,255,255,.1); border-radius:18px; background:rgba(8,15,30,.82); box-shadow:0 14px 34px rgba(0,0,0,.25); animation:winnerReveal .7s cubic-bezier(.2,.8,.2,1) both; }
+    .winner-card::before { content:''; position:absolute; inset:0; z-index:2; pointer-events:none; background:linear-gradient(120deg,transparent 30%,rgba(255,215,75,.12),transparent 68%); transform:translateX(-120%); animation:winnerShine 3.5s ease-in-out infinite; }
+    .winner-photo { width:100%; height:260px; object-fit:cover; object-position:top; background:#111827; }
+    .winner-details { padding:16px; }
+    .winner-posting { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:rgba(255,193,7,.12); color:#ffd75e; border:1px solid rgba(255,193,7,.22); font-size:.72rem; font-weight:900; letter-spacing:.05em; }
+    .winner-votes { color:#43e6ad; font-weight:900; }
+    @keyframes winnerReveal { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:none} }
+    @keyframes winnerShine { 50%,100%{transform:translateX(160%)} }
 
     /* Skeleton Loading Enhancement */
     .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 8px; }
@@ -370,6 +380,9 @@
       #candidatesGrid { margin-left:0; margin-right:0; }
       #candidatesGrid > [class*="col-"] { padding-left:0; padding-right:0; }
       .category-title { max-width:65vw; overflow-wrap:anywhere; }
+      .final-results-student { padding:16px 12px; border-radius:18px; }
+      .winner-grid { grid-template-columns:1fr; }
+      .winner-photo { height:300px; }
     }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
 
@@ -457,6 +470,14 @@
       <p class="text-secondary fs-5 mb-0">Thank you for fulfilling your democratic duty. Your cryptographic votes have been recorded.</p>
       <button class="btn btn-outline-light mt-5 px-5 py-3 rounded-pill fw-bold nav-btn shadow-sm" onclick="logout()">Terminate Session</button>
     </div>
+    <section id="finalResultsStudent" class="final-results-student d-none" aria-live="polite">
+      <div class="text-center mb-4">
+        <span class="winner-posting mb-3"><i class="fa-solid fa-trophy"></i> FINAL RESULTS RELEASED</span>
+        <h2 class="fw-bold text-white mb-2">Meet Your Elected Student Leaders</h2>
+        <p class="text-secondary mb-0">Every eligible student has completed voting. The winners are now official.</p>
+      </div>
+      <div id="studentWinnerGrid" class="winner-grid"></div>
+    </section>
   </div>
 </div>
 
@@ -481,6 +502,7 @@
   let postingsArray = [];
   let currentCategoryIndex = 0;
   let userSelections = {}; 
+  let finalResultsTimer = null;
 
   if (!rollNumber || !token) window.location.href = 'index.html';
   if (studentName) {
@@ -493,6 +515,54 @@
 
   function triggerHaptic(pattern) {
     if (navigator.vibrate) navigator.vibrate(pattern);
+  }
+
+  function escapeHtml(value) {
+    const element = document.createElement('div');
+    element.textContent = String(value ?? '');
+    return element.innerHTML;
+  }
+
+  function studentWinnerCardsHtml(winners) {
+    return winners.map((winner, index) => {
+      const photo = winner.photo && winner.photo.startsWith('data:') ? winner.photo : `${API_BASE_URL}${winner.photo || ''}`;
+      const section = winner.section && winner.section !== 'None' ? ` · Section ${escapeHtml(winner.section)}` : '';
+      return `
+        <article class="winner-card" style="animation-delay:${index * .1}s">
+          <img class="winner-photo" src="${escapeHtml(photo)}" alt="${escapeHtml(winner.name)}" onerror="this.style.display='none'">
+          <div class="winner-details">
+            <span class="winner-posting"><i class="fa-solid fa-crown"></i>${escapeHtml(winner.posting)}${winner.isTie ? ' · TIE' : ''}</span>
+            <h4 class="fw-bold text-white mt-3 mb-1">${escapeHtml(winner.name)}</h4>
+            <p class="text-secondary small mb-2">${escapeHtml(winner.department)} · Year ${escapeHtml(winner.year)}${section}</p>
+            ${winner.description ? `<p class="text-secondary small mb-3">${escapeHtml(winner.description)}</p>` : ''}
+            <div class="winner-votes"><i class="fa-solid fa-check-to-slot me-2"></i>${escapeHtml(winner.votes)} votes</div>
+          </div>
+        </article>`;
+    }).join('');
+  }
+
+  async function loadFinalResults() {
+    const panel = document.getElementById('finalResultsStudent');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/results/final`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Results request failed: ${response.status}`);
+      const results = await response.json();
+      if (!results.isComplete || !Array.isArray(results.winners) || results.winners.length === 0) {
+        panel.classList.add('d-none');
+        document.getElementById('studentWinnerGrid').innerHTML = '';
+        return;
+      }
+
+      document.getElementById('studentWinnerGrid').innerHTML = studentWinnerCardsHtml(results.winners);
+      panel.classList.remove('d-none');
+      if (finalResultsTimer) {
+        clearInterval(finalResultsTimer);
+        finalResultsTimer = null;
+      }
+    } catch (error) {
+      console.error('Unable to load final results:', error);
+      panel.classList.add('d-none');
+    }
   }
 
   function renderSkeletons() {
@@ -708,6 +778,8 @@
     document.getElementById('introScreen').classList.remove('active');
     document.getElementById('votingWizard').classList.remove('active');
     document.getElementById('successScreen').classList.add('active');
+    loadFinalResults();
+    if (!finalResultsTimer) finalResultsTimer = setInterval(loadFinalResults, 30000);
   }
 
   loadSettings();
