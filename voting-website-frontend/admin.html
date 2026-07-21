@@ -6,8 +6,8 @@
   <title>Election Administration Console | Kamaraj College</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    html, body { width: 100%; max-width: 100%; margin: 0; overflow-x: clip; }
     body { 
       background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%); 
       color: #ffffff;
@@ -18,6 +18,8 @@
     }
     body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:0; background-image:linear-gradient(rgba(78,140,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(78,140,255,.025) 1px,transparent 1px); background-size:42px 42px; mask-image:linear-gradient(to bottom,black,transparent 80%); animation:grid-drift 22s linear infinite; }
     @keyframes grid-drift { to { background-position:42px 42px; } }
+    .container-fluid { width:100%; max-width:100%; padding:0 !important; overflow-x:clip; }
+    .container-fluid > .row { width:100%; max-width:100%; margin:0 !important; --bs-gutter-x:0; }
     
     /* Glowing background blobs */
     .glow-blob {
@@ -101,7 +103,8 @@
       z-index: 10;
       flex: 0 0 270px; width:270px; position:sticky; top:65px; align-self:flex-start;
     }
-    .admin-main { flex:1 1 0; min-width:0; position:relative; z-index:2; }
+    .admin-main { flex:1 1 0; width:calc(100% - 270px); max-width:calc(100vw - 270px); min-width:0; position:relative; z-index:2; overflow-x:hidden; }
+    .tab-content, .tab-pane, #dashboard { width:100%; max-width:100%; min-width:0; }
     .nav-pills .nav-link { 
       color: rgba(255, 255, 255, 0.65); 
       font-weight: 600; 
@@ -228,16 +231,28 @@
     .candidate-thumb:hover { transform: scale(1.1); border-color: #00f2fe; box-shadow: 0 0 10px rgba(0,242,254,0.4); }
     .table-group-header { background-color: rgba(0, 242, 254, 0.05) !important; color: #00f2fe; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
 
-    .progress { background-color: rgba(255, 255, 255, 0.05); }
-    .progress-bar { transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .progress { background-color:rgba(255,255,255,.055); }
+    .progress-bar { transition:width .8s cubic-bezier(.4,0,.2,1); }
     .portfolio-results-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
     .portfolio-result-card { min-width:0; }
     .portfolio-result-card .card-header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
     .portfolio-total { white-space:nowrap; }
-    .posting-chart-wrap { position:relative; height:clamp(180px,24vw,260px); margin-bottom:22px; padding:8px 4px 14px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .candidate-progress-row { position:relative; padding:14px; border:1px solid rgba(255,255,255,.07); border-radius:14px; background:linear-gradient(135deg,rgba(255,255,255,.035),rgba(255,255,255,.012)); animation:resultRowIn .55s cubic-bezier(.2,.8,.2,1) both; animation-delay:var(--delay); }
+    .candidate-progress-row.winner { border-color:rgba(32,201,151,.25); background:linear-gradient(135deg,rgba(32,201,151,.09),rgba(0,242,254,.025)); box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 22px rgba(0,0,0,.16); }
     .candidate-progress-row:last-child { margin-bottom:0 !important; }
-    .candidate-progress-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:7px; }
+    .candidate-progress-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+    .candidate-identity { display:flex; align-items:center; min-width:0; gap:10px; }
+    .progress-rank { width:27px; height:27px; flex:0 0 27px; display:grid; place-items:center; border-radius:9px; background:rgba(45,126,255,.13); color:#7fc5ff; font-size:.72rem; font-weight:900; border:1px solid rgba(83,163,255,.18); }
+    .winner .progress-rank { color:#081510; background:#20c997; border-color:#20c997; box-shadow:0 0 18px rgba(32,201,151,.3); }
     .candidate-progress-name { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .vote-progress { height:12px !important; border-radius:999px !important; overflow:visible; position:relative; box-shadow:inset 0 2px 5px rgba(0,0,0,.35); }
+    .vote-progress .progress-bar { width:var(--progress); border-radius:999px; background:linear-gradient(90deg,#176eff,#05c7f2); position:relative; overflow:hidden; animation:growBar .9s cubic-bezier(.2,.8,.2,1) both; transform-origin:left; }
+    .winner .vote-progress .progress-bar { background:linear-gradient(90deg,#16a36a,#27e6b0); box-shadow:0 0 18px rgba(32,201,151,.28); }
+    .vote-progress .progress-bar::after { content:''; position:absolute; inset:0; background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.34) 48%,transparent 72%); transform:translateX(-120%); animation:barShine 2.8s ease-in-out infinite; }
+    @keyframes growBar { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+    @keyframes barShine { 55%,100%{transform:translateX(180%)} }
+    @keyframes resultRowIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:none} }
+    .mobile-bottom-nav { display:none; }
 
     .offcanvas {
       background-color: #070a13 !important;
@@ -256,10 +271,22 @@
       .mobile-menu-btn { display: block; }
       .sidebar-wrapper { display: none; }
       .header-right { gap: 10px; }
-      .admin-main { width:100%; }
+      .admin-main { width:100%; max-width:100vw; }
       .portfolio-results-grid { grid-template-columns:1fr; }
     }
-    @media (max-width:575.98px) { .admin-main{padding:12px 8px!important}.face-header{padding:8px 10px}.college-logo{width:30px;height:30px}.face-logo{max-width:105px;height:24px}.btn-logout{width:38px;height:38px;padding:0;font-size:0}.btn-logout i{margin:0!important;font-size:1rem}.content-card .card-body.d-flex{align-items:flex-start!important;gap:12px;flex-direction:column}.content-card{border-radius:13px}h3{font-size:1.2rem}.table{min-width:680px}.portfolio-results-grid{gap:14px}.portfolio-result-card .card-header{align-items:flex-start;flex-direction:column;padding:14px!important}.portfolio-result-card .card-body{padding:14px!important}.posting-chart-wrap{height:210px;margin-bottom:16px}.candidate-progress-head{align-items:flex-start}.candidate-progress-head .badge{font-size:.67rem;flex-shrink:0}.stat-card-row .col-md-4{margin-bottom:10px!important} }
+    .table-responsive { display:block; width:100%; max-width:100%; overflow-x:auto !important; overscroll-behavior-x:contain; -webkit-overflow-scrolling:touch; }
+    .table-responsive > .table { min-width:680px; margin-bottom:0; }
+    @media (max-width:767.98px) {
+      body { padding-bottom:calc(82px + env(safe-area-inset-bottom)); }
+      .mobile-menu-btn { display:none; }
+      .mobile-bottom-nav { position:fixed; left:10px; right:10px; bottom:max(8px,env(safe-area-inset-bottom)); z-index:1090; height:66px; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:7px; border:1px solid rgba(101,174,255,.2); border-radius:20px; background:rgba(5,10,23,.9); backdrop-filter:blur(22px) saturate(150%); box-shadow:0 16px 45px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.08); }
+      .mobile-dock-btn { min-width:0; border:0; border-radius:14px; background:transparent; color:#7386a3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; font-size:.58rem; font-weight:800; line-height:1; transition:.3s ease; }
+      .mobile-dock-btn i { font-size:1rem; transition:.3s cubic-bezier(.2,.8,.2,1); }
+      .mobile-dock-btn.active { color:#5ceaff; background:linear-gradient(145deg,rgba(19,111,255,.22),rgba(0,228,255,.08)); box-shadow:inset 0 0 0 1px rgba(70,208,255,.16),0 0 20px rgba(0,188,255,.09); }
+      .mobile-dock-btn.active i { transform:translateY(-2px) scale(1.12); filter:drop-shadow(0 0 7px rgba(35,221,255,.6)); }
+      .mobile-dock-btn.text-danger.active { color:#ff5875 !important; background:rgba(220,53,69,.1); }
+    }
+    @media (max-width:575.98px) { .admin-main{padding:12px 10px!important}.face-header{padding:8px 10px}.face-header>div:first-child{min-width:0}.college-logo{width:30px;height:30px;flex:0 0 30px}.face-logo{max-width:105px;height:24px}.btn-logout{width:38px;height:38px;padding:0;font-size:0}.btn-logout i{margin:0!important;font-size:1rem}.content-card .card-body.d-flex{align-items:flex-start!important;gap:12px;flex-direction:column}.content-card{border-radius:13px}.content-card:hover{transform:none}h3{font-size:1.2rem}.portfolio-results-grid{gap:14px}.portfolio-result-card .card-header{align-items:flex-start;flex-direction:column;padding:14px!important}.portfolio-result-card .card-body{padding:12px!important}.candidate-progress-row{padding:12px}.candidate-progress-head{align-items:center}.candidate-progress-head .badge{font-size:.64rem;flex-shrink:0}.stat-card-row .col-md-4{margin-bottom:10px!important} }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
     
     /* Futuristic Cyber Modal */
@@ -309,6 +336,14 @@
   </div>
 </div>
 
+<nav class="mobile-bottom-nav" aria-label="Administrator navigation">
+  <button class="mobile-dock-btn mobile-nav-btn active" data-bs-target="#dashboard" aria-label="Telemetry"><i class="fa-solid fa-chart-pie"></i><span>Home</span></button>
+  <button class="mobile-dock-btn mobile-nav-btn" data-bs-target="#studentsList" aria-label="Voter registry"><i class="fa-solid fa-address-book"></i><span>Voters</span></button>
+  <button class="mobile-dock-btn mobile-nav-btn" data-bs-target="#candidates" aria-label="Candidate profiles"><i class="fa-solid fa-users"></i><span>Profiles</span></button>
+  <button class="mobile-dock-btn mobile-nav-btn" data-bs-target="#settings" aria-label="Deployment settings"><i class="fa-solid fa-sliders"></i><span>Settings</span></button>
+  <button class="mobile-dock-btn mobile-nav-btn text-danger" data-bs-target="#danger" aria-label="Critical actions"><i class="fa-solid fa-triangle-exclamation"></i><span>Danger</span></button>
+</nav>
+
 <div class="container-fluid">
   <div class="row">
     
@@ -357,7 +392,7 @@
             </div>
           </div>
           
-          <h4 class="fw-bold mb-3 mt-4 text-white"><i class="fa-solid fa-chart-simple text-primary me-2"></i>Results by Portfolio</h4>
+          <h4 class="fw-bold mb-3 mt-4 text-white"><i class="fa-solid fa-bars-progress text-primary me-2"></i>Results by Portfolio</h4>
           <div id="leaderboardContainer" class="mb-4"></div>
 
           <div class="card content-card p-4 text-center shadow-sm mt-4 border-top border-4 border-success">
@@ -574,7 +609,6 @@
 
   let globalStudents = []; 
   let globalCandidates = []; 
-  let postingCharts = {};
   let lastLeaderboardSignature = '';
 
   document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
@@ -654,29 +688,6 @@
     } catch (e) { console.log(e); }
   }
 
-  function renderPostingCharts(grouped) {
-      Object.values(postingCharts).forEach(chart => chart.destroy());
-      postingCharts = {};
-      Object.entries(grouped).forEach(([posting, candidates], postingIndex) => {
-          const canvas = document.getElementById(`postingChart-${postingIndex}`);
-          if (!canvas) return;
-          const colors = candidates.map((candidate, index) => index === 0 && candidate.votes > 0 ? 'rgba(32, 201, 151, .88)' : `hsla(${205 + index * 35}, 88%, 60%, .86)`);
-          postingCharts[posting] = new Chart(canvas, {
-              type: 'bar',
-              data: { labels: candidates.map(c => c.name), datasets: [{ data: candidates.map(c => c.votes), backgroundColor: colors, borderRadius: 8, barThickness: 17 }] },
-              options: {
-                  indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                  animation: { duration: 650, easing: 'easeOutQuart' },
-                  scales: {
-                      x: { beginAtZero: true, ticks: { stepSize: 1, precision: 0, color: 'rgba(255,255,255,.7)' }, grid: { color: 'rgba(255,255,255,.07)' } },
-                      y: { ticks: { color: '#eef5ff', font: { weight: '600', size: window.innerWidth < 576 ? 10 : 12 } }, grid: { display: false } }
-                  },
-                  plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(7,12,25,.96)', borderColor: 'rgba(0,242,254,.3)', borderWidth: 1, titleColor: '#00f2fe', bodyColor: '#fff', padding: 10 } }
-              }
-          });
-      });
-  }
-
   async function refreshLeaderboard() {
       try {
           const candRes = await fetch(`${API_BASE_URL}/api/candidates`);
@@ -697,7 +708,7 @@
           let leaderHTML = '<div class="portfolio-results-grid">';
           let totalCurrentVotes = 0;
           
-          Object.keys(grouped).forEach((posting, postingIndex) => {
+          Object.keys(grouped).forEach(posting => {
               let postingCandidates = grouped[posting];
               let totalPostingVotes = postingCandidates.reduce((sum, c) => sum + c.votes, 0);
               
@@ -708,7 +719,6 @@
                           <span class="badge bg-light text-dark shadow-sm portfolio-total">${totalPostingVotes} Total Votes</span>
                       </div>
                       <div class="card-body">
-                        <div class="posting-chart-wrap"><canvas id="postingChart-${postingIndex}" aria-label="${posting} vote chart"></canvas></div>
               `;
               
               if (postingCandidates.length === 0) {
@@ -717,17 +727,17 @@
                   postingCandidates.forEach((c, index) => {
                       totalCurrentVotes += c.votes; 
                       let percent = totalPostingVotes === 0 ? 0 : Math.round((c.votes / totalPostingVotes) * 100);
-                      let barColor = (index === 0 && c.votes > 0) ? 'bg-success' : 'bg-primary';
-                      let animation = c.votes > 0 ? 'progress-bar-striped progress-bar-animated' : '';
-                      
                       leaderHTML += `
-                      <div class="candidate-progress-row mb-4">
+                      <div class="candidate-progress-row ${index === 0 && c.votes > 0 ? 'winner' : ''} mb-3" style="--delay:${index * 0.08}s;--progress:${percent}%">
                           <div class="candidate-progress-head">
-                              <span class="candidate-progress-name fw-bold text-white">${c.name}</span>
+                              <div class="candidate-identity">
+                                <span class="progress-rank">${index === 0 && c.votes > 0 ? '<i class="fa-solid fa-crown"></i>' : index + 1}</span>
+                                <span class="candidate-progress-name fw-bold text-white">${c.name}</span>
+                              </div>
                               <span class="badge bg-light text-dark border shadow-sm">${c.votes} Votes (${percent}%)</span>
                           </div>
-                          <div class="progress shadow-sm" style="height: 16px; border-radius: 8px;">
-                              <div class="progress-bar ${barColor} ${animation}" role="progressbar" style="width: ${percent}%"></div>
+                          <div class="progress vote-progress" role="progressbar" aria-label="${c.name}" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
+                              <div class="progress-bar"></div>
                           </div>
                       </div>
                       `;
@@ -739,7 +749,6 @@
           
           const lbContainer = document.getElementById('leaderboardContainer');
           lbContainer.innerHTML = leaderHTML;
-          renderPostingCharts(grouped);
           
           const totalVotesEl = document.getElementById('stat-votes');
           if (totalVotesEl && totalCurrentVotes > 0) {

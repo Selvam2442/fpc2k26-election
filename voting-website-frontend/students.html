@@ -8,11 +8,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
+    html, body { width:100%; max-width:100%; margin:0; overflow-x:clip; }
+    *, *::before, *::after { box-sizing:border-box; }
+    img { max-width:100%; }
     body { 
       background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%); 
       color: #ffffff;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      overflow-x: hidden; 
+      overflow-x: clip;
       position: relative;
       min-height: 100vh;
     }
@@ -363,6 +366,10 @@
       .btn-logout i { display:inline-block !important; margin:0 !important; font-size:1rem; }
       .wizard-actions { position:sticky; bottom:8px; z-index:50; gap:8px; margin-top:24px!important; padding:10px; border:1px solid rgba(255,255,255,.1); border-radius:16px; background:rgba(5,9,20,.86); backdrop-filter:blur(18px); }
       .wizard-actions .nav-btn { flex:1; min-width:0; padding:11px 8px; font-size:.82rem; white-space:nowrap; }
+      #votingWizard, #introScreen, #successScreen, #candidatesGrid { width:100%; max-width:100%; min-width:0; }
+      #candidatesGrid { margin-left:0; margin-right:0; }
+      #candidatesGrid > [class*="col-"] { padding-left:0; padding-right:0; }
+      .category-title { max-width:65vw; overflow-wrap:anywhere; }
     }
     @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important} }
 
