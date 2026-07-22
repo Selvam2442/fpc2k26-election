@@ -30,7 +30,11 @@ const settingsSchema = new mongoose.Schema({
   isCardVisible: {
     type: Boolean,
     default: false
-  }
+  },
+  collegeName: { type: String, default: 'Kamaraj College' },
+  portalTitle: { type: String, default: 'Student Campus Portal' },
+  supportEmail: { type: String, default: '' },
+  academicYear: { type: String, default: '2026-2027' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Settings', settingsSchema);

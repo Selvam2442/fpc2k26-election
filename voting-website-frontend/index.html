@@ -1,583 +1,69 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <title>Campus Election | Kamaraj College</title>
-  <meta name="title" content="Campus Election | Kamaraj College">
-  <meta name="description" content="Official secure student voting portal for Kamaraj College campus elections. Log in to cast your ballot!">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://fpc2k26-election.vercel.app/">
-  <meta property="og:title" content="Campus Election | Kamaraj College">
-  <meta property="og:description" content="Official secure student voting portal for Kamaraj College campus elections. Log in to cast your ballot!">
-  <meta property="og:image" content="https://fpc2k26-election.vercel.app/banner.png">
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    html, body { width:100%; max-width:100%; margin:0; overflow-x:clip; }
-    *, *::before, *::after { box-sizing:border-box; }
-    img { max-width:100%; }
-    body { 
-      background: radial-gradient(circle at 50% 50%, #0c1020 0%, #05070f 100%); 
-      color: #ffffff;
-      min-height: 100vh; 
-      display: flex; 
-      flex-direction: column; 
-      overflow-x: clip;
-      position: relative;
-    }
-    body::before { content:''; position:fixed; inset:0; pointer-events:none; opacity:.45; background-image:linear-gradient(rgba(89,153,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(89,153,255,.035) 1px,transparent 1px); background-size:48px 48px; animation:gridMove 20s linear infinite; }
-    @keyframes gridMove { to { background-position:48px 48px; } }
-    .particle { position:fixed; width:4px; height:4px; border-radius:50%; background:#58dcff; box-shadow:0 0 14px #38cfff; pointer-events:none; z-index:0; animation:particleRise var(--speed) linear infinite; opacity:0; }
-    @keyframes particleRise { 0%{transform:translate3d(0,105vh,0) scale(.4);opacity:0} 12%{opacity:.65} 85%{opacity:.25} 100%{transform:translate3d(var(--drift),-10vh,0) scale(1.5);opacity:0} }
-    
-    /* Glowing liquid background blobs */
-    .glow-blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(100px);
-      z-index: 0;
-      opacity: 0.12;
-      animation: float-blob 20s infinite alternate ease-in-out;
-      pointer-events: none;
-    }
-    .blob-1 {
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, #0d6efd 0%, transparent 80%);
-      top: 5%;
-      left: 10%;
-    }
-    .blob-2 {
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, #00f2fe 0%, transparent 80%);
-      bottom: 5%;
-      right: 10%;
-      animation-duration: 25s;
-    }
-    .blob-3 {
-      width: 300px;
-      height: 300px;
-      background: radial-gradient(circle, #ffc107 0%, transparent 80%);
-      top: 45%;
-      left: 45%;
-      animation-duration: 15s;
-    }
-    @keyframes float-blob {
-      0% { transform: translate(0, 0) scale(1); }
-      100% { transform: translate(60px, 40px) scale(1.15); }
-    }
-    
-    .face-header { 
-      background: rgba(13, 110, 253, 0.03); 
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      padding: 12px 25px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: space-between; 
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08); 
-      z-index: 10; 
-    }
-    .face-logo { height: 38px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(13, 110, 253, 0.3)); }
-    .college-logo { height: 42px; width: 42px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255, 255, 255, 0.15); background-color: white; box-shadow: 0 0 10px rgba(13,110,253,0.2); }
-    .header-right { display: flex; align-items: center; gap: 20px; }
-    .nav-link-custom { color: rgba(255, 255, 255, 0.85); text-decoration: none; font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px; text-shadow: 0 0 10px rgba(13, 110, 253, 0.3); }
-
-    .login-container { flex: 1; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(380px, .95fr); gap: 24px; align-items: stretch; width: min(1040px, calc(100% - 32px)); margin: 48px auto; perspective: 1000px; z-index: 1; }
-    
-    @keyframes fadeInUp {
-      0% { opacity: 0; transform: translateY(40px) scale(0.98); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-    
-    /* Liquid Glassmorphism Login Card */
-    .login-card { 
-      width: 100%; 
-      max-width: none;
-      border-radius: 24px; 
-      border: 1px solid rgba(255, 255, 255, 0.08); 
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
-      background: rgba(255, 255, 255, 0.02); 
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
-      position: relative;
-      overflow: visible;
-      transform-style:preserve-3d;
-      transition:transform .18s ease-out,border-color .35s,box-shadow .35s;
-    }
-    
-    .login-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: -50%;
-      width: 200%; height: 100%;
-      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.03) 50%, rgba(255,255,255,0) 100%);
-      transform: rotate(25deg);
-      transition: all 0.7s;
-      pointer-events: none;
-    }
-    .login-card:hover::before {
-      left: 100%;
-    }
-    .login-card:hover { border-color:rgba(65,190,255,.28); box-shadow:0 28px 70px rgba(0,0,0,.4),0 0 35px rgba(0,174,255,.08); }
-    
-    @keyframes float {
-      0% { transform: translateY(0px) rotate(0deg); box-shadow: 0 4px 15px rgba(13,110,253,0.2); }
-      50% { transform: translateY(-8px) rotate(2deg); box-shadow: 0 15px 25px rgba(0,242,254,0.4); }
-      100% { transform: translateY(0px) rotate(0deg); box-shadow: 0 4px 15px rgba(13,110,253,0.2); }
-    }
-    .crest-container { text-align: center; margin: 0 0 18px; position: relative; z-index: 5; }
-    .college-crest-main { height: 96px; width: 96px; border-radius: 50%; object-fit: cover; border: 4px solid rgba(255, 255, 255, 0.1); background-color: white; animation: float 4s ease-in-out infinite; }
-    
-    /* Cyber Glass Form Inputs */
-    .input-group {
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px !important;
-      transition: all 0.3s ease;
-      overflow: hidden;
-    }
-    .input-group-text { 
-      background-color: transparent; 
-      border: none;
-      color: #00f2fe; 
-      transition: all 0.3s; 
-      padding-left: 15px;
-    }
-    .form-control { 
-      background-color: transparent !important;
-      border: none; 
-      color: #ffffff !important;
-      font-weight: 500;
-      transition: all 0.3s; 
-      padding: 12px 15px 12px 5px;
-    }
-    .form-control::placeholder {
-      color: rgba(255, 255, 255, 0.4);
-    }
-    
-    .form-control:focus { 
-      box-shadow: none; 
-      background-color: transparent !important;
-    }
-    .input-group:focus-within { 
-      box-shadow: 0 0 15px rgba(0, 242, 254, 0.25); 
-      border-color: #00f2fe; 
-      background: rgba(255, 255, 255, 0.06);
-    }
-    .input-group:focus-within .input-group-text {
-      color: #00f2fe;
-      text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
-    }
-    
-    /* Glowing Cyber Buttons */
-    .btn-primary { 
-      background: linear-gradient(135deg, #0d6efd 0%, #00f2fe 100%);
-      border: none;
-      border-radius: 50px;
-      font-weight: 700;
-      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 14px;
-      transition: all 0.3s ease; 
-    }
-    .btn-primary:hover:not(:disabled) { 
-      transform: translateY(-2px); 
-      box-shadow: 0 8px 25px rgba(0, 242, 254, 0.5) !important; 
-      filter: brightness(1.1);
-    }
-    
-    .btn-dark { 
-      background: linear-gradient(135deg, #2b303c 0%, #0f1115 100%);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 50px;
-      font-weight: 700;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 14px;
-      color: #ffffff;
-      transition: all 0.3s ease; 
-    }
-    .btn-dark:hover:not(:disabled) { 
-      transform: translateY(-2px); 
-      border-color: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5) !important; 
-    }
-    
-    .btn:disabled { 
-      opacity: 0.6; 
-      cursor: not-allowed; 
-      transform: none !important;
-      box-shadow: none !important;
-    }
-
-    .admin-link { 
-      cursor: pointer; 
-      color: rgba(255, 255, 255, 0.5); 
-      transition: all 0.3s ease; 
-      font-size: 0.85rem;
-      letter-spacing: 0.5px;
-    }
-    .admin-link:hover { 
-      color: #00f2fe; 
-      text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
-    }
-    
-    /* Neon Status Banners */
-    .status-banner { 
-      font-size: 0.85rem; 
-      letter-spacing: 1px; 
-      font-weight: 800; 
-      transition: all 0.3s ease; 
-      border-radius: 8px; 
-      padding: 8px 12px !important;
-      border: 1px solid transparent;
-    }
-    .status-banner.bg-success {
-      background-color: rgba(25, 135, 84, 0.15) !important;
-      color: #00ff87 !important;
-      border-color: rgba(25, 135, 84, 0.3) !important;
-      box-shadow: 0 0 15px rgba(25, 135, 84, 0.15);
-    }
-    .status-banner.bg-secondary {
-      background-color: rgba(255, 255, 255, 0.05) !important;
-      color: rgba(255, 255, 255, 0.7) !important;
-      border-color: rgba(255, 255, 255, 0.1) !important;
-    }
-    .status-banner.bg-danger {
-      background-color: rgba(220, 53, 69, 0.15) !important;
-      color: #ff4d6d !important;
-      border-color: rgba(220, 53, 69, 0.3) !important;
-      box-shadow: 0 0 15px rgba(220, 53, 69, 0.15);
-    }
-
-    .brand-lockup { display:flex; align-items:center; gap:12px; min-width:0; }
-    .brand-copy strong { display:block; font-size:.98rem; }
-    .brand-copy small { display:block; color:#91a4c1; font-size:.75rem; }
-    .header-face-logo { height:34px; max-width:150px; object-fit:contain; }
-    .portal-intro { border:1px solid rgba(105,161,235,.16); border-radius:26px; padding:44px 40px; background:linear-gradient(145deg,rgba(18,39,69,.72),rgba(9,22,41,.88)); background-size:160% 160%; box-shadow:0 20px 55px rgba(0,0,0,.28); display:flex; flex-direction:column; justify-content:center; position:relative; overflow:hidden; animation:introReveal .85s cubic-bezier(.2,.8,.2,1) both,auroraShift 10s ease-in-out infinite alternate; }
-    .portal-intro::after { content:''; position:absolute; width:280px; height:280px; right:-140px; bottom:-150px; border-radius:50%; border:1px solid rgba(67,213,255,.28); box-shadow:0 0 80px rgba(38,164,255,.15),inset 0 0 50px rgba(36,196,255,.08); animation:orbPulse 4s ease-in-out infinite; }
-    @keyframes introReveal { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:none} }
-    @keyframes auroraShift { to{background-position:100% 100%} }
-    @keyframes orbPulse { 50%{transform:scale(1.12);opacity:.65} }
-    .eyebrow { width:max-content; border:1px solid rgba(65,145,255,.45); background:rgba(32,112,225,.10); border-radius:999px; padding:8px 14px; color:#a9ceff; font-weight:800; font-size:.76rem; letter-spacing:.08em; }
-    .portal-intro h1 { font-size:clamp(2.7rem,5vw,4.2rem); line-height:1.02; font-weight:850; margin:30px 0 18px; letter-spacing:-.045em; }
-    .gradient-copy { background:linear-gradient(90deg,#cce0ff,#42dce9,#7c8cff,#cce0ff); background-size:250% auto; -webkit-background-clip:text; background-clip:text; color:transparent; animation:textFlow 5s linear infinite; }
-    @keyframes textFlow { to{background-position:250% center} }
-    .intro-copy { color:#a9bfdc; font-size:1.05rem; line-height:1.55; max-width:620px; }
-    .trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:26px; }
-    .trust-item { padding:15px 14px; border:1px solid rgba(255,255,255,.08); border-radius:15px; background:rgba(255,255,255,.035); color:#b7c9e1; font-size:.78rem; line-height:1.4; transition:transform .35s,background .35s,border-color .35s; animation:trustIn .55s both; }
-    .trust-item:nth-child(2){animation-delay:.12s}.trust-item:nth-child(3){animation-delay:.24s}
-    .trust-item:hover { transform:translateY(-7px) rotateX(5deg); background:rgba(55,148,255,.09); border-color:rgba(75,208,255,.28); }
-    @keyframes trustIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
-    .trust-item i { display:block; color:#63a7ff; font-size:1.1rem; margin-bottom:8px; }
-    .trust-item strong { color:#eef5ff; display:block; font-size:.82rem; }
-    .portal-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:5px; border:1px solid rgba(105,161,235,.2); border-radius:15px; background:rgba(3,14,30,.55); margin-bottom:25px; }
-    .portal-tab { border:0; border-radius:11px; padding:12px; background:transparent; color:#9bb1cf; font-weight:800; }
-    .portal-tab.active { color:white; background:linear-gradient(135deg,#176ee8,#408cff); box-shadow:0 5px 16px rgba(24,112,238,.3); }
-    .login-card .card-body { display:flex; flex-direction:column; justify-content:center; }
-    
-    @media (max-width: 768px) {
-      .face-header { padding: 10px 15px; }
-      .college-logo { height: 32px; width: 32px; }
-      .face-logo { height: 30px; }
-      .login-container { grid-template-columns:1fr; margin:24px auto; }
-      .portal-intro { padding:32px 25px; }
-      .portal-intro h1 { font-size:2.7rem; }
-      .trust-grid { grid-template-columns:1fr; }
-      .brand-copy small, .header-face-logo { display:none; }
-    }
-    @media (max-width:480px) { .login-container{width:min(100% - 20px,1040px);margin:14px auto 24px;gap:14px}.portal-intro{padding:26px 20px;border-radius:20px}.portal-intro h1{font-size:2.15rem;margin:20px 0 14px}.intro-copy{font-size:.94rem}.login-card{border-radius:20px}.login-card .card-body{padding:24px 18px!important}.college-crest-main{width:76px;height:76px}.portal-tab{padding:10px 7px;font-size:.82rem}.brand-copy strong{font-size:.8rem} }
-    @media (max-width:480px) { .login-card{order:-1}.trust-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.trust-item{scroll-snap-align:start}.face-header{min-height:56px}.brand-copy{max-width:205px}.eyebrow{font-size:.67rem;padding:7px 10px} }
-    @media (max-width:480px) { .face-header{width:100%;max-width:100vw}.login-container>*{min-width:0}.portal-intro h1{overflow-wrap:anywhere}.input-group,.form-control{min-width:0}.trust-grid{max-width:100%;overscroll-behavior-x:contain} }
-    @media (prefers-reduced-motion:reduce) { *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.particle{display:none} }
-  </style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kamaraj College | Official Student Portal</title>
+  <meta name="description" content="Official Kamaraj College portal for student services, notices and campus elections.">
+  <link rel="icon" href="kc.png"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"><link rel="stylesheet" href="portal.css">
 </head>
-<body>
-
-<div class="glow-blob blob-1"></div>
-<div class="glow-blob blob-2"></div>
-<div class="glow-blob blob-3"></div>
-
-<nav class="face-header sticky-top">
-  <div class="brand-lockup">
-    <img src="kc.png" alt="Kamaraj College crest" class="college-logo">
-    <div class="brand-copy"><strong>Kamaraj College Election Portal</strong><small>Official Digital Voting System</small></div>
-  </div>
-  <div class="header-right">
-     <img src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="FACE Prep Campus" class="header-face-logo">
-  </div>
-</nav>
-
-<div class="login-container">
-  <section class="portal-intro">
-    <div class="eyebrow"><i class="fa-solid fa-shield-halved me-2"></i>SECURE CAMPUS ELECTION</div>
-    <h1>Vote with clarity,<br><span class="gradient-copy">confidence &amp; privacy.</span></h1>
-    <p class="intro-copy">Verify your identity, review every candidate carefully, and submit one complete ballot through the official Kamaraj College election system.</p>
-    <div class="trust-grid">
-      <div class="trust-item"><i class="fa-solid fa-user-check"></i><strong>Verified access</strong>Roll number and DOB validation</div>
-      <div class="trust-item"><i class="fa-solid fa-lock"></i><strong>Single ballot</strong>Duplicate voting is blocked</div>
-      <div class="trust-item"><i class="fa-solid fa-mobile-screen"></i><strong>Responsive</strong>Works on phones, tablets and PCs</div>
-    </div>
-  </section>
-  <div class="card login-card">
-    <div class="card-body p-4 p-md-5 pt-3">
-      
-      <div class="crest-container">
-         <img src="kc.png" alt="Kamaraj College Crest" class="college-crest-main" onerror="this.style.display='none'">
+<body class="auth-page">
+  <main class="auth-wrap">
+    <section class="auth-story">
+      <span class="eyebrow"><i class="fa-solid fa-building-columns"></i> Official college portal</span>
+      <h1>Your campus,<br>all in one place.</h1>
+      <p>Access college announcements, student services, class information and campus elections with one verified student account.</p>
+      <div class="feature-list">
+        <div class="feature"><i class="fa-solid fa-bullhorn"></i> Important notices and campus updates</div>
+        <div class="feature"><i class="fa-solid fa-graduation-cap"></i> Student dashboard and quick services</div>
+        <div class="feature"><i class="fa-solid fa-check-to-slot"></i> Secure, one-person-one-vote elections</div>
       </div>
-
-      <div class="portal-tabs" aria-label="Choose portal">
-        <button type="button" class="portal-tab active" id="studentTab"><i class="fa-solid fa-user-graduate me-2"></i>Student</button>
-        <button type="button" class="portal-tab" id="adminTab"><i class="fa-solid fa-user-shield me-2"></i>Administrator</button>
+    </section>
+    <section class="auth-card">
+      <img class="crest" src="kc.png" alt="Kamaraj College crest">
+      <div class="portal-status"><i class="fa-solid fa-circle-check"></i><span id="portalStatus">Official student access</span></div>
+      <h2 style="margin:4px 0 5px">Welcome to Kamaraj College</h2>
+      <p style="color:var(--muted);margin:0">Sign in to continue to your portal.</p>
+      <div class="tabs" role="tablist">
+        <button class="tab active" id="studentTab" type="button"><i class="fa-solid fa-user-graduate"></i> Student</button>
+        <button class="tab" id="adminTab" type="button"><i class="fa-solid fa-user-shield"></i> Admin</button>
       </div>
-
-      <div id="studentView">
-        <div class="text-center mb-4">
-          <div id="publicStatusBadge" class="badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm">
-            <i class="fa-solid fa-spinner fa-spin me-1"></i> Authenticating Telemetry...
-          </div>
-          <h4 class="fw-bold text-white"><i class="fa-solid fa-check-to-slot text-primary me-2"></i>Official Voting Portal</h4>
-          <p class="text-secondary small">Please verify your identity to proceed</p>
-        </div>
-        <div id="studentAlert" class="alert d-none" role="alert"></div>
-        <form id="studentLoginForm">
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">INSTITUTIONAL ROLL NUMBER</label>
-            <div class="input-group mb-3">
-              <span class="input-group-text"><i class="fa-solid fa-id-card"></i></span>
-              <input type="text" class="form-control form-control-lg" id="rollNumber" placeholder="e.g. 26BCA001" required>
-            </div>
-          </div>
-          <div class="mb-4">
-            <label class="form-label text-secondary small fw-bold">VERIFICATION (DATE OF BIRTH)</label>
-            <div class="input-group mb-1">
-              <span class="input-group-text"><i class="fa-solid fa-calendar-days"></i></span>
-              <input type="date" class="form-control form-control-lg" id="dob" required>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="studentLoginBtn" style="background-color: #0d6efd; border: none;">
-            Secure Login <i class="fa-solid fa-arrow-right ms-2"></i>
-          </button>
-        </form>
-      </div>
-
-      <div id="adminView" class="d-none">
-        <div class="text-center mb-4">
-          <h4 class="fw-bold text-white"><i class="fa-solid fa-shield-halved text-danger me-2"></i>Admin Dashboard</h4>
-          <p class="text-secondary small">Authorized personnel only</p>
-        </div>
-        <div id="adminAlert" class="alert d-none" role="alert"></div>
-        <form id="adminLoginForm">
-          <div class="mb-3">
-            <label class="form-label text-secondary small fw-bold">ADMIN ID</label>
-            <div class="input-group mb-3">
-              <span class="input-group-text"><i class="fa-solid fa-user-tie"></i></span>
-              <input type="text" class="form-control form-control-lg" id="adminId" required>
-            </div>
-          </div>
-          <div class="mb-4">
-            <label class="form-label text-secondary small fw-bold">ENCRYPTION KEY (PASSWORD)</label>
-            <div class="input-group mb-3">
-              <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-              <input type="password" class="form-control form-control-lg" id="adminPassword" required>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold shadow-sm border-0" id="adminLoginBtn">
-            Authenticate <i class="fa-solid fa-unlock-keyhole ms-2"></i>
-          </button>
-        </form>
-      </div>
-
-      <div class="text-center mt-4 pt-2">
-        <span class="text-decoration-none small fw-bold admin-link" id="toggleViewBtn">
-          <i class="fa-solid fa-gear me-1"></i> Switch to Administrator Portal
-        </span>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : 'https://fpc2k26-election.onrender.com';
-
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduceMotion) {
-    for (let i = 0; i < 16; i++) {
-      const particle = document.createElement('span');
-      particle.className = 'particle';
-      particle.style.left = `${Math.random() * 100}%`;
-      particle.style.setProperty('--speed', `${10 + Math.random() * 13}s`);
-      particle.style.setProperty('--drift', `${-80 + Math.random() * 160}px`);
-      particle.style.animationDelay = `${-Math.random() * 18}s`;
-      document.body.appendChild(particle);
-    }
-
-    const loginCard = document.querySelector('.login-card');
-    loginCard.addEventListener('pointermove', (event) => {
-      if (window.innerWidth < 900) return;
-      const rect = loginCard.getBoundingClientRect();
-      const rotateY = ((event.clientX - rect.left) / rect.width - .5) * 5;
-      const rotateX = -((event.clientY - rect.top) / rect.height - .5) * 5;
-      loginCard.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-    loginCard.addEventListener('pointerleave', () => { loginCard.style.transform = ''; });
-  }
-
-  async function checkElectionStatus() {
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/settings`);
-      if (res.ok) {
-        const data = await res.json();
-        const badge = document.getElementById('publicStatusBadge');
-        if (data.isPublished) {
-          badge.innerHTML = '<i class="fa-solid fa-signal me-1"></i> SECURE NETWORK ACTIVE';
-          badge.className = 'badge bg-success status-banner mb-3 p-2 w-100 shadow-sm';
-        } else {
-          badge.innerHTML = '<i class="fa-solid fa-power-off me-1"></i> NETWORK STANDBY';
-          badge.className = 'badge bg-secondary status-banner mb-3 p-2 w-100 shadow-sm';
-        }
-      }
-    } catch(e) {
-      document.getElementById('publicStatusBadge').innerHTML = '<i class="fa-solid fa-triangle-exclamation me-1"></i> SERVER UNREACHABLE';
-    }
-  }
-  checkElectionStatus(); 
-  setInterval(checkElectionStatus, 60000); 
-
-  const toggleBtn = document.getElementById('toggleViewBtn');
-  const studentTab = document.getElementById('studentTab');
-  const adminTab = document.getElementById('adminTab');
-  const studentView = document.getElementById('studentView');
-  const adminView = document.getElementById('adminView');
-  let isStudentView = true;
-
-  function setPortalView(showStudent) {
-    isStudentView = showStudent;
-    if (isStudentView) {
-      studentView.classList.remove('d-none'); adminView.classList.add('d-none');
-      studentTab.classList.add('active'); adminTab.classList.remove('active');
-      toggleBtn.innerHTML = '<i class="fa-solid fa-gear me-1"></i> Switch to Administrator Portal';
-    } else {
-      studentView.classList.add('d-none'); adminView.classList.remove('d-none');
-      studentTab.classList.remove('active'); adminTab.classList.add('active');
-      toggleBtn.innerHTML = '<i class="fa-solid fa-user-graduate me-1"></i> Return to Voter Authorization';
-    }
-  }
-
-  toggleBtn.addEventListener('click', () => setPortalView(!isStudentView));
-  studentTab.addEventListener('click', () => setPortalView(true));
-  adminTab.addEventListener('click', () => setPortalView(false));
-
-  // PROTECTED STUDENT LOGIN
-  document.getElementById('studentLoginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const alertBox = document.getElementById('studentAlert');
-    const submitBtn = document.getElementById('studentLoginBtn');
-    const originalBtnHTML = submitBtn.innerHTML;
-
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Fetching Credentials...';
-    
-    const rollNumber = document.getElementById('rollNumber').value.trim();
-    const rawDob = document.getElementById('dob').value.trim();
-    const parts = rawDob.split('-');
-    const formattedDob = `${parts[2]}-${parts[1]}-${parts[0]}`; 
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/student/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rollNumber: rollNumber, dob: formattedDob })
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        localStorage.setItem('voterToken', data.token);
-        localStorage.setItem('rollNumber', data.student.rollNumber); 
-        localStorage.setItem('studentName', data.student.name);
-        alertBox.className = 'alert alert-success mb-3';
-        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Handshake verified! Securing connection...';
-        alertBox.classList.remove('d-none');
-        
-        submitBtn.innerHTML = '<i class="fa-solid fa-shield-check me-2"></i> Redirecting...';
-        setTimeout(() => window.location.href = 'students.html', 1000);
-      } else {
-        alertBox.className = 'alert alert-danger mb-3';
-        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message || 'Invalid Credentials.'}`;
-        alertBox.classList.remove('d-none');
-        
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHTML;
-      }
-    } catch (error) {
-      alertBox.className = 'alert alert-danger mb-3';
-      alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
-      alertBox.classList.remove('d-none');
-      
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnHTML;
-    }
-  });
-
-  // PROTECTED ADMIN LOGIN
-  document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const alertBox = document.getElementById('adminAlert');
-    const submitBtn = document.getElementById('adminLoginBtn');
-    const originalBtnHTML = submitBtn.innerHTML;
-
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Authenticating...';
-
-    const username = document.getElementById('adminId').value;
-    const password = document.getElementById('adminPassword').value;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await response.json();
-      
-      if (response.ok) {
-        localStorage.setItem('adminToken', data.token);
-        localStorage.setItem('isAdmin', 'true');
-        alertBox.className = 'alert alert-success mb-3';
-        alertBox.innerHTML = '<i class="fa-solid fa-circle-check me-2"></i>Access granted! Booting dashboard...';
-        alertBox.classList.remove('d-none');
-        
-        submitBtn.innerHTML = '<i class="fa-solid fa-lock-open me-2"></i> Unlocking...';
-        setTimeout(() => window.location.href = 'admin.html', 1000);
-      } else {
-        alertBox.className = 'alert alert-danger mb-3';
-        alertBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i>${data.message}`;
-        alertBox.classList.remove('d-none');
-        
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHTML;
-      }
-    } catch (error) {
-      alertBox.className = 'alert alert-danger mb-3';
-      alertBox.innerHTML = '<i class="fa-solid fa-wifi me-2"></i>Telemetry failure. Unable to reach server.';
-      alertBox.classList.remove('d-none');
-      
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = originalBtnHTML;
-    }
-  });
-</script>
-</body>
-</html>
+      <div id="alert" aria-live="polite"></div>
+      <form id="studentForm">
+        <div class="field" style="margin-bottom:14px"><label for="rollNumber">Roll number</label><input class="input" id="rollNumber" autocomplete="username" placeholder="Enter your roll number" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="dob">Date of birth</label><input class="input" type="date" id="dob" autocomplete="bday" required></div>
+        <label class="check" style="margin:16px 0"><input type="checkbox" id="rememberMe" checked> Keep me signed in on this device</label>
+        <button class="btn btn-primary btn-block" id="studentSubmit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open student portal</button>
+        <p style="color:var(--muted);font-size:.78rem;line-height:1.5;margin:14px 0 0"><i class="fa-solid fa-shield-halved"></i> Only your secure session is remembered. Your date of birth is never stored on this device.</p>
+      </form>
+      <form id="adminForm" class="hidden">
+        <div class="field" style="margin-bottom:14px"><label for="adminId">Administrator ID</label><input class="input" id="adminId" autocomplete="username" required></div>
+        <div class="field" style="margin-bottom:18px"><label for="adminPassword">Password</label><input class="input" type="password" id="adminPassword" autocomplete="current-password" required></div>
+        <button class="btn btn-dark btn-block" id="adminSubmit"><i class="fa-solid fa-lock-open"></i> Open administration</button>
+      </form>
+    </section>
+  </main>
+  <script src="portal.js"></script>
+  <script>
+    const alertBox=document.getElementById('alert');
+    function showAlert(message,type='error'){alertBox.innerHTML=`<div class="alert alert-${type}">${Portal.escape(message)}</div>`}
+    function choose(student){document.getElementById('studentForm').classList.toggle('hidden',!student);document.getElementById('adminForm').classList.toggle('hidden',student);studentTab.classList.toggle('active',student);adminTab.classList.toggle('active',!student);alertBox.innerHTML=''}
+    studentTab.onclick=()=>choose(true);adminTab.onclick=()=>choose(false);
+    if(Portal.studentToken()) window.location.href='dashboard.html';
+    fetch(`${API_BASE_URL}/api/portal/public`).then(r=>r.json()).then(data=>{if(data.settings?.collegeName)document.title=`${data.settings.collegeName} | Official Student Portal`}).catch(()=>{});
+    document.getElementById('studentForm').onsubmit=async event=>{
+      event.preventDefault();const button=document.getElementById('studentSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying student record';
+      try{
+        const raw=document.getElementById('dob').value.split('-');const dob=`${raw[2]}-${raw[1]}-${raw[0]}`;
+        const response=await Portal.request('/api/student/login',{method:'POST',body:JSON.stringify({rollNumber:document.getElementById('rollNumber').value,dob})});const data=await response.json();
+        if(!response.ok)throw new Error(data.message||'Sign in failed.');
+        const remember=document.getElementById('rememberMe').checked;localStorage.setItem('rememberStudent',String(remember));
+        Portal.store('studentToken',data.token,remember);Portal.store('rollNumber',data.student.rollNumber,remember);Portal.store('studentName',data.student.name,remember);Portal.store('studentClass',data.student.className||'',remember);Portal.store('hasVoted',data.student.hasVoted,remember);
+        showAlert('Welcome! Opening your dashboard…','success');setTimeout(()=>window.location.href='dashboard.html',450);
+      }catch(error){showAlert(error.message);button.disabled=false;button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Open student portal'}
+    };
+    document.getElementById('adminForm').onsubmit=async event=>{
+      event.preventDefault();const button=document.getElementById('adminSubmit');button.disabled=true;
+      try{const response=await Portal.request('/api/admin/login',{method:'POST',body:JSON.stringify({username:adminId.value,password:adminPassword.value})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Sign in failed.');localStorage.setItem('adminToken',data.token);window.location.href='admin.html'}catch(error){showAlert(error.message);button.disabled=false}
+    };
+  </script>
+</body></html>
