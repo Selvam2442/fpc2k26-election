@@ -12,6 +12,7 @@ const StudentRecord = require('./models/StudentRecord');
 const StudentSource = require('./models/StudentSource');
 const Announcement = require('./models/Announcement');
 const Settings = require('./models/Settings');
+const Timetable = require('./models/Timetable');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -150,10 +151,10 @@ async function syncSource(source) {
     const classes = new Set();
     let imported = 0;
 
-    for (const sheetTitle of workbook.SheetNames) {
+    for (const [sheetOrder, sheetTitle] of workbook.SheetNames.entries()) {
       const displayTitle = meaningfulSheetTitle(sheetTitle, documentTitle);
       const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
-      for (const row of rows) {
+      for (const [sourceRow, row] of rows.entries()) {
         const rollNumber = firstValue(row, ['RollNumber', 'RollNo', 'RegisterNumber', 'RegisterNo', 'StudentId', 'AdmissionNumber']).toUpperCase();
         const name = firstValue(row, ['Name', 'StudentName', 'FullName']);
         const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
@@ -164,11 +165,11 @@ async function syncSource(source) {
         await StudentRecord.findOneAndUpdate(
           { rollNumber },
           {
-            sourceId: source._id, sheetTitle, className, rollNumber, name, dob,
-            department: firstValue(row, ['Department', 'Dept', 'Course']),
+            sourceId: source._id, sheetTitle: displayTitle, className, rollNumber, name, dob,
+            department: firstValue(row, ['Department', 'Dept', 'Course']) || displayTitle,
             year: firstValue(row, ['Year', 'StudyYear']),
             section: firstValue(row, ['Section', 'Sec']),
-            email: firstValue(row, ['Email', 'EmailAddress']), active: true
+            email: firstValue(row, ['Email', 'EmailAddress']), sheetOrder, sourceRow, active: true
           },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
@@ -202,7 +203,15 @@ async function ensureStudentDirectory() {
 
 let classNameRefreshPromise = null;
 async function ensureMeaningfulClassNames() {
-  const genericCount = await StudentRecord.countDocuments({ className: /^(sheet|worksheet|tab)(\s*\d+)?$/i, active: true });
+  const genericCount = await StudentRecord.countDocuments({
+    active: true,
+    $or: [
+      { className: /^(sheet|worksheet|tab)(\s*\d+)?$/i },
+      { sheetTitle: /^(sheet|worksheet|tab)(\s*\d+)?$/i },
+      { department: '' },
+      { sourceRow: { $exists: false } }
+    ]
+  });
   if (!genericCount) return;
   if (!classNameRefreshPromise) {
     classNameRefreshPromise = (async () => {
@@ -218,6 +227,38 @@ function publicSettings(settings) {
     isPublished: false, isCardVisible: false, cardTitle: '', cardDescription: '',
     collegeName: 'Kamaraj College', portalTitle: 'Student Campus Portal', academicYear: '2026-2027'
   };
+}
+
+const DEFAULT_BCA_TIMETABLE = {
+  Monday: [['DSA', 'Sharumathi'], ['DSA', 'Sharumathi'], ['Aptitude', 'Santhiya'], ['English', 'Venkatesh'], ['Data Visualisation', 'Aparna'], ['Tamil', '']],
+  Tuesday: [['BDA', 'DS 1'], ['BDA', 'DS 1'], ['DSA', 'Sharumathi'], ['English', 'Venkatesh'], ['DBMS Lab', 'Aparna'], ['DBMS Lab', 'Aparna']],
+  Wednesday: [['DSA', 'Sharumathi'], ['DSA', 'Sharumathi'], ['Data Visualisation', 'Aparna'], ['BDA', 'DS 1'], ['English', 'Venkatesh'], ['English', 'Venkatesh']],
+  Thursday: [['BDA', 'DS 1'], ['BDA', 'DS 1'], ['DSA', 'Sharumathi'], ['Aptitude', 'Santhiya'], ['DBMS Lab', 'Aparna'], ['English', 'Venkatesh']],
+  Friday: [['Data Visualisation', 'Aparna'], ['English', 'Venkatesh'], ['DSA', 'Sharumathi'], ['DSA', 'Sharumathi'], ['Tamil', ''], ['English', 'Venkatesh']]
+};
+
+function defaultSchedule() {
+  return Object.entries(DEFAULT_BCA_TIMETABLE).map(([day, periods]) => ({
+    day,
+    periods: periods.map(([subject, faculty]) => ({ subject, faculty }))
+  }));
+}
+
+async function ensureDefaultTimetable() {
+  const target = await StudentRecord.findOne({
+    active: true,
+    $or: [
+      { className: /^2nd\s+BCA[\s·-]*A$/i },
+      { className: /BCA.*(?:2nd|year\s*2|II).*(?:section\s*)?A/i }
+    ]
+  }).select('className department sheetTitle').lean();
+  if (!target) return;
+  if (await Timetable.exists({ className: target.className })) return;
+  await Timetable.findOneAndUpdate(
+    { className: target.className },
+    { $setOnInsert: { className: target.className, department: target.department || target.sheetTitle || 'BCA', sheetTitle: target.sheetTitle || target.department || 'BCA', schedule: defaultSchedule() } },
+    { upsert: true, new: true }
+  );
 }
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'college-portal' }));
@@ -292,6 +333,18 @@ app.get('/api/student/announcements', verifyStudent, async (req, res) => {
   }).sort({ publishAt: -1 }));
 });
 
+app.get('/api/student/timetable', verifyStudent, async (req, res) => {
+  const student = await StudentRecord.findOne({ rollNumber: req.user.rollNumber, active: true }).select('className department sheetTitle').lean();
+  if (!student) return res.status(404).json({ message: 'Student record is no longer active.' });
+  await ensureDefaultTimetable();
+  const timetable = await Timetable.findOne({ className: student.className }).lean();
+  res.json({
+    className: student.className,
+    department: student.sheetTitle || student.department || '',
+    timetable: timetable || null
+  });
+});
+
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Candidate photo is required.' });
@@ -360,15 +413,59 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
   await ensureMeaningfulClassNames();
   const query = { active: true };
   if (req.query.className) query.className = req.query.className;
-  const [students, votedRolls] = await Promise.all([StudentRecord.find(query).sort({ className: 1, name: 1 }).lean(), VoteReceipt.distinct('rollNumber')]);
+  const [students, votedRolls] = await Promise.all([StudentRecord.find(query).sort({ sourceId: 1, sheetOrder: 1, sourceRow: 1 }).lean(), VoteReceipt.distinct('rollNumber')]);
   const voted = new Set(votedRolls);
   res.json(students.map(student => ({ ...student, hasVoted: voted.has(student.rollNumber) })));
 });
 
 app.get('/api/admin/classes', verifyAdmin, async (_req, res) => {
   await ensureMeaningfulClassNames();
-  const groups = await StudentRecord.aggregate([{ $match: { active: true } }, { $group: { _id: '$className', count: { $sum: 1 }, sheets: { $addToSet: '$sheetTitle' } } }, { $sort: { _id: 1 } }]);
-  res.json(groups.map(group => ({ className: group._id, count: group.count, sheets: group.sheets })));
+  const groups = await StudentRecord.aggregate([{ $match: { active: true } }, { $sort: { sourceId: 1, sheetOrder: 1, sourceRow: 1 } }, { $group: { _id: '$className', count: { $sum: 1 }, sheetTitle: { $first: '$sheetTitle' }, department: { $first: '$department' }, firstSheetOrder: { $first: '$sheetOrder' }, firstSourceRow: { $first: '$sourceRow' } } }, { $sort: { firstSheetOrder: 1, firstSourceRow: 1 } }]);
+  res.json(groups.map(group => ({ className: group._id, count: group.count, sheets: group.sheetTitle ? [group.sheetTitle] : [], departments: group.department ? [group.department] : [] })));
+});
+
+function cleanTimetableSchedule(schedule) {
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+  const source = Array.isArray(schedule) ? schedule : [];
+  return days.map(day => {
+    const match = source.find(item => item?.day === day) || {};
+    const periods = Array.isArray(match.periods) ? match.periods : [];
+    return {
+      day,
+      periods: Array.from({ length: 6 }, (_, index) => ({
+        subject: String(periods[index]?.subject || '').trim().slice(0, 100),
+        faculty: String(periods[index]?.faculty || '').trim().slice(0, 100)
+      }))
+    };
+  });
+}
+
+app.get('/api/admin/timetables', verifyAdmin, async (_req, res) => {
+  await ensureDefaultTimetable();
+  res.json(await Timetable.find().sort({ className: 1 }).lean());
+});
+
+app.post('/api/admin/timetables', verifyAdmin, async (req, res) => {
+  const className = String(req.body.className || '').trim();
+  const classRecord = await StudentRecord.findOne({ className, active: true }).select('className department sheetTitle').lean();
+  if (!classRecord) return res.status(400).json({ message: 'Choose a class imported from the student spreadsheet.' });
+  const timetable = await Timetable.findOneAndUpdate(
+    { className },
+    {
+      className,
+      department: classRecord.department || classRecord.sheetTitle || '',
+      sheetTitle: classRecord.sheetTitle || classRecord.department || '',
+      schedule: cleanTimetableSchedule(req.body.schedule)
+    },
+    { upsert: true, new: true, runValidators: true }
+  );
+  res.json({ message: 'Timetable saved for the selected class.', timetable });
+});
+
+app.delete('/api/admin/timetables/:id', verifyAdmin, async (req, res) => {
+  const timetable = await Timetable.findByIdAndDelete(req.params.id);
+  if (!timetable) return res.status(404).json({ message: 'Timetable not found.' });
+  res.json({ message: 'Timetable removed.' });
 });
 
 app.get('/api/admin/sources', verifyAdmin, async (_req, res) => {
@@ -444,7 +541,7 @@ app.get('/api/results/final', async (_req, res) => {
 app.get('/api/admin/download-results', verifyAdmin, async (_req, res) => {
   const [candidates, receipts] = await Promise.all([Candidate.find().sort({ posting: 1, votes: -1 }), VoteReceipt.find().sort({ votedAt: 1 })]);
   const workbook = xlsx.utils.book_new();
-  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(candidates.map(c => ({ Name: c.name, Position: c.posting, Department: c.department, Votes: c.votes }))), 'Election Results');
+  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(candidates.map(c => ({ Name: c.name, Position: c.posting, Department: c.department, Year: c.year, Section: c.section, Votes: c.votes }))), 'Election Results');
   xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(receipts.map(r => ({ RollNumber: r.rollNumber, Name: r.name, VotedAt: r.votedAt }))), 'Participation');
   res.setHeader('Content-Disposition', 'attachment; filename="College_Portal_Election_Results.xlsx"');
   res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' }));

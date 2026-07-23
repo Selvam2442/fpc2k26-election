@@ -11,6 +11,8 @@ const studentRecordSchema = new mongoose.Schema({
   year: { type: String, trim: true, default: '' },
   section: { type: String, trim: true, default: '' },
   email: { type: String, trim: true, default: '' },
+  sheetOrder: { type: Number, default: 0, index: true },
+  sourceRow: { type: Number, default: 0, index: true },
   active: { type: Boolean, default: true }
 }, { timestamps: true });
 
