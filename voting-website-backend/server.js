@@ -26,7 +26,23 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to the college portal database.'))
   .catch(error => console.error('Database connection error:', error.message));
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 12 * 1024 * 1024 },
+  fileFilter: (_req, file, callback) => callback(file.mimetype.startsWith('image/') ? null : new Error('Only image files are allowed.'), file.mimetype.startsWith('image/'))
+});
+
+function safeExternalUrl(value) {
+  const input = String(value || '').trim();
+  if (!input) return '';
+  try {
+    const url = new URL(input);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Unsupported link');
+    return url.toString();
+  } catch (_) {
+    throw new Error('Announcement links must begin with http:// or https://.');
+  }
+}
 
 function bearerToken(req) {
   return req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : '';
@@ -185,7 +201,7 @@ app.get('/api/portal/public', async (_req, res) => {
   try {
     const [settings, announcements] = await Promise.all([
       Settings.findOne({ settingsId: 'master_config' }).lean(),
-      Announcement.find({ published: true, publishAt: { $lte: new Date() }, $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] }).sort({ priority: 1, publishAt: -1 }).limit(8).lean()
+      Announcement.find({ published: true, publishAt: { $lte: new Date() }, $and: [{ $or: [{ targetClasses: { $exists: false } }, { targetClasses: { $size: 0 } }] }, { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] }] }).sort({ publishAt: -1 }).limit(8).lean()
     ]);
     res.json({ settings: publicSettings(settings), announcements });
   } catch (error) { res.status(500).json({ message: error.message }); }
@@ -227,9 +243,19 @@ app.get('/api/student/me', verifyStudent, async (req, res) => {
   res.json({ ...student, hasVoted });
 });
 
-app.get('/api/student/announcements', verifyStudent, async (_req, res) => {
+app.get('/api/student/announcements', verifyStudent, async (req, res) => {
   const now = new Date();
-  res.json(await Announcement.find({ published: true, audience: { $in: ['ALL', 'STUDENTS'] }, publishAt: { $lte: now }, $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] }).sort({ publishAt: -1 }));
+  const student = await StudentRecord.findOne({ rollNumber: req.user.rollNumber, active: true }).select('className').lean();
+  const className = student?.className || '';
+  res.json(await Announcement.find({
+    published: true,
+    audience: { $in: ['ALL', 'STUDENTS'] },
+    publishAt: { $lte: now },
+    $and: [
+      { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] },
+      { $or: [{ targetClasses: { $exists: false } }, { targetClasses: { $size: 0 } }, { targetClasses: className }] }
+    ]
+  }).sort({ publishAt: -1 }));
 });
 
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
@@ -339,12 +365,26 @@ app.delete('/api/admin/sources/:id', verifyAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/announcements', verifyAdmin, async (_req, res) => res.json(await Announcement.find().sort({ createdAt: -1 })));
-app.post('/api/admin/announcements', verifyAdmin, async (req, res) => {
-  try { res.status(201).json(await Announcement.create(req.body)); }
+app.post('/api/admin/announcements', verifyAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const payload = { ...req.body };
+    payload.published = String(req.body.published) !== 'false';
+    payload.targetClasses = req.body.targetClasses ? JSON.parse(req.body.targetClasses) : [];
+    payload.linkUrl = safeExternalUrl(req.body.linkUrl);
+    if (req.file) payload.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    res.status(201).json(await Announcement.create(payload));
+  }
   catch (error) { res.status(400).json({ message: error.message }); }
 });
-app.put('/api/admin/announcements/:id', verifyAdmin, async (req, res) => {
-  try { res.json(await Announcement.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })); }
+app.put('/api/admin/announcements/:id', verifyAdmin, upload.single('image'), async (req, res) => {
+  try {
+    const payload = { ...req.body };
+    if (req.body.published !== undefined) payload.published = String(req.body.published) !== 'false';
+    if (req.body.targetClasses) payload.targetClasses = JSON.parse(req.body.targetClasses);
+    if (req.body.linkUrl !== undefined) payload.linkUrl = safeExternalUrl(req.body.linkUrl);
+    if (req.file) payload.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    res.json(await Announcement.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true }));
+  }
   catch (error) { res.status(400).json({ message: error.message }); }
 });
 app.delete('/api/admin/announcements/:id', verifyAdmin, async (req, res) => {
