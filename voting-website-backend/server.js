@@ -113,6 +113,24 @@ function classNameFor(row, sheetTitle) {
   return [department, year ? `Year ${year}` : '', section ? `Section ${section}` : ''].filter(Boolean).join(' · ') || sheetTitle || 'Unassigned';
 }
 
+function sheetDocumentTitle(response, workbook, fallback = 'Student Register') {
+  const disposition = response.headers.get('content-disposition') || '';
+  const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+  const basicMatch = disposition.match(/filename="?([^";]+)"?/i);
+  let title = workbook?.Props?.Title || '';
+  try {
+    if (utf8Match) title = decodeURIComponent(utf8Match[1]);
+    else if (basicMatch) title = basicMatch[1];
+  } catch (_) { /* keep workbook title or fallback */ }
+  title = String(title || fallback).replace(/\.xlsx$/i, '').trim();
+  return title || fallback;
+}
+
+function meaningfulSheetTitle(sheetTitle, documentTitle) {
+  const generic = /^(sheet|worksheet|tab)(\s*\d+)?$/i.test(String(sheetTitle || '').trim());
+  return generic ? documentTitle : sheetTitle;
+}
+
 async function ensureDefaultSource() {
   if (await StudentSource.countDocuments()) return;
   await StudentSource.create({
@@ -127,18 +145,20 @@ async function syncSource(source) {
     const response = await fetch(exportUrl(source.sheetId));
     if (!response.ok) throw new Error(`Google Sheets returned ${response.status}`);
     const workbook = xlsx.read(Buffer.from(await response.arrayBuffer()), { type: 'buffer', cellDates: false });
+    const documentTitle = sheetDocumentTitle(response, workbook, source.name);
     const seenRolls = [];
     const classes = new Set();
     let imported = 0;
 
     for (const sheetTitle of workbook.SheetNames) {
+      const displayTitle = meaningfulSheetTitle(sheetTitle, documentTitle);
       const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
       for (const row of rows) {
         const rollNumber = firstValue(row, ['RollNumber', 'RollNo', 'RegisterNumber', 'RegisterNo', 'StudentId', 'AdmissionNumber']).toUpperCase();
         const name = firstValue(row, ['Name', 'StudentName', 'FullName']);
         const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
         if (!rollNumber || !name || !dob) continue;
-        const className = classNameFor(row, sheetTitle);
+        const className = classNameFor(row, displayTitle);
         classes.add(className);
         seenRolls.push(rollNumber);
         await StudentRecord.findOneAndUpdate(
@@ -158,6 +178,7 @@ async function syncSource(source) {
 
     await StudentRecord.updateMany({ sourceId: source._id, rollNumber: { $nin: seenRolls } }, { active: false });
     source.lastSyncAt = new Date();
+    if (['Primary student register', 'Student register'].includes(source.name)) source.name = documentTitle;
     source.lastError = '';
     source.studentCount = imported;
     source.classCount = classes.size;
@@ -177,6 +198,19 @@ async function ensureStudentDirectory() {
   for (const source of sources) {
     try { await syncSource(source); } catch (error) { console.error(`Student sync failed: ${error.message}`); }
   }
+}
+
+let classNameRefreshPromise = null;
+async function ensureMeaningfulClassNames() {
+  const genericCount = await StudentRecord.countDocuments({ className: /^(sheet|worksheet|tab)(\s*\d+)?$/i, active: true });
+  if (!genericCount) return;
+  if (!classNameRefreshPromise) {
+    classNameRefreshPromise = (async () => {
+      const sources = await StudentSource.find({ enabled: true });
+      for (const source of sources) await syncSource(source);
+    })().finally(() => { classNameRefreshPromise = null; });
+  }
+  await classNameRefreshPromise;
 }
 
 function publicSettings(settings) {
@@ -314,6 +348,7 @@ app.post('/api/student/vote', verifyStudent, async (req, res) => {
 });
 
 app.get('/api/admin/stats', verifyAdmin, async (_req, res) => {
+  await ensureMeaningfulClassNames();
   const [totalStudents, totalVotes, totalCandidates, totalAnnouncements, totalClasses] = await Promise.all([
     StudentRecord.countDocuments({ active: true }), VoteReceipt.countDocuments(), Candidate.countDocuments(),
     Announcement.countDocuments({ published: true }), StudentRecord.distinct('className', { active: true })
@@ -322,6 +357,7 @@ app.get('/api/admin/stats', verifyAdmin, async (_req, res) => {
 });
 
 app.get('/api/admin/students', verifyAdmin, async (req, res) => {
+  await ensureMeaningfulClassNames();
   const query = { active: true };
   if (req.query.className) query.className = req.query.className;
   const [students, votedRolls] = await Promise.all([StudentRecord.find(query).sort({ className: 1, name: 1 }).lean(), VoteReceipt.distinct('rollNumber')]);
@@ -330,6 +366,7 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/classes', verifyAdmin, async (_req, res) => {
+  await ensureMeaningfulClassNames();
   const groups = await StudentRecord.aggregate([{ $match: { active: true } }, { $group: { _id: '$className', count: { $sum: 1 }, sheets: { $addToSet: '$sheetTitle' } } }, { $sort: { _id: 1 } }]);
   res.json(groups.map(group => ({ className: group._id, count: group.count, sheets: group.sheets })));
 });
