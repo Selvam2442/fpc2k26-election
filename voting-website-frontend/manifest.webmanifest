@@ -1,0 +1,71 @@
+{
+  "id": "./index.html",
+  "name": "KC-FPC",
+  "short_name": "KC-FPC",
+  "description": "The official Kamaraj College and FACE Prep Campus student portal.",
+  "lang": "en-IN",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#f4f7fb",
+  "theme_color": "#07152e",
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Student dashboard",
+      "short_name": "Dashboard",
+      "description": "Open the KC-FPC student dashboard.",
+      "url": "./dashboard.html",
+      "icons": [
+        {
+          "src": "app-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Campus voting",
+      "short_name": "Vote",
+      "description": "Open the KC-FPC campus election.",
+      "url": "./students.html",
+      "icons": [
+        {
+          "src": "app-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,8 @@ const API_BASE_URL = ['localhost', '127.0.0.1'].includes(window.location.hostnam
   ? 'http://localhost:5000'
   : 'https://fpc2k26-election.onrender.com';
 
+let installPrompt = null;
+
 const Portal = {
   read(key) { return localStorage.getItem(key) || sessionStorage.getItem(key); },
   store(key, value, remember = localStorage.getItem('rememberStudent') === 'true') {
@@ -35,7 +37,31 @@ const Portal = {
     return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
   },
   logoutStudent() { this.clearStudent(); window.location.href = 'index.html'; },
-  logoutAdmin() { localStorage.removeItem('adminToken'); sessionStorage.removeItem('adminToken'); window.location.href = 'index.html'; }
+  logoutAdmin() { localStorage.removeItem('adminToken'); sessionStorage.removeItem('adminToken'); window.location.href = 'index.html'; },
+  async installApp() {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    document.querySelectorAll('[data-install-app]').forEach(button => button.classList.add('hidden'));
+  }
 };
 
 window.Portal = Portal;
+
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  installPrompt = event;
+  document.querySelectorAll('[data-install-app]').forEach(button => button.classList.remove('hidden'));
+});
+
+window.addEventListener('appinstalled', () => {
+  installPrompt = null;
+  document.querySelectorAll('[data-install-app]').forEach(button => button.classList.add('hidden'));
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
