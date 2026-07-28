@@ -16,6 +16,7 @@ const Timetable = require('./models/Timetable');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-change-me';
+const RELEASE = '2026-07-28-live-class-sheets-v2';
 const STUDENT_SYNC_INTERVAL_MS = Math.max(Number(process.env.STUDENT_SYNC_INTERVAL_MS) || 120000, 30000);
 const DEFAULT_STUDENT_SOURCES = [
   {
@@ -372,7 +373,12 @@ async function ensureDefaultTimetable() {
   );
 }
 
-app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'college-portal' }));
+app.get('/api/health', (_req, res) => res.json({
+  ok: true,
+  service: 'college-portal',
+  release: RELEASE,
+  configuredClassSheets: DEFAULT_STUDENT_SOURCES.length
+}));
 
 app.post('/api/admin/login', (req, res) => {
   const adminUser = process.env.ADMIN_USER || 'electionteam';
