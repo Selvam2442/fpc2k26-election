@@ -182,6 +182,7 @@ async function ensureDefaultSources() {
 }
 
 const studentDirectoryBySource = new Map();
+const classDirectoryBySource = new Map();
 let studentDirectorySyncPromise = null;
 let lastStudentDirectorySyncAt = 0;
 
@@ -197,6 +198,32 @@ function currentStudentDirectory() {
   ));
 }
 
+function currentClassDirectory() {
+  const groups = new Map();
+  for (const classes of classDirectoryBySource.values()) {
+    for (const item of classes) {
+      if (!groups.has(item.className)) {
+        groups.set(item.className, {
+          className: item.className,
+          year: item.year,
+          count: 0,
+          sheets: [item.sheetTitle],
+          departments: [item.department],
+          sourceOrder: item.sourceOrder,
+          sheetOrder: item.sheetOrder
+        });
+      }
+    }
+  }
+  for (const student of currentStudentDirectory()) {
+    const group = groups.get(student.className);
+    if (group) group.count += 1;
+  }
+  return [...groups.values()]
+    .sort((a, b) => a.sourceOrder - b.sourceOrder || a.sheetOrder - b.sheetOrder)
+    .map(({ sourceOrder, sheetOrder, ...group }) => group);
+}
+
 async function syncSource(source) {
   try {
     const response = await fetch(exportUrl(source.sheetId), { signal: AbortSignal.timeout(20000) });
@@ -204,6 +231,7 @@ async function syncSource(source) {
     const workbook = xlsx.read(Buffer.from(await response.arrayBuffer()), { type: 'buffer', cellDates: false });
     const documentTitle = sheetDocumentTitle(response, workbook, source.name);
     const classes = new Set();
+    const sourceClasses = [];
     const students = [];
     const defaultSourceOrder = DEFAULT_STUDENT_SOURCES.findIndex(item => item.sheetId === source.sheetId);
     const sourceOrder = defaultSourceOrder < 0 ? DEFAULT_STUDENT_SOURCES.length : defaultSourceOrder;
@@ -211,13 +239,14 @@ async function syncSource(source) {
     for (const [sheetOrder, sheetTitle] of workbook.SheetNames.entries()) {
       const displayTitle = meaningfulSheetTitle(sheetTitle, documentTitle);
       const classDetails = classDetailsFor(displayTitle);
+      classes.add(classDetails.className);
+      sourceClasses.push({ ...classDetails, sourceOrder, sheetOrder });
       const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
       for (const [sourceRow, row] of rows.entries()) {
         const rollNumber = firstValue(row, ['RollNumber', 'RollNo', 'RegisterNumber', 'RegisterNo', 'StudentId', 'AdmissionNumber']).toUpperCase();
         const name = firstValue(row, ['Name', 'StudentName', 'FullName']);
         const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
         if (!rollNumber || !name || !dob) continue;
-        classes.add(classDetails.className);
         students.push({
           sourceId: String(source._id),
           sourceName: source.name,
@@ -235,6 +264,7 @@ async function syncSource(source) {
     }
 
     studentDirectoryBySource.set(source.sheetId, students);
+    classDirectoryBySource.set(source.sheetId, sourceClasses);
     source.lastSyncAt = new Date();
     if (/^(Primary )?student register(?: \d+)?$/i.test(source.name)) source.name = documentTitle;
     source.lastError = '';
@@ -260,7 +290,10 @@ async function refreshStudentDirectory({ force = false } = {}) {
       const sources = await StudentSource.find({ enabled: true }).sort({ createdAt: 1 });
       const enabledIds = new Set(sources.map(source => source.sheetId));
       for (const sourceId of studentDirectoryBySource.keys()) {
-        if (!enabledIds.has(sourceId)) studentDirectoryBySource.delete(sourceId);
+        if (!enabledIds.has(sourceId)) {
+          studentDirectoryBySource.delete(sourceId);
+          classDirectoryBySource.delete(sourceId);
+        }
       }
 
       const results = await Promise.allSettled(sources.map(source => syncSource(source)));
@@ -487,6 +520,7 @@ app.post('/api/student/vote', verifyStudent, async (req, res) => {
 
 app.get('/api/admin/stats', verifyAdmin, async (_req, res) => {
   const students = await getStudentDirectory();
+  const classes = currentClassDirectory();
   const eligibleRolls = students.map(student => student.rollNumber);
   const [totalVotes, totalCandidates, totalAnnouncements] = await Promise.all([
     VoteReceipt.countDocuments({ rollNumber: { $in: eligibleRolls } }), Candidate.countDocuments(),
@@ -497,7 +531,7 @@ app.get('/api/admin/stats', verifyAdmin, async (_req, res) => {
     totalVotes,
     totalCandidates,
     totalAnnouncements,
-    totalClasses: new Set(students.map(student => student.className)).size
+    totalClasses: classes.length
   });
 });
 
@@ -510,19 +544,8 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
 });
 
 app.get('/api/admin/classes', verifyAdmin, async (_req, res) => {
-  const students = await getStudentDirectory();
-  const groups = new Map();
-  for (const student of students) {
-    const group = groups.get(student.className) || {
-      className: student.className,
-      count: 0,
-      sheets: [student.sheetTitle],
-      departments: [student.department]
-    };
-    group.count += 1;
-    groups.set(student.className, group);
-  }
-  res.json([...groups.values()]);
+  await getStudentDirectory();
+  res.json(currentClassDirectory());
 });
 
 function cleanTimetableSchedule(schedule) {
@@ -548,14 +571,15 @@ app.get('/api/admin/timetables', verifyAdmin, async (_req, res) => {
 
 app.post('/api/admin/timetables', verifyAdmin, async (req, res) => {
   const className = String(req.body.className || '').trim();
-  const classRecord = (await getStudentDirectory()).find(student => student.className === className);
+  await getStudentDirectory();
+  const classRecord = currentClassDirectory().find(item => item.className === className);
   if (!classRecord) return res.status(400).json({ message: 'Choose a class imported from the student spreadsheet.' });
   const timetable = await Timetable.findOneAndUpdate(
     { className },
     {
       className,
-      department: classRecord.department || classRecord.sheetTitle || '',
-      sheetTitle: classRecord.sheetTitle || classRecord.department || '',
+      department: classRecord.departments?.[0] || '',
+      sheetTitle: classRecord.sheets?.[0] || className,
       schedule: cleanTimetableSchedule(req.body.schedule)
     },
     { upsert: true, new: true, runValidators: true }
@@ -613,7 +637,10 @@ app.post('/api/admin/sources/:id/sync', verifyAdmin, async (req, res) => {
 
 app.delete('/api/admin/sources/:id', verifyAdmin, async (req, res) => {
   const source = await StudentSource.findByIdAndDelete(req.params.id);
-  if (source) studentDirectoryBySource.delete(source.sheetId);
+  if (source) {
+    studentDirectoryBySource.delete(source.sheetId);
+    classDirectoryBySource.delete(source.sheetId);
+  }
   res.json({ message: 'Spreadsheet source was disconnected.' });
 });
 
