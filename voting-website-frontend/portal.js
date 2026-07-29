@@ -36,9 +36,10 @@ const Portal = {
     if (!value) return '';
     return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
   },
-  applyTheme(theme = localStorage.getItem('studentTheme') || 'light') {
+  applyTheme(theme = localStorage.getItem('portalTheme') || localStorage.getItem('studentTheme') || 'light') {
     const dark = theme === 'dark';
     document.body.classList.toggle('theme-dark', dark);
+    document.body.classList.toggle('theme-light', !dark);
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#071526' : '#07152e');
     document.querySelectorAll('[data-theme-toggle]').forEach(button => {
       button.setAttribute('aria-pressed', String(dark));
@@ -48,6 +49,7 @@ const Portal = {
   },
   toggleTheme() {
     const theme = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+    localStorage.setItem('portalTheme', theme);
     localStorage.setItem('studentTheme', theme);
     this.applyTheme(theme);
   },
