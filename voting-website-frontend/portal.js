@@ -36,6 +36,51 @@ const Portal = {
     if (!value) return '';
     return new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value));
   },
+  applyTheme(theme = localStorage.getItem('studentTheme') || 'light') {
+    const dark = theme === 'dark';
+    document.body.classList.toggle('theme-dark', dark);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#071526' : '#07152e');
+    document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+      button.setAttribute('aria-pressed', String(dark));
+      button.setAttribute('aria-label', dark ? 'Use light theme' : 'Use dark theme');
+      button.innerHTML = `<i class="fa-solid fa-${dark ? 'sun' : 'moon'}"></i><span>${dark ? 'Light' : 'Dark'}</span>`;
+    });
+  },
+  toggleTheme() {
+    const theme = document.body.classList.contains('theme-dark') ? 'light' : 'dark';
+    localStorage.setItem('studentTheme', theme);
+    this.applyTheme(theme);
+  },
+  prepareVoteFeedback() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      this._voteAudioContext ||= new AudioContext();
+      if (this._voteAudioContext.state === 'suspended') this._voteAudioContext.resume().catch(() => {});
+    } catch (_) {}
+  },
+  celebrateVote() {
+    if (navigator.vibrate) navigator.vibrate([180, 80, 260]);
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const context = this._voteAudioContext || new AudioContext();
+      const play = (frequency, start, duration) => {
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(frequency, context.currentTime + start);
+        gain.gain.setValueAtTime(0.0001, context.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + start + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + start + duration);
+        oscillator.connect(gain); gain.connect(context.destination);
+        oscillator.start(context.currentTime + start);
+        oscillator.stop(context.currentTime + start + duration);
+      };
+      play(523.25, 0, 0.2); play(659.25, 0.16, 0.22); play(783.99, 0.34, 0.34);
+      setTimeout(() => { context.close().catch(() => {}); this._voteAudioContext = null; }, 1000);
+    } catch (_) {}
+  },
   logoutStudent() { this.clearStudent(); window.location.href = 'index.html'; },
   logoutAdmin() { localStorage.removeItem('adminToken'); sessionStorage.removeItem('adminToken'); window.location.href = 'index.html'; },
   async installApp() {
@@ -48,6 +93,7 @@ const Portal = {
 };
 
 window.Portal = Portal;
+Portal.applyTheme();
 
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
