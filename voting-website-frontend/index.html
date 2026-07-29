@@ -10,6 +10,7 @@
   <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"><link rel="stylesheet" href="portal.css">
 </head>
 <body class="auth-page">
+  <script>try{const savedTheme=localStorage.getItem('portalTheme')||localStorage.getItem('studentTheme')||'light';document.body.classList.add(`theme-${savedTheme}`);document.documentElement.style.colorScheme=savedTheme}catch(_){document.body.classList.add('theme-light')}</script>
   <button class="btn btn-ghost btn-sm auth-theme-toggle" type="button" data-theme-toggle onclick="Portal.toggleTheme()" aria-label="Use dark theme" aria-pressed="false"><i class="fa-solid fa-moon"></i><span>Dark</span></button>
   <main class="auth-wrap">
     <section class="auth-story">

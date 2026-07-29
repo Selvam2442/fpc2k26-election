@@ -40,6 +40,7 @@ const Portal = {
     const dark = theme === 'dark';
     document.body.classList.toggle('theme-dark', dark);
     document.body.classList.toggle('theme-light', !dark);
+    document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#071526' : '#07152e');
     document.querySelectorAll('[data-theme-toggle]').forEach(button => {
       button.setAttribute('aria-pressed', String(dark));

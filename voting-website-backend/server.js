@@ -381,8 +381,8 @@ app.get('/api/health', (_req, res) => res.json({
 }));
 
 app.post('/api/admin/login', (req, res) => {
-  const adminUser = process.env.ADMIN_USER || 'electionteam';
-  const adminPass = process.env.ADMIN_PASS || 'fpc2k26';
+  const adminUser = process.env.ADMIN_USER || 'kcfpcportal';
+  const adminPass = process.env.ADMIN_PASS || 'kcfpcofficial@69';
   if (req.body.username !== adminUser || req.body.password !== adminPass) {
     return res.status(401).json({ message: 'Invalid administrator credentials.' });
   }

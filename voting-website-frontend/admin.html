@@ -9,6 +9,7 @@
   <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"><link rel="stylesheet" href="portal.css">
 </head>
 <body class="admin-theme">
+<script>try{const savedTheme=localStorage.getItem('portalTheme')||localStorage.getItem('studentTheme')||'light';document.body.classList.add(`theme-${savedTheme}`);document.documentElement.style.colorScheme=savedTheme}catch(_){document.body.classList.add('theme-light')}</script>
 <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
 <header class="topbar">
   <button class="btn btn-ghost btn-sm admin-sidebar-toggle" id="sidebarToggle" type="button" onclick="toggleSidebar()" aria-controls="adminSidebar" aria-expanded="true"><i class="fa-solid fa-bars"></i><span>Hide menu</span></button><a class="brand" href="#overview"><img src="kc.png" alt="College crest"><span class="brand-text"><strong>Kamaraj College</strong><small>Administration Centre</small></span></a><img class="topbar-faceprep" src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="FACE Prep Campus">
