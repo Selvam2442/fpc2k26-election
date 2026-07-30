@@ -55,11 +55,13 @@ mongoose.connect(process.env.MONGO_URI)
     console.log('Connected to the college portal database.');
     await PushSubscription.updateMany(
       { recipientId: { $exists: false }, rollNumber: { $exists: true } },
-      [{ $set: { recipientRole: 'student', recipientId: '$rollNumber' } }]
+      [{ $set: { recipientRole: 'student', recipientId: '$rollNumber' } }],
+      { updatePipeline: true }
     ).catch(error => console.error(`Push subscription migration failed: ${error.message}`));
     await VoteReceipt.updateMany(
       { voterId: { $exists: false } },
-      [{ $set: { voterRole: 'student', voterId: '$rollNumber' } }]
+      [{ $set: { voterRole: 'student', voterId: '$rollNumber' } }],
+      { updatePipeline: true }
     ).catch(error => console.error(`Vote receipt migration failed: ${error.message}`));
     try { await Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true })]); }
     catch (error) { console.error(`Initial student sync failed: ${error.message}`); }
