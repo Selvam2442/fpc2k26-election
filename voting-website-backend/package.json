@@ -18,10 +18,10 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.3",
     "multer": "^2.2.0",
+    "web-push": "^3.6.7",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
   }
 }
- 

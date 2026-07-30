@@ -4,6 +4,7 @@ const cors = require('cors');
 const multer = require('multer');
 const xlsx = require('xlsx');
 const jwt = require('jsonwebtoken');
+const webPush = require('web-push');
 require('dotenv').config();
 
 const Candidate = require('./models/Candidate');
@@ -12,12 +13,15 @@ const StudentSource = require('./models/StudentSource');
 const Announcement = require('./models/Announcement');
 const Settings = require('./models/Settings');
 const Timetable = require('./models/Timetable');
+const PushConfig = require('./models/PushConfig');
+const PushSubscription = require('./models/PushSubscription');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-change-me';
 const RELEASE = '2026-07-28-live-class-sheets-v2';
 const STUDENT_SYNC_INTERVAL_MS = Math.max(Number(process.env.STUDENT_SYNC_INTERVAL_MS) || 120000, 30000);
+const ANNOUNCEMENT_PUSH_INTERVAL_MS = Math.max(Number(process.env.ANNOUNCEMENT_PUSH_INTERVAL_MS) || 60000, 15000);
 const DEFAULT_STUDENT_SOURCES = [
   {
     name: 'Student register 1',
@@ -55,6 +59,11 @@ mongoose.connect(process.env.MONGO_URI)
         .catch(error => console.error(`Scheduled student sync failed: ${error.message}`));
     }, STUDENT_SYNC_INTERVAL_MS);
     timer.unref();
+    notifyLiveAnnouncements().catch(error => console.error(`Initial announcement push failed: ${error.message}`));
+    const announcementTimer = setInterval(() => {
+      notifyLiveAnnouncements().catch(error => console.error(`Scheduled announcement push failed: ${error.message}`));
+    }, ANNOUNCEMENT_PUSH_INTERVAL_MS);
+    announcementTimer.unref();
   })
   .catch(error => console.error('Database connection error:', error.message));
 
@@ -74,6 +83,85 @@ function safeExternalUrl(value) {
   } catch (_) {
     throw new Error('Announcement links must begin with http:// or https://.');
   }
+}
+
+let webPushConfigPromise = null;
+
+async function getWebPushConfig() {
+  if (!webPushConfigPromise) {
+    webPushConfigPromise = (async () => {
+      let config = await PushConfig.findOne({ configId: 'web_push' });
+      if (!config) {
+        const keys = webPush.generateVAPIDKeys();
+        config = await PushConfig.findOneAndUpdate(
+          { configId: 'web_push' },
+          { $setOnInsert: { configId: 'web_push', publicKey: keys.publicKey, privateKey: keys.privateKey } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+      }
+      webPush.setVapidDetails(
+        process.env.WEB_PUSH_CONTACT || 'mailto:portal@kamarajcollege.ac.in',
+        config.publicKey,
+        config.privateKey
+      );
+      return config;
+    })().catch(error => {
+      webPushConfigPromise = null;
+      throw error;
+    });
+  }
+  return webPushConfigPromise;
+}
+
+async function notifyAnnouncementIfLive(announcementId) {
+  const now = new Date();
+  const announcement = await Announcement.findOneAndUpdate({
+    _id: announcementId,
+    pushNotifiedAt: null,
+    published: true,
+    publishAt: { $lte: now },
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+  }, { $set: { pushNotifiedAt: now } }, { new: true }).lean();
+  if (!announcement) return false;
+
+  const subscriptionQuery = { active: true };
+  if (announcement.targetClasses?.length) subscriptionQuery.className = { $in: announcement.targetClasses };
+  const subscriptions = await PushSubscription.find(subscriptionQuery).lean();
+  if (!subscriptions.length) return true;
+
+  await getWebPushConfig();
+  const payload = JSON.stringify({
+    title: announcement.title,
+    body: announcement.body.length > 240 ? `${announcement.body.slice(0, 237)}...` : announcement.body,
+    priority: announcement.priority,
+    tag: `announcement-${announcement._id}`,
+    url: './dashboard.html#announcements'
+  });
+  const staleIds = [];
+  await Promise.all(subscriptions.map(async subscription => {
+    try {
+      await webPush.sendNotification({
+        endpoint: subscription.endpoint,
+        keys: subscription.keys
+      }, payload, { TTL: 24 * 60 * 60, urgency: announcement.priority === 'URGENT' ? 'high' : 'normal' });
+    } catch (error) {
+      if ([404, 410].includes(error.statusCode)) staleIds.push(subscription._id);
+      else console.error(`Announcement push delivery failed: ${error.message}`);
+    }
+  }));
+  if (staleIds.length) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+  return true;
+}
+
+async function notifyLiveAnnouncements() {
+  const now = new Date();
+  const announcements = await Announcement.find({
+    pushNotifiedAt: null,
+    published: true,
+    publishAt: { $lte: now },
+    $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+  }).select('_id').lean();
+  await Promise.all(announcements.map(item => notifyAnnouncementIfLive(item._id)));
 }
 
 function bearerToken(req) {
@@ -458,6 +546,44 @@ app.get('/api/student/announcements', verifyStudent, async (req, res) => {
   }).sort({ publishAt: -1 }));
 });
 
+app.get('/api/student/push/public-key', verifyStudent, async (_req, res) => {
+  try {
+    const config = await getWebPushConfig();
+    res.json({ publicKey: config.publicKey });
+  } catch (error) { res.status(500).json({ message: 'Notifications are temporarily unavailable.' }); }
+});
+
+app.post('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
+  try {
+    const subscription = req.body.subscription || req.body;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ message: 'The notification subscription is incomplete.' });
+    }
+    const endpoint = new URL(subscription.endpoint);
+    if (endpoint.protocol !== 'https:') return res.status(400).json({ message: 'The notification endpoint must be secure.' });
+    const { student } = await findLiveStudent(req.user.rollNumber);
+    if (!student) return res.status(404).json({ message: 'Student record is no longer active.' });
+    await PushSubscription.findOneAndUpdate(
+      { endpoint: endpoint.toString() },
+      {
+        endpoint: endpoint.toString(),
+        keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
+        rollNumber: student.rollNumber,
+        className: student.className,
+        active: true
+      },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    res.status(201).json({ message: 'Announcement notifications are enabled.' });
+  } catch (error) { res.status(400).json({ message: error.message }); }
+});
+
+app.delete('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
+  const endpoint = String(req.body.endpoint || '').trim();
+  if (endpoint) await PushSubscription.deleteOne({ endpoint, rollNumber: req.user.rollNumber });
+  res.json({ message: 'Announcement notifications are disabled.' });
+});
+
 app.get('/api/student/timetable', verifyStudent, async (req, res) => {
   const { student } = await findLiveStudent(req.user.rollNumber);
   if (!student) return res.status(404).json({ message: 'Student record is no longer active.' });
@@ -663,7 +789,9 @@ app.post('/api/admin/announcements', verifyAdmin, upload.single('image'), async 
     payload.targetClasses = req.body.targetClasses ? JSON.parse(req.body.targetClasses) : [];
     payload.linkUrl = safeExternalUrl(req.body.linkUrl);
     if (req.file) payload.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    res.status(201).json(await Announcement.create(payload));
+    const announcement = await Announcement.create(payload);
+    notifyAnnouncementIfLive(announcement._id).catch(error => console.error(`Announcement push failed: ${error.message}`));
+    res.status(201).json(announcement);
   }
   catch (error) { res.status(400).json({ message: error.message }); }
 });
@@ -674,7 +802,9 @@ app.put('/api/admin/announcements/:id', verifyAdmin, upload.single('image'), asy
     if (req.body.targetClasses) payload.targetClasses = JSON.parse(req.body.targetClasses);
     if (req.body.linkUrl !== undefined) payload.linkUrl = safeExternalUrl(req.body.linkUrl);
     if (req.file) payload.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    res.json(await Announcement.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true }));
+    const announcement = await Announcement.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+    if (announcement) notifyAnnouncementIfLive(announcement._id).catch(error => console.error(`Announcement push failed: ${error.message}`));
+    res.json(announcement);
   }
   catch (error) { res.status(400).json({ message: error.message }); }
 });

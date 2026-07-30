@@ -12,7 +12,8 @@ const announcementSchema = new mongoose.Schema({
   linkLabel: { type: String, trim: true, maxlength: 80, default: 'Open link' },
   published: { type: Boolean, default: true },
   publishAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date, default: null }
+  expiresAt: { type: Date, default: null },
+  pushNotifiedAt: { type: Date, default: null, index: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Announcement', announcementSchema);

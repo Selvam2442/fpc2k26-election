@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kc-fpc-shell-v7';
+const CACHE_NAME = 'kc-fpc-shell-v8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -66,6 +66,37 @@ self.addEventListener('fetch', event => {
         return response;
       });
       return cached || network;
+    })
+  );
+});
+
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data?.json() || {}; } catch (_) { data = { body: event.data?.text() || '' }; }
+  const title = data.title || 'New campus announcement';
+  event.waitUntil(self.registration.showNotification(title, {
+    body: data.body || 'A new announcement is now live.',
+    icon: './app-icon-192.png',
+    badge: './app-icon-192.png',
+    tag: data.tag || 'campus-announcement',
+    renotify: true,
+    requireInteraction: data.priority === 'URGENT',
+    data: { url: data.url || './dashboard.html#announcements' }
+  }));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || './dashboard.html#announcements', self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
+      for (const client of clients) {
+        if (client.url.startsWith(self.location.origin)) {
+          await client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
     })
   );
 });

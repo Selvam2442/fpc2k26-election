@@ -92,6 +92,71 @@ const Portal = {
     await installPrompt.userChoice;
     installPrompt = null;
     document.querySelectorAll('[data-install-app]').forEach(button => button.classList.add('hidden'));
+  },
+  notificationSupportAvailable() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  },
+  applicationServerKey(value) {
+    const padding = '='.repeat((4 - value.length % 4) % 4);
+    const base64 = (value + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = atob(base64);
+    return Uint8Array.from(bytes, character => character.charCodeAt(0));
+  },
+  async refreshAnnouncementNotificationButtons() {
+    const buttons = document.querySelectorAll('[data-announcement-notifications]');
+    if (!buttons.length) return;
+    if (!this.notificationSupportAvailable()) {
+      buttons.forEach(button => button.classList.add('hidden'));
+      return;
+    }
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    buttons.forEach(button => {
+      button.classList.remove('hidden');
+      button.setAttribute('aria-pressed', String(Boolean(subscription)));
+      button.innerHTML = subscription
+        ? '<i class="fa-solid fa-bell"></i><span>Alerts on</span>'
+        : '<i class="fa-regular fa-bell"></i><span>Enable alerts</span>';
+    });
+  },
+  async toggleAnnouncementNotifications(button) {
+    if (!this.notificationSupportAvailable()) return;
+    button.disabled = true;
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const existing = await registration.pushManager.getSubscription();
+      if (existing) {
+        await this.request('/api/student/push/subscriptions', {
+          method: 'DELETE',
+          body: JSON.stringify({ endpoint: existing.endpoint })
+        }, 'student');
+        await existing.unsubscribe();
+      } else {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') throw new Error('Allow notifications in your browser to receive campus alerts.');
+        const keyResponse = await this.request('/api/student/push/public-key', {}, 'student');
+        const keyData = await keyResponse.json();
+        if (!keyResponse.ok || !keyData.publicKey) throw new Error(keyData.message || 'Notifications are unavailable.');
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.applicationServerKey(keyData.publicKey)
+        });
+        const response = await this.request('/api/student/push/subscriptions', {
+          method: 'POST',
+          body: JSON.stringify({ subscription: subscription.toJSON() })
+        }, 'student');
+        if (!response.ok) {
+          await subscription.unsubscribe();
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || 'Could not enable notifications.');
+        }
+      }
+      await this.refreshAnnouncementNotificationButtons();
+    } catch (error) {
+      window.alert(error.message || 'Could not update notification settings.');
+    } finally {
+      button.disabled = false;
+    }
   }
 };
 
@@ -111,6 +176,8 @@ window.addEventListener('appinstalled', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => Portal.refreshAnnouncementNotificationButtons())
+      .catch(() => {});
   });
 }
