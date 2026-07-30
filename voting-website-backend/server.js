@@ -107,7 +107,7 @@ async function getWebPushConfig() {
         config = await PushConfig.findOneAndUpdate(
           { configId: 'web_push' },
           { $setOnInsert: { configId: 'web_push', publicKey: keys.publicKey, privateKey: keys.privateKey } },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+          { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
         );
       }
       webPush.setVapidDetails(
@@ -132,7 +132,7 @@ async function notifyAnnouncementIfLive(announcementId) {
     published: true,
     publishAt: { $lte: now },
     $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
-  }, { $set: { pushNotifiedAt: now } }, { new: true }).lean();
+  }, { $set: { pushNotifiedAt: now } }, { returnDocument: 'after' }).lean();
   if (!announcement) return false;
 
   const subscriptionQuery = {
@@ -317,7 +317,7 @@ async function ensureDefaultSources() {
   await Promise.all(DEFAULT_STUDENT_SOURCES.map(source => StudentSource.findOneAndUpdate(
     { sheetId: source.sheetId },
     { $setOnInsert: { ...source, enabled: true } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   )));
 }
 
@@ -654,7 +654,7 @@ async function ensureDefaultTimetable() {
   await Timetable.findOneAndUpdate(
     { className: target.className },
     { $setOnInsert: { className: target.className, department: target.department || target.sheetTitle || 'BCA', sheetTitle: target.sheetTitle || target.department || 'BCA', schedule: defaultSchedule() } },
-    { upsert: true, new: true }
+    { upsert: true, returnDocument: 'after' }
   );
 }
 
@@ -726,7 +726,7 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
       return res.status(409).json({ message: 'Approved voter groups are locked for a completed election. Reset before configuring the next election.' });
     }
     if (updates.isPublished === true) updates.resultsPublished = false;
-    const settings = await Settings.findOneAndUpdate({ settingsId: 'master_config' }, { $set: updates }, { upsert: true, new: true, setDefaultsOnInsert: true });
+    const settings = await Settings.findOneAndUpdate({ settingsId: 'master_config' }, { $set: updates }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true });
     res.json({ message: 'Portal settings updated.', settings });
   } catch (error) { res.status(500).json({ message: error.message }); }
 });
@@ -871,7 +871,7 @@ app.post('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
         className: student.className,
         active: true
       },
-      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
     );
     res.status(201).json({ message: 'Announcement notifications are enabled.' });
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -910,7 +910,7 @@ app.post('/api/staff/push/subscriptions', verifyStaff, async (req, res) => {
         className: '',
         active: true
       },
-      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true }
     );
     res.status(201).json({ message: 'Staff announcement notifications are enabled.' });
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -958,7 +958,7 @@ app.put('/api/candidates/:id', verifyAdmin, upload.single('photo'), async (req, 
   try {
     const update = { name: req.body.name, posting: req.body.posting, department: req.body.department, year: Number(req.body.year), section: req.body.section || 'None', description: String(req.body.description || '').trim() };
     if (req.file) update.photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    res.json({ message: 'Candidate updated.', candidate: await Candidate.findByIdAndUpdate(req.params.id, update, { new: true, runValidators: true }) });
+    res.json({ message: 'Candidate updated.', candidate: await Candidate.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after', runValidators: true }) });
   } catch (error) { res.status(500).json({ message: error.message }); }
 });
 
@@ -1093,7 +1093,7 @@ app.post('/api/admin/timetables', verifyAdmin, async (req, res) => {
       sheetTitle: classRecord.sheets?.[0] || className,
       schedule: cleanTimetableSchedule(req.body.schedule)
     },
-    { upsert: true, new: true, runValidators: true }
+    { upsert: true, returnDocument: 'after', runValidators: true }
   );
   res.json({ message: 'Timetable saved for the selected class.', timetable });
 });
@@ -1176,7 +1176,7 @@ app.put('/api/admin/announcements/:id', verifyAdmin, upload.single('image'), asy
     if (req.body.targetClasses) payload.targetClasses = JSON.parse(req.body.targetClasses);
     if (req.body.linkUrl !== undefined) payload.linkUrl = safeExternalUrl(req.body.linkUrl);
     if (req.file) payload.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    const announcement = await Announcement.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
+    const announcement = await Announcement.findByIdAndUpdate(req.params.id, payload, { returnDocument: 'after', runValidators: true });
     if (announcement) notifyAnnouncementIfLive(announcement._id).catch(error => console.error(`Announcement push failed: ${error.message}`));
     res.json(announcement);
   }
@@ -1223,7 +1223,7 @@ app.post('/api/admin/elections/complete', verifyAdmin, async (req, res) => {
     await Settings.findOneAndUpdate(
       { settingsId: 'master_config' },
       { $set: { isPublished: false, resultsPublished: true, currentElectionArchiveId: archive._id } },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
     res.json({ message: 'Election completed. Results are now visible to approved students and staff and saved in history.', archive });
   } catch (error) { res.status(400).json({ message: error.message }); }
@@ -1253,7 +1253,7 @@ app.post('/api/admin/reset-election', verifyAdmin, async (req, res) => {
   await Settings.findOneAndUpdate(
     { settingsId: 'master_config' },
     { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
   res.json({
     message: archive
