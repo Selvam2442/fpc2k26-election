@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Kamaraj College | Official Student Portal</title>
-  <meta name="description" content="Official Kamaraj College portal for student services, notices and campus elections.">
+  <title>Kamaraj College | Official Campus Portal</title>
+  <meta name="description" content="Official Kamaraj College portal for students, staff, announcements and campus elections.">
   <meta name="application-name" content="KC-FPC"><meta name="theme-color" content="#07152e">
   <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="KC-FPC">
@@ -16,7 +16,7 @@
     <section class="auth-story">
       <span class="eyebrow"><i class="fa-solid fa-building-columns"></i> Official college portal</span>
       <h1>Your campus,<br>all in one place.</h1>
-      <p>Access college announcements, student services, class information and campus elections with one verified student account.</p>
+      <p>Access personalized college announcements, student services, staff election oversight and campus administration with one verified account.</p>
       <div class="feature-list">
         <div class="feature"><i class="fa-solid fa-bullhorn"></i> Important notices and campus updates</div>
         <div class="feature"><i class="fa-solid fa-graduation-cap"></i> Student dashboard and quick services</div>
@@ -29,11 +29,12 @@
     </section>
     <section class="auth-card">
       <div class="auth-brand-row"><img class="crest" src="kc.png" alt="Kamaraj College crest"><span></span><img class="auth-faceprep" src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="FACE Prep Campus"></div>
-      <div class="portal-status"><i class="fa-solid fa-circle-check"></i><span id="portalStatus">Official student access</span></div>
+      <div class="portal-status"><i class="fa-solid fa-circle-check"></i><span id="portalStatus">Official verified access</span></div>
       <h2 style="margin:4px 0 5px">Welcome to Kamaraj College</h2>
       <p style="color:var(--muted);margin:0">Sign in to continue to your portal.</p>
       <div class="tabs" role="tablist">
         <button class="tab active" id="studentTab" type="button"><i class="fa-solid fa-user-graduate"></i> Student</button>
+        <button class="tab" id="staffTab" type="button"><i class="fa-solid fa-chalkboard-user"></i> Staff</button>
         <button class="tab" id="adminTab" type="button"><i class="fa-solid fa-user-shield"></i> Admin</button>
       </div>
       <div id="alert" aria-live="polite"></div>
@@ -43,6 +44,13 @@
         <label class="check" style="margin:16px 0"><input type="checkbox" id="rememberMe" checked> Keep me signed in on this device</label>
         <button class="btn btn-primary btn-block" id="studentSubmit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open student portal</button>
         <p style="color:var(--muted);font-size:.78rem;line-height:1.5;margin:14px 0 0"><i class="fa-solid fa-shield-halved"></i> Only your secure session is remembered. Your date of birth is never stored on this device.</p>
+      </form>
+      <form id="staffForm" class="hidden">
+        <div class="field" style="margin-bottom:14px"><label for="staffId">Staff ID</label><input class="input" id="staffId" autocomplete="username" placeholder="Enter your staff ID" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="staffDob">Date of birth</label><input class="input" type="date" id="staffDob" autocomplete="bday" required></div>
+        <label class="check" style="margin:16px 0"><input type="checkbox" id="rememberStaff" checked> Keep me signed in on this device</label>
+        <button class="btn btn-primary btn-block" id="staffSubmit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open staff portal</button>
+        <p style="color:var(--muted);font-size:.78rem;line-height:1.5;margin:14px 0 0"><i class="fa-solid fa-shield-halved"></i> Your identity is checked against the live staff register. Your date of birth is never stored.</p>
       </form>
       <form id="adminForm" class="hidden">
         <div class="field" style="margin-bottom:14px"><label for="adminId">Administrator ID</label><input class="input" id="adminId" autocomplete="username" required></div>
@@ -55,9 +63,11 @@
   <script>
     const alertBox=document.getElementById('alert');
     function showAlert(message,type='error'){alertBox.innerHTML=`<div class="alert alert-${type}">${Portal.escape(message)}</div>`}
-    function choose(student){document.getElementById('studentForm').classList.toggle('hidden',!student);document.getElementById('adminForm').classList.toggle('hidden',student);studentTab.classList.toggle('active',student);adminTab.classList.toggle('active',!student);alertBox.innerHTML=''}
-    studentTab.onclick=()=>choose(true);adminTab.onclick=()=>choose(false);
+    function choose(role){studentForm.classList.toggle('hidden',role!=='student');staffForm.classList.toggle('hidden',role!=='staff');adminForm.classList.toggle('hidden',role!=='admin');studentTab.classList.toggle('active',role==='student');staffTab.classList.toggle('active',role==='staff');adminTab.classList.toggle('active',role==='admin');portalStatus.textContent=role==='student'?'Verified student access':role==='staff'?'Verified staff access':'Protected administration access';alertBox.innerHTML=''}
+    studentTab.onclick=()=>choose('student');staffTab.onclick=()=>choose('staff');adminTab.onclick=()=>choose('admin');
     if(Portal.studentToken()) window.location.href='dashboard.html';
+    else if(Portal.staffToken()) window.location.href='staff.html';
+    else if(Portal.adminToken()) window.location.href='admin.html';
     fetch(`${API_BASE_URL}/api/portal/public`).then(r=>r.json()).then(data=>{if(data.settings?.collegeName)document.title=`${data.settings.collegeName} | Official Student Portal`}).catch(()=>{});
     document.getElementById('studentForm').onsubmit=async event=>{
       event.preventDefault();const button=document.getElementById('studentSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying student record';
@@ -66,13 +76,26 @@
         const response=await Portal.request('/api/student/login',{method:'POST',body:JSON.stringify({rollNumber:document.getElementById('rollNumber').value,dob})});const data=await response.json();
         if(!response.ok)throw new Error(data.message||'Sign in failed.');
         const remember=document.getElementById('rememberMe').checked;localStorage.setItem('rememberStudent',String(remember));
+        Portal.clearStaff();
         Portal.store('studentToken',data.token,remember);Portal.store('rollNumber',data.student.rollNumber,remember);Portal.store('studentName',data.student.name,remember);Portal.store('studentClass',data.student.className||'',remember);Portal.store('hasVoted',data.student.hasVoted,remember);
         showAlert('Welcome! Opening your dashboard…','success');setTimeout(()=>window.location.href='dashboard.html',450);
       }catch(error){showAlert(error.message);button.disabled=false;button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Open student portal'}
     };
+    document.getElementById('staffForm').onsubmit=async event=>{
+      event.preventDefault();const button=document.getElementById('staffSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying staff record';
+      try{
+        const raw=document.getElementById('staffDob').value.split('-');const dob=`${raw[2]}-${raw[1]}-${raw[0]}`;
+        const response=await Portal.request('/api/staff/login',{method:'POST',body:JSON.stringify({staffId:document.getElementById('staffId').value,dob})});const data=await response.json();
+        if(!response.ok)throw new Error(data.message||'Sign in failed.');
+        const remember=document.getElementById('rememberStaff').checked;localStorage.setItem('rememberStaff',String(remember));
+        Portal.clearStudent();localStorage.removeItem('adminToken');sessionStorage.removeItem('adminToken');
+        Portal.store('staffToken',data.token,remember);Portal.store('staffId',data.staff.staffId,remember);Portal.store('staffName',data.staff.name,remember);
+        showAlert(`Welcome, ${data.staff.name}. Opening your staff portal…`,'success');setTimeout(()=>window.location.href='staff.html',450);
+      }catch(error){showAlert(error.message);button.disabled=false;button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Open staff portal'}
+    };
     document.getElementById('adminForm').onsubmit=async event=>{
       event.preventDefault();const button=document.getElementById('adminSubmit');button.disabled=true;
-      try{const response=await Portal.request('/api/admin/login',{method:'POST',body:JSON.stringify({username:adminId.value,password:adminPassword.value})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Sign in failed.');localStorage.setItem('adminToken',data.token);window.location.href='admin.html'}catch(error){showAlert(error.message);button.disabled=false}
+      try{const response=await Portal.request('/api/admin/login',{method:'POST',body:JSON.stringify({username:adminId.value,password:adminPassword.value})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Sign in failed.');Portal.clearStudent();Portal.clearStaff();localStorage.setItem('adminToken',data.token);window.location.href='admin.html'}catch(error){showAlert(error.message);button.disabled=false}
     };
   </script>
 </body></html>

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Staff Portal | Kamaraj College</title>
+  <meta name="description" content="Official Kamaraj College staff portal for announcements and campus election oversight.">
+  <meta name="application-name" content="Kamaraj College Campus Portal"><meta name="theme-color" content="#07152e">
+  <meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="KC Campus">
+  <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="app-icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"><link rel="stylesheet" href="portal.css">
+</head>
+<body class="student-theme staff-theme">
+<script>try{const savedTheme=localStorage.getItem('portalTheme')||'light';document.body.classList.add(`theme-${savedTheme}`);document.documentElement.style.colorScheme=savedTheme}catch(_){document.body.classList.add('theme-light')}</script>
+<div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+<header class="topbar">
+  <a class="brand" href="staff.html"><img src="kc.png" alt="Kamaraj College crest"><span class="brand-text"><strong>Kamaraj College</strong><small>Official Staff Portal</small></span></a>
+  <img class="topbar-faceprep" src="FACE_Prep_Logo-7fc4a872-2088-4df9-ab2f-72cded203db8.png" alt="FACE Prep Campus">
+  <div class="top-actions">
+    <button class="btn btn-ghost btn-sm hidden" type="button" data-install-app onclick="Portal.installApp()"><i class="fa-solid fa-download"></i><span>Install app</span></button>
+    <button class="btn btn-ghost btn-sm hidden" type="button" data-announcement-notifications onclick="Portal.toggleAnnouncementNotifications(this)" aria-pressed="false"><i class="fa-regular fa-bell"></i><span>Enable alerts</span></button>
+    <button class="btn btn-ghost btn-sm" type="button" data-tour-button onclick="Portal.showRoleTour('staff',Portal.read('staffName'),true)" aria-label="Show staff portal tour"><i class="fa-solid fa-circle-question"></i><span>Tour</span></button>
+    <button class="btn btn-ghost btn-sm theme-toggle" type="button" data-theme-toggle onclick="Portal.toggleTheme()" aria-label="Use dark theme" aria-pressed="false"><i class="fa-solid fa-moon"></i><span>Dark</span></button>
+    <span class="user-chip" id="staffChip">Staff</span>
+    <button class="btn btn-ghost btn-sm signout-button" onclick="Portal.logoutStaff()"><i class="fa-solid fa-right-from-bracket"></i><span>Sign out</span></button>
+  </div>
+</header>
+<div class="page-shell">
+  <aside class="sidebar">
+    <div class="side-label">Staff portal</div>
+    <a class="nav-link active" href="staff.html"><i class="fa-solid fa-house"></i> Overview</a>
+    <a class="nav-link" href="#announcements"><i class="fa-solid fa-bullhorn"></i> Announcements</a>
+    <a class="nav-link" href="#election"><i class="fa-solid fa-chart-pie"></i> Election oversight</a>
+    <a class="nav-link" href="#profile"><i class="fa-solid fa-id-card"></i> My staff profile</a>
+  </aside>
+  <main class="main">
+    <section class="hero staff-hero">
+      <div class="hero-copy"><span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Verified staff workspace</span><h1>Good to see you, <span id="staffHeroName">Staff member</span>.</h1><p>Your official notices and campus election overview are ready. Student-only services and timetables stay separate from this workspace.</p><div class="hero-actions"><a class="btn btn-primary" href="#announcements"><i class="fa-solid fa-bullhorn"></i> Read announcements</a><a class="btn btn-ghost" href="#election"><i class="fa-solid fa-chart-simple"></i> View election</a></div></div>
+      <div class="staff-hero-mark" aria-hidden="true"><i class="fa-solid fa-chalkboard-user"></i><span>STAFF<br>ACCESS</span></div>
+    </section>
+    <section class="grid grid-4 staff-stats" style="margin-top:18px">
+      <article class="card stat"><i class="fa-solid fa-id-badge"></i><strong id="staffIdStat">—</strong><small>Staff ID</small></article>
+      <article class="card stat"><i class="fa-solid fa-bullhorn"></i><strong id="noticeStat">0</strong><small>Current notices</small></article>
+      <article class="card stat"><i class="fa-solid fa-check-to-slot"></i><strong id="electionStatusStat">Checking</strong><small>Voting status</small></article>
+      <article class="card stat"><i class="fa-solid fa-chart-line"></i><strong id="turnoutStat">0%</strong><small>Participation</small></article>
+    </section>
+    <section id="announcements">
+      <div class="section-head"><div><span class="eyebrow"><i class="fa-solid fa-bullhorn"></i> Official communication</span><h2>Staff announcements</h2><p>College-wide and staff-only updates published by administration.</p></div><span class="badge badge-blue skeleton-pill" id="noticeCount">Loading</span></div>
+      <div class="grid grid-2" id="announcementGrid"><article class="card skeleton-card"><span class="skeleton skeleton-media"></span><span class="skeleton skeleton-line short"></span><span class="skeleton skeleton-line"></span></article><article class="card skeleton-card"><span class="skeleton skeleton-media"></span><span class="skeleton skeleton-line short"></span><span class="skeleton skeleton-line"></span></article></div>
+    </section>
+    <section id="election">
+      <div class="section-head"><div><span class="eyebrow"><i class="fa-solid fa-scale-balanced"></i> Neutral oversight</span><h2>Campus election</h2><p>Monitor participation without exposing live candidate vote counts.</p></div><span class="badge badge-gold" id="electionBadge">Checking</span></div>
+      <article class="card staff-election-summary">
+        <div class="staff-turnout-ring" id="staffTurnoutRing"><div><strong id="turnoutPercent">0%</strong><small>TURNOUT</small></div></div>
+        <div><h3 id="electionTitle">Election status loading</h3><p id="electionCopy">Secure participation totals will appear here.</p></div>
+        <div class="staff-election-numbers"><div><small>ELIGIBLE</small><strong id="eligibleCount">0</strong></div><div><small>VOTED</small><strong id="votedCount">0</strong></div><div><small>PENDING</small><strong id="pendingCount">0</strong></div></div>
+      </article>
+      <div class="section-head compact-head"><div><h2>Candidate lineup</h2><p>Profiles are grouped by position. Live vote choices remain confidential.</p></div></div>
+      <div class="grid grid-3 staff-candidate-grid" id="candidateGrid"><article class="card skeleton-card"><span class="skeleton skeleton-media"></span><span class="skeleton skeleton-line"></span></article></div>
+      <div id="winnerPanel"></div>
+    </section>
+    <section id="profile">
+      <div class="section-head"><div><span class="eyebrow"><i class="fa-solid fa-address-card"></i> Verified identity</span><h2>My staff profile</h2><p>Loaded from the live staff register each time your session is verified.</p></div></div>
+      <div class="card"><div class="grid grid-4"><div><small class="meta">FULL NAME</small><h3 id="profileName">—</h3></div><div><small class="meta">STAFF ID</small><h3 id="profileId">—</h3></div><div><small class="meta">DEPARTMENT</small><h3 id="profileDepartment">Not listed</h3></div><div><small class="meta">DESIGNATION</small><h3 id="profileDesignation">Staff member</h3></div></div></div>
+    </section>
+  </main>
+</div>
+<nav class="mobile-nav student-mobile-nav"><a class="nav-link active" href="staff.html"><i class="fa-solid fa-house"></i>Home</a><a class="nav-link" href="#announcements"><i class="fa-solid fa-bullhorn"></i>Notices</a><a class="nav-link" href="#election"><i class="fa-solid fa-chart-pie"></i>Election</a><a class="nav-link" href="#profile"><i class="fa-solid fa-id-card"></i>Profile</a></nav>
+<script src="portal.js"></script>
+<script>
+if(!Portal.staffToken())location.href='index.html';
+const e=Portal.escape;
+function renderAnnouncements(items){noticeStat.textContent=items.length;noticeCount.classList.remove('skeleton-pill');noticeCount.textContent=`${items.length} active`;announcementGrid.innerHTML=items.length?items.map((item,index)=>`<article class="card student-announcement reveal ${item.priority==='URGENT'?'urgent':item.priority==='IMPORTANT'?'important':''}" style="--delay:${index*.07}s">${item.image?`<div class="student-announcement-image"><img src="${e(item.image)}" alt="${e(item.imageAlt||item.title)}"><span class="badge ${item.priority==='URGENT'?'badge-red':item.priority==='IMPORTANT'?'badge-gold':'badge-blue'}">${e(item.priority)}</span></div>`:''}<div class="student-announcement-body">${item.image?'':`<span class="badge ${item.priority==='URGENT'?'badge-red':item.priority==='IMPORTANT'?'badge-gold':'badge-blue'}">${e(item.priority)}</span>`}<h3>${e(item.title)}</h3><p>${e(item.body)}</p>${item.linkUrl?`<a class="btn btn-secondary btn-sm notice-action" href="${e(item.linkUrl)}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> ${e(item.linkLabel||'Open official link')}</a>`:''}<div class="meta">Published ${Portal.date(item.publishAt)} · ${item.audience==='FACULTY'?'Staff notice':'College-wide notice'}</div></div></article>`).join(''):'<div class="card empty">There are no active staff announcements right now.</div>'}
+function renderElection(election){electionStatusStat.textContent=election.isOpen?'Open':'Closed';electionStatusStat.style.color=election.isOpen?'var(--green)':'var(--muted)';turnoutStat.textContent=`${election.turnout}%`;electionBadge.className=`badge ${election.isOpen?'badge-green':'badge-gold'}`;electionBadge.textContent=election.isOpen?'VOTING OPEN':'VOTING CLOSED';turnoutPercent.textContent=`${election.turnout}%`;staffTurnoutRing.style.setProperty('--turnout',`${election.turnout*3.6}deg`);eligibleCount.textContent=election.totalStudents;votedCount.textContent=election.totalVotes;pendingCount.textContent=election.pendingVotes;electionTitle.textContent=election.resultsAvailable?'Election complete':election.isOpen?'Voting is currently open':'Voting is currently closed';electionCopy.textContent=election.resultsAvailable?'Final winners are now available below.':`${election.totalVotes} of ${election.totalStudents} eligible students have submitted a ballot. Candidate-level vote totals remain private until completion.`;const groups=election.candidates.reduce((all,c)=>{const key=String(c.posting||'Position').toUpperCase();(all[key]||=[]).push(c);return all},{});candidateGrid.innerHTML=Object.keys(groups).length?Object.entries(groups).flatMap(([position,items])=>items.map((candidate,index)=>`<article class="card staff-candidate reveal" style="--delay:${index*.05}s"><img src="${e(candidate.photo||'')}" alt="${e(candidate.name)}"><div><span class="badge badge-blue">${e(position)}</span><h3>${e(candidate.name)}</h3><p>${e(candidate.department||'Department not listed')} · Year ${e(candidate.year||'—')}${candidate.section&&candidate.section!=='None'?` · Section ${e(candidate.section)}`:''}</p></div></article>`)).join(''):'<div class="card empty">Candidate profiles have not been published yet.</div>';winnerPanel.innerHTML=election.resultsAvailable?`<article class="card staff-winners"><span class="eyebrow"><i class="fa-solid fa-trophy"></i> Final result</span><h2>Election winners</h2><div class="grid grid-3">${election.winners.map(winner=>`<div><small>${e(winner.position)}</small><strong>${e(winner.name)}</strong><span>${e(winner.department||'')}</span></div>`).join('')}</div></article>`:''}
+async function load(){try{const response=await Portal.request('/api/staff/overview',{},'staff');const data=await response.json();if(!response.ok)throw new Error(data.message||'Could not load the staff portal.');const staff=data.staff;staffHeroName.textContent=staff.name;staffChip.textContent=staff.name;staffIdStat.textContent=staff.staffId;profileName.textContent=staff.name;profileId.textContent=staff.staffId;profileDepartment.textContent=staff.department||'Not listed';profileDesignation.textContent=staff.designation||'Staff member';renderAnnouncements(data.announcements);renderElection(data.election);Portal.store('staffName',staff.name,localStorage.getItem('rememberStaff')==='true');setTimeout(()=>Portal.showRoleTour('staff',staff.name),500)}catch(error){announcementGrid.innerHTML=`<div class="card empty">${e(error.message)}</div>`}}load();
+</script>
+</body>
+</html>

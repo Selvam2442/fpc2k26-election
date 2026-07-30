@@ -1,8 +1,8 @@
 {
   "id": "./index.html",
-  "name": "KC-FPC",
-  "short_name": "KC-FPC",
-  "description": "The official Kamaraj College and FACE Prep Campus student portal.",
+  "name": "Kamaraj College Campus Portal",
+  "short_name": "KC Campus",
+  "description": "The verified Kamaraj College portal for students, staff, announcements and campus elections.",
   "lang": "en-IN",
   "dir": "ltr",
   "start_url": "./index.html",
@@ -13,6 +13,9 @@
     "standalone",
     "minimal-ui"
   ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
   "background_color": "#f4f7fb",
   "theme_color": "#07152e",
   "categories": [
@@ -58,6 +61,19 @@
       "short_name": "Vote",
       "description": "Open the KC-FPC campus election.",
       "url": "./students.html",
+      "icons": [
+        {
+          "src": "app-icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Staff portal",
+      "short_name": "Staff",
+      "description": "Open the verified Kamaraj College staff portal.",
+      "url": "./staff.html",
       "icons": [
         {
           "src": "app-icon-192.png",

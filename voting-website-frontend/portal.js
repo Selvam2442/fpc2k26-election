@@ -17,15 +17,22 @@ const Portal = {
       localStorage.removeItem(key); sessionStorage.removeItem(key);
     });
   },
+  clearStaff() {
+    ['staffToken', 'staffId', 'staffName'].forEach(key => {
+      localStorage.removeItem(key); sessionStorage.removeItem(key);
+    });
+  },
   studentToken() { return this.read('studentToken') || this.read('voterToken'); },
+  staffToken() { return this.read('staffToken'); },
   adminToken() { return localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken'); },
   async request(path, options = {}, role = '') {
     const headers = new Headers(options.headers || {});
-    const token = role === 'admin' ? this.adminToken() : role === 'student' ? this.studentToken() : '';
+    const token = role === 'admin' ? this.adminToken() : role === 'student' ? this.studentToken() : role === 'staff' ? this.staffToken() : '';
     if (token) headers.set('Authorization', `Bearer ${token}`);
     if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
     const response = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
     if (response.status === 401 && role === 'student') { this.clearStudent(); window.location.href = 'index.html'; }
+    if (response.status === 401 && role === 'staff') { this.clearStaff(); window.location.href = 'index.html'; }
     if (response.status === 401 && role === 'admin') { localStorage.removeItem('adminToken'); window.location.href = 'index.html'; }
     return response;
   },
@@ -85,6 +92,7 @@ const Portal = {
     } catch (_) {}
   },
   logoutStudent() { this.clearStudent(); window.location.href = 'index.html'; },
+  logoutStaff() { this.clearStaff(); window.location.href = 'index.html'; },
   logoutAdmin() { localStorage.removeItem('adminToken'); sessionStorage.removeItem('adminToken'); window.location.href = 'index.html'; },
   async installApp() {
     if (!installPrompt) return;
@@ -102,6 +110,9 @@ const Portal = {
     const bytes = atob(base64);
     return Uint8Array.from(bytes, character => character.charCodeAt(0));
   },
+  notificationRole() {
+    return this.staffToken() ? 'staff' : 'student';
+  },
   async refreshAnnouncementNotificationButtons() {
     const buttons = document.querySelectorAll('[data-announcement-notifications]');
     if (!buttons.length) return;
@@ -111,10 +122,11 @@ const Portal = {
     }
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
+    const roleMatches = localStorage.getItem('notificationSubscriptionRole') === this.notificationRole();
     buttons.forEach(button => {
       button.classList.remove('hidden');
-      button.setAttribute('aria-pressed', String(Boolean(subscription)));
-      button.innerHTML = subscription
+      button.setAttribute('aria-pressed', String(Boolean(subscription && roleMatches)));
+      button.innerHTML = subscription && roleMatches
         ? '<i class="fa-solid fa-bell"></i><span>Alerts on</span>'
         : '<i class="fa-regular fa-bell"></i><span>Enable alerts</span>';
     });
@@ -123,33 +135,42 @@ const Portal = {
     if (!this.notificationSupportAvailable()) return;
     button.disabled = true;
     try {
+      const role = this.notificationRole();
       const registration = await navigator.serviceWorker.ready;
-      const existing = await registration.pushManager.getSubscription();
-      if (existing) {
-        await this.request('/api/student/push/subscriptions', {
+      let existing = await registration.pushManager.getSubscription();
+      const existingRole = localStorage.getItem('notificationSubscriptionRole');
+      if (existing && existingRole === role) {
+        await this.request(`/api/${role}/push/subscriptions`, {
           method: 'DELETE',
           body: JSON.stringify({ endpoint: existing.endpoint })
-        }, 'student');
+        }, role);
         await existing.unsubscribe();
+        localStorage.removeItem('notificationSubscriptionRole');
       } else {
+        if (existing) {
+          await existing.unsubscribe();
+          localStorage.removeItem('notificationSubscriptionRole');
+          existing = null;
+        }
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') throw new Error('Allow notifications in your browser to receive campus alerts.');
-        const keyResponse = await this.request('/api/student/push/public-key', {}, 'student');
+        const keyResponse = await this.request(`/api/${role}/push/public-key`, {}, role);
         const keyData = await keyResponse.json();
         if (!keyResponse.ok || !keyData.publicKey) throw new Error(keyData.message || 'Notifications are unavailable.');
         const subscription = await registration.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: this.applicationServerKey(keyData.publicKey)
         });
-        const response = await this.request('/api/student/push/subscriptions', {
+        const response = await this.request(`/api/${role}/push/subscriptions`, {
           method: 'POST',
           body: JSON.stringify({ subscription: subscription.toJSON() })
-        }, 'student');
+        }, role);
         if (!response.ok) {
           await subscription.unsubscribe();
           const data = await response.json().catch(() => ({}));
           throw new Error(data.message || 'Could not enable notifications.');
         }
+        localStorage.setItem('notificationSubscriptionRole', role);
       }
       await this.refreshAnnouncementNotificationButtons();
     } catch (error) {
@@ -157,6 +178,76 @@ const Portal = {
     } finally {
       button.disabled = false;
     }
+  },
+  roleTourSteps(role, name) {
+    const firstName = String(name || role).trim().split(/\s+/)[0];
+    if (role === 'student') return [
+      { icon: 'fa-hand-sparkles', title: `Welcome, ${firstName}`, body: 'This is your verified student space. Your profile comes directly from the live college register.', target: '.college-hero' },
+      { icon: 'fa-bullhorn', title: 'Never miss an update', body: 'Official notices for all students or your class appear here.', target: '#announcements' },
+      { icon: 'fa-calendar-week', title: 'Your class timetable', body: 'The timetable is personalized from your class record and highlights the current period.', target: '#timetable' },
+      { icon: 'fa-check-to-slot', title: 'Vote securely', body: 'Open Campus voting when the election is live. Each verified student can submit only one ballot.', target: 'a[href="students.html"]' },
+      { icon: 'fa-bell', title: 'Enable official alerts', body: 'Allow notifications to receive trusted Kamaraj College announcements even when the app is closed.', target: '[data-announcement-notifications]', action: 'notifications' }
+    ];
+    if (role === 'staff') return [
+      { icon: 'fa-hand-sparkles', title: `Welcome, ${firstName}`, body: 'This staff portal is personalized from the live staff register and keeps student-only tools separate.', target: '.staff-hero' },
+      { icon: 'fa-bullhorn', title: 'Staff announcements', body: 'See college-wide and staff-only notices in one official feed.', target: '#announcements' },
+      { icon: 'fa-chart-pie', title: 'Election oversight', body: 'Monitor whether voting is open, participation progress, candidates, and final results without exposing live vote choices.', target: '#election' },
+      { icon: 'fa-bell', title: 'Enable official alerts', body: 'Allow notifications to receive trusted staff announcements even when the app is closed.', target: '[data-announcement-notifications]', action: 'notifications' }
+    ];
+    return [
+      { icon: 'fa-shield-halved', title: 'Welcome, Administrator', body: 'This protected control centre manages official portal data and communication.', target: '#overview' },
+      { icon: 'fa-users', title: 'Live directories', body: 'Student and staff identities remain connected to their separate official spreadsheets.', target: '[data-view="students"]' },
+      { icon: 'fa-paper-plane', title: 'Publish by audience', body: 'Send notices to students, staff, everyone, or selected student classes.', target: '[data-view="announcements"]' },
+      { icon: 'fa-check-to-slot', title: 'Election controls', body: 'Open or pause voting, manage candidates, and review participation securely.', target: '[data-view="election"]' }
+    ];
+  },
+  showRoleTour(role, name, force = false) {
+    const storageKey = `kc-fpc-tour-${role}-v2`;
+    if (!force && localStorage.getItem(storageKey) === 'complete') return;
+    document.querySelector('.app-tour-layer')?.remove();
+    const steps = this.roleTourSteps(role, name);
+    let index = 0;
+    const layer = document.createElement('div');
+    layer.className = 'app-tour-layer';
+    layer.innerHTML = '<div class="app-tour-shade"></div><section class="app-tour-card" role="dialog" aria-modal="true" aria-live="polite"></section>';
+    document.body.appendChild(layer);
+    const card = layer.querySelector('.app-tour-card');
+    const close = () => {
+      document.querySelector('.tour-focus')?.classList.remove('tour-focus');
+      localStorage.setItem(storageKey, 'complete');
+      layer.remove();
+    };
+    const render = () => {
+      document.querySelector('.tour-focus')?.classList.remove('tour-focus');
+      const step = steps[index];
+      const target = document.querySelector(step.target);
+      if (target) {
+        target.classList.add('tour-focus');
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      card.innerHTML = `<div class="tour-progress">${steps.map((_, i) => `<span class="${i <= index ? 'active' : ''}"></span>`).join('')}</div><div class="tour-icon"><i class="fa-solid ${step.icon}"></i></div><span class="eyebrow">Quick tour · ${index + 1} of ${steps.length}</span><h2>${this.escape(step.title)}</h2><p>${this.escape(step.body)}</p>${step.action === 'notifications' ? '<button class="btn btn-primary btn-block tour-notification-action"><i class="fa-solid fa-bell"></i> Enable official alerts</button>' : ''}<div class="tour-actions"><button class="btn btn-secondary tour-skip">${index ? 'Back' : 'Skip tour'}</button><button class="btn btn-primary tour-next">${index === steps.length - 1 ? 'Finish' : 'Next'}</button></div>`;
+      card.querySelector('.tour-skip').onclick = () => {
+        if (index) { index -= 1; render(); } else close();
+      };
+      card.querySelector('.tour-next').onclick = () => {
+        if (index === steps.length - 1) close();
+        else { index += 1; render(); }
+      };
+      const notificationAction = card.querySelector('.tour-notification-action');
+      if (notificationAction) notificationAction.onclick = async () => {
+        if (!this.notificationSupportAvailable()) {
+          notificationAction.innerHTML = '<i class="fa-solid fa-circle-info"></i> Notifications are not supported here';
+          notificationAction.disabled = true;
+          return;
+        }
+        const topButton = document.querySelector('[data-announcement-notifications]');
+        if (topButton) await this.toggleAnnouncementNotifications(topButton);
+        notificationAction.innerHTML = Notification.permission === 'granted'
+          ? '<i class="fa-solid fa-circle-check"></i> Official alerts enabled'
+          : '<i class="fa-solid fa-bell"></i> Enable official alerts';
+      };
+    };
+    render();
   }
 };
 

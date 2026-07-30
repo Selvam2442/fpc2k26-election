@@ -1,9 +1,10 @@
-const CACHE_NAME = 'kc-fpc-shell-v8';
+const CACHE_NAME = 'kc-fpc-shell-v9';
 const APP_SHELL = [
   './',
   './index.html',
   './dashboard.html',
   './students.html',
+  './staff.html',
   './admin.html',
   './portal.css',
   './portal.js',
@@ -81,7 +82,12 @@ self.addEventListener('push', event => {
     tag: data.tag || 'campus-announcement',
     renotify: true,
     requireInteraction: data.priority === 'URGENT',
-    data: { url: data.url || './dashboard.html#announcements' }
+    silent: false,
+    timestamp: Date.now(),
+    vibrate: data.priority === 'URGENT' ? [180, 90, 180] : [140],
+    lang: 'en-IN',
+    actions: [{ action: 'view', title: 'View announcement' }],
+    data: { url: data.url || './dashboard.html#announcements', official: true }
   }));
 });
 

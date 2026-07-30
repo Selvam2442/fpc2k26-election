@@ -19,7 +19,7 @@ const PushSubscription = require('./models/PushSubscription');
 const app = express();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'development-only-change-me';
-const RELEASE = '2026-07-28-live-class-sheets-v2';
+const RELEASE = '2026-07-30-role-portals-v3';
 const STUDENT_SYNC_INTERVAL_MS = Math.max(Number(process.env.STUDENT_SYNC_INTERVAL_MS) || 120000, 30000);
 const ANNOUNCEMENT_PUSH_INTERVAL_MS = Math.max(Number(process.env.ANNOUNCEMENT_PUSH_INTERVAL_MS) || 60000, 15000);
 const DEFAULT_STUDENT_SOURCES = [
@@ -37,13 +37,13 @@ const DEFAULT_STUDENT_SOURCES = [
     name: 'Student register 3',
     sheetId: '1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII',
     url: 'https://docs.google.com/spreadsheets/d/1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII/edit?usp=sharing'
-  },
-  {
-    name: 'Student register 4',
-    sheetId: '1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU',
-    url: 'https://docs.google.com/spreadsheets/d/1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU/edit?gid=0#gid=0'
   }
 ];
+const STAFF_SOURCE = {
+  name: 'Staff directory',
+  sheetId: '1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU',
+  url: 'https://docs.google.com/spreadsheets/d/1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU/edit?gid=0#gid=0'
+};
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -52,11 +52,15 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('Connected to the college portal database.');
-    try { await refreshStudentDirectory({ force: true }); }
+    await PushSubscription.updateMany(
+      { recipientId: { $exists: false }, rollNumber: { $exists: true } },
+      [{ $set: { recipientRole: 'student', recipientId: '$rollNumber' } }]
+    ).catch(error => console.error(`Push subscription migration failed: ${error.message}`));
+    try { await Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true })]); }
     catch (error) { console.error(`Initial student sync failed: ${error.message}`); }
     const timer = setInterval(() => {
-      refreshStudentDirectory({ force: true })
-        .catch(error => console.error(`Scheduled student sync failed: ${error.message}`));
+      Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true })])
+        .catch(error => console.error(`Scheduled directory sync failed: ${error.message}`));
     }, STUDENT_SYNC_INTERVAL_MS);
     timer.unref();
     notifyLiveAnnouncements().catch(error => console.error(`Initial announcement push failed: ${error.message}`));
@@ -124,26 +128,35 @@ async function notifyAnnouncementIfLive(announcementId) {
   }, { $set: { pushNotifiedAt: now } }, { new: true }).lean();
   if (!announcement) return false;
 
-  const subscriptionQuery = { active: true };
+  const subscriptionQuery = {
+    active: true,
+    recipientRole: announcement.audience === 'FACULTY'
+      ? 'staff'
+      : announcement.audience === 'STUDENTS'
+        ? 'student'
+        : { $in: ['student', 'staff'] }
+  };
   if (announcement.targetClasses?.length) subscriptionQuery.className = { $in: announcement.targetClasses };
   const subscriptions = await PushSubscription.find(subscriptionQuery).lean();
   if (!subscriptions.length) return true;
 
   await getWebPushConfig();
-  const payload = JSON.stringify({
-    title: announcement.title,
-    body: announcement.body.length > 240 ? `${announcement.body.slice(0, 237)}...` : announcement.body,
+  const payload = {
+    title: `Kamaraj College • ${announcement.title}`,
+    body: `Official campus notice: ${announcement.body.length > 196 ? `${announcement.body.slice(0, 193)}...` : announcement.body}`,
     priority: announcement.priority,
-    tag: `announcement-${announcement._id}`,
-    url: './dashboard.html#announcements'
-  });
+    tag: `announcement-${announcement._id}`
+  };
   const staleIds = [];
   await Promise.all(subscriptions.map(async subscription => {
     try {
       await webPush.sendNotification({
         endpoint: subscription.endpoint,
         keys: subscription.keys
-      }, payload, { TTL: 24 * 60 * 60, urgency: announcement.priority === 'URGENT' ? 'high' : 'normal' });
+      }, JSON.stringify({
+        ...payload,
+        url: subscription.recipientRole === 'staff' ? './staff.html#announcements' : './dashboard.html#announcements'
+      }), { TTL: 24 * 60 * 60, urgency: announcement.priority === 'URGENT' ? 'high' : 'normal' });
     } catch (error) {
       if ([404, 410].includes(error.statusCode)) staleIds.push(subscription._id);
       else console.error(`Announcement push delivery failed: ${error.message}`);
@@ -187,6 +200,17 @@ function verifyStudent(req, res, next) {
     next();
   } catch (_) {
     res.status(401).json({ message: 'Your student session is invalid or has expired.' });
+  }
+}
+
+function verifyStaff(req, res, next) {
+  try {
+    const decoded = jwt.verify(bearerToken(req), JWT_SECRET);
+    if (decoded.role !== 'staff' || !decoded.staffId) throw new Error('Not a staff member');
+    req.user = decoded;
+    next();
+  } catch (_) {
+    res.status(401).json({ message: 'Your staff session is invalid or has expired.' });
   }
 }
 
@@ -268,6 +292,10 @@ function meaningfulSheetTitle(sheetTitle, documentTitle) {
 }
 
 async function ensureDefaultSources() {
+  await StudentSource.updateOne(
+    { sheetId: STAFF_SOURCE.sheetId },
+    { $set: { name: STAFF_SOURCE.name, enabled: false } }
+  );
   await Promise.all(DEFAULT_STUDENT_SOURCES.map(source => StudentSource.findOneAndUpdate(
     { sheetId: source.sheetId },
     { $setOnInsert: { ...source, enabled: true } },
@@ -429,6 +457,60 @@ async function findLiveStudent(rollNumber, { force = false } = {}) {
   return { student, result };
 }
 
+let staffDirectory = [];
+let staffDirectorySyncPromise = null;
+let lastStaffDirectorySyncAt = 0;
+
+async function refreshStaffDirectory({ force = false } = {}) {
+  if (!force && Date.now() - lastStaffDirectorySyncAt < STUDENT_SYNC_INTERVAL_MS) {
+    return { staff: staffDirectory, failed: 0 };
+  }
+  if (!staffDirectorySyncPromise) {
+    staffDirectorySyncPromise = (async () => {
+      try {
+        const response = await fetch(exportUrl(STAFF_SOURCE.sheetId), { signal: AbortSignal.timeout(20000) });
+        if (!response.ok) throw new Error(`Google Sheets returned ${response.status}`);
+        const workbook = xlsx.read(Buffer.from(await response.arrayBuffer()), { type: 'buffer', cellDates: false });
+        const records = [];
+        for (const sheetTitle of workbook.SheetNames) {
+          const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
+          for (const row of rows) {
+            const staffId = firstValue(row, ['RollNumber', 'StaffId', 'EmployeeId', 'EmployeeNumber', 'RegisterNumber']).toUpperCase();
+            const name = firstValue(row, ['Name', 'StaffName', 'EmployeeName', 'FullName']);
+            const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
+            if (!staffId || !name || !dob) continue;
+            records.push({
+              staffId,
+              name,
+              dob,
+              department: firstValue(row, ['Department', 'Dept']),
+              designation: firstValue(row, ['Designation', 'Role', 'Position'])
+            });
+          }
+        }
+        staffDirectory = [...new Map(records.map(record => [record.staffId, record])).values()];
+        lastStaffDirectorySyncAt = Date.now();
+        return { staff: staffDirectory, failed: 0 };
+      } catch (error) {
+        console.error(`Staff directory sync failed: ${error.message}`);
+        return { staff: staffDirectory, failed: 1, error: error.message };
+      }
+    })().finally(() => { staffDirectorySyncPromise = null; });
+  }
+  return staffDirectorySyncPromise;
+}
+
+async function findLiveStaff(staffId, { force = false } = {}) {
+  const normalizedId = String(staffId || '').trim().toUpperCase();
+  let result = await refreshStaffDirectory({ force });
+  let staff = result.staff.find(item => item.staffId === normalizedId);
+  if (!staff && !force) {
+    result = await refreshStaffDirectory({ force: true });
+    staff = result.staff.find(item => item.staffId === normalizedId);
+  }
+  return { staff, result };
+}
+
 function publicSettings(settings) {
   return settings || {
     isPublished: false, isCardVisible: false, cardTitle: '', cardDescription: '',
@@ -470,7 +552,8 @@ app.get('/api/health', (_req, res) => res.json({
   ok: true,
   service: 'college-portal',
   release: RELEASE,
-  configuredClassSheets: DEFAULT_STUDENT_SOURCES.length
+  configuredClassSheets: DEFAULT_STUDENT_SOURCES.length,
+  configuredStaffSheets: 1
 }));
 
 app.post('/api/admin/login', (req, res) => {
@@ -482,11 +565,32 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ token: jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' }) });
 });
 
+app.post('/api/staff/login', async (req, res) => {
+  try {
+    const staffId = String(req.body.staffId || req.body.rollNumber || '').trim().toUpperCase();
+    const dob = normalizeDob(req.body.dob);
+    const { staff, result } = await findLiveStaff(staffId, { force: true });
+    if (!staff && result.failed) {
+      return res.status(503).json({ message: 'The live staff directory is temporarily unavailable. Please try again shortly.' });
+    }
+    if (!staff || staff.dob !== dob) return res.status(401).json({ message: 'Staff ID or date of birth is incorrect.' });
+    res.json({
+      token: jwt.sign({ role: 'staff', staffId }, JWT_SECRET, { expiresIn: '30d' }),
+      staff: {
+        name: staff.name,
+        staffId,
+        department: staff.department,
+        designation: staff.designation
+      }
+    });
+  } catch (error) { res.status(500).json({ message: 'Unable to verify the staff directory.', detail: error.message }); }
+});
+
 app.get('/api/portal/public', async (_req, res) => {
   try {
     const [settings, announcements] = await Promise.all([
       Settings.findOne({ settingsId: 'master_config' }).lean(),
-      Announcement.find({ published: true, publishAt: { $lte: new Date() }, $and: [{ $or: [{ targetClasses: { $exists: false } }, { targetClasses: { $size: 0 } }] }, { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] }] }).sort({ publishAt: -1 }).limit(8).lean()
+      Announcement.find({ published: true, audience: 'ALL', publishAt: { $lte: new Date() }, $and: [{ $or: [{ targetClasses: { $exists: false } }, { targetClasses: { $size: 0 } }] }, { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] }] }).sort({ publishAt: -1 }).limit(8).lean()
     ]);
     res.json({ settings: publicSettings(settings), announcements });
   } catch (error) { res.status(500).json({ message: error.message }); }
@@ -546,6 +650,66 @@ app.get('/api/student/announcements', verifyStudent, async (req, res) => {
   }).sort({ publishAt: -1 }));
 });
 
+app.get('/api/staff/me', verifyStaff, async (req, res) => {
+  const { staff } = await findLiveStaff(req.user.staffId);
+  if (!staff) return res.status(404).json({ message: 'Staff record is no longer active.' });
+  res.json({
+    name: staff.name,
+    staffId: staff.staffId,
+    department: staff.department,
+    designation: staff.designation
+  });
+});
+
+app.get('/api/staff/overview', verifyStaff, async (req, res) => {
+  try {
+    const { staff } = await findLiveStaff(req.user.staffId);
+    if (!staff) return res.status(404).json({ message: 'Staff record is no longer active.' });
+    const now = new Date();
+    const students = await getStudentDirectory();
+    const eligibleRolls = students.map(student => student.rollNumber);
+    const [settings, announcements, candidates, totalVotes] = await Promise.all([
+      Settings.findOne({ settingsId: 'master_config' }).lean(),
+      Announcement.find({
+        published: true,
+        audience: { $in: ['ALL', 'FACULTY'] },
+        publishAt: { $lte: now },
+        $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
+      }).sort({ publishAt: -1 }).limit(20).lean(),
+      Candidate.find().select('-votes').sort({ posting: 1, name: 1 }).lean(),
+      VoteReceipt.countDocuments({ rollNumber: { $in: eligibleRolls } })
+    ]);
+    const totalStudents = eligibleRolls.length;
+    let winners = [];
+    if (totalStudents > 0 && totalVotes >= totalStudents) {
+      const resultCandidates = await Candidate.find().sort({ posting: 1, votes: -1, name: 1 }).lean();
+      const grouped = resultCandidates.reduce((all, candidate) => {
+        (all[candidate.posting] ||= []).push(candidate);
+        return all;
+      }, {});
+      winners = Object.entries(grouped).map(([position, items]) => ({
+        position,
+        name: items[0]?.name || '',
+        department: items[0]?.department || ''
+      }));
+    }
+    res.json({
+      staff: { name: staff.name, staffId: staff.staffId, department: staff.department, designation: staff.designation },
+      announcements,
+      election: {
+        isOpen: Boolean(settings?.isPublished),
+        totalStudents,
+        totalVotes,
+        pendingVotes: Math.max(totalStudents - totalVotes, 0),
+        turnout: totalStudents ? Math.round((totalVotes / totalStudents) * 100) : 0,
+        resultsAvailable: winners.length > 0,
+        winners,
+        candidates
+      }
+    });
+  } catch (error) { res.status(500).json({ message: error.message }); }
+});
+
 app.get('/api/student/push/public-key', verifyStudent, async (_req, res) => {
   try {
     const config = await getWebPushConfig();
@@ -568,7 +732,8 @@ app.post('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
       {
         endpoint: endpoint.toString(),
         keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
-        rollNumber: student.rollNumber,
+        recipientRole: 'student',
+        recipientId: student.rollNumber,
         className: student.className,
         active: true
       },
@@ -580,7 +745,46 @@ app.post('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
 
 app.delete('/api/student/push/subscriptions', verifyStudent, async (req, res) => {
   const endpoint = String(req.body.endpoint || '').trim();
-  if (endpoint) await PushSubscription.deleteOne({ endpoint, rollNumber: req.user.rollNumber });
+  if (endpoint) await PushSubscription.deleteOne({ endpoint, recipientRole: 'student', recipientId: req.user.rollNumber });
+  res.json({ message: 'Announcement notifications are disabled.' });
+});
+
+app.get('/api/staff/push/public-key', verifyStaff, async (_req, res) => {
+  try {
+    const config = await getWebPushConfig();
+    res.json({ publicKey: config.publicKey });
+  } catch (error) { res.status(500).json({ message: 'Notifications are temporarily unavailable.' }); }
+});
+
+app.post('/api/staff/push/subscriptions', verifyStaff, async (req, res) => {
+  try {
+    const subscription = req.body.subscription || req.body;
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return res.status(400).json({ message: 'The notification subscription is incomplete.' });
+    }
+    const endpoint = new URL(subscription.endpoint);
+    if (endpoint.protocol !== 'https:') return res.status(400).json({ message: 'The notification endpoint must be secure.' });
+    const { staff } = await findLiveStaff(req.user.staffId);
+    if (!staff) return res.status(404).json({ message: 'Staff record is no longer active.' });
+    await PushSubscription.findOneAndUpdate(
+      { endpoint: endpoint.toString() },
+      {
+        endpoint: endpoint.toString(),
+        keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth },
+        recipientRole: 'staff',
+        recipientId: staff.staffId,
+        className: '',
+        active: true
+      },
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+    res.status(201).json({ message: 'Staff announcement notifications are enabled.' });
+  } catch (error) { res.status(400).json({ message: error.message }); }
+});
+
+app.delete('/api/staff/push/subscriptions', verifyStaff, async (req, res) => {
+  const endpoint = String(req.body.endpoint || '').trim();
+  if (endpoint) await PushSubscription.deleteOne({ endpoint, recipientRole: 'staff', recipientId: req.user.staffId });
   res.json({ message: 'Announcement notifications are disabled.' });
 });
 
