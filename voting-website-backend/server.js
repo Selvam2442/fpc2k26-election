@@ -33,6 +33,11 @@ const DEFAULT_STUDENT_SOURCES = [
     name: 'Student register 3',
     sheetId: '1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII',
     url: 'https://docs.google.com/spreadsheets/d/1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII/edit?usp=sharing'
+  },
+  {
+    name: 'Student register 4',
+    sheetId: '1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU',
+    url: 'https://docs.google.com/spreadsheets/d/1kCK1rBl1WF4xw-T-qCRBj-ImB-F7gFFnnWQQWK5rKhU/edit?gid=0#gid=0'
   }
 ];
 
