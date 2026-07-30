@@ -201,7 +201,146 @@ const Portal = {
       { icon: 'fa-check-to-slot', title: 'Election controls', body: 'Open or pause voting, manage candidates, and review participation securely.', target: '[data-view="election"]' }
     ];
   },
+  showAdvancedRoleTour(role, name, force = false) {
+    const storageKey = `kc-fpc-tour-${role}-v3`;
+    if (!force && localStorage.getItem(storageKey) === 'complete') return;
+    this._activeTourClose?.();
+    document.querySelector('.app-tour-layer')?.remove();
+    const steps = this.roleTourSteps(role, name);
+    const adminViews = ['overview', 'students', 'announcements', 'election'];
+    let index = 0;
+    let target = null;
+    let positionTimer = 0;
+    let closed = false;
+    const previouslyFocused = document.activeElement;
+    const layer = document.createElement('div');
+    layer.className = 'app-tour-layer';
+    layer.innerHTML = '<div class="app-tour-shade"></div><div class="app-tour-spotlight" aria-hidden="true"></div><section class="app-tour-card" role="dialog" aria-modal="true" aria-live="polite" aria-label="Portal guided tour"></section>';
+    document.body.appendChild(layer);
+    document.body.classList.add('tour-is-active');
+    const card = layer.querySelector('.app-tour-card');
+    const spotlight = layer.querySelector('.app-tour-spotlight');
+    const findTarget = step => {
+      if (role === 'admin') {
+        const view = adminViews[index];
+        document.querySelector(`[data-view="${view}"]`)?.click();
+        return document.querySelector(`#${view} .section-head, #${view} .election-switch-card, #${view}`);
+      }
+      return document.querySelector(step.target);
+    };
+    const place = () => {
+      if (closed || !layer.isConnected) return;
+      if (!target?.isConnected) {
+        spotlight.classList.remove('visible');
+        card.removeAttribute('style');
+        card.classList.add('tour-card-centred');
+        return;
+      }
+      card.classList.remove('tour-card-centred');
+      const rect = target.getBoundingClientRect();
+      const padding = innerWidth < 700 ? 6 : 10;
+      const left = Math.max(8, rect.left - padding);
+      const top = Math.max(8, rect.top - padding);
+      spotlight.style.left = `${left}px`;
+      spotlight.style.top = `${top}px`;
+      spotlight.style.width = `${Math.max(24, Math.min(innerWidth - left - 8, rect.width + padding * 2))}px`;
+      spotlight.style.height = `${Math.max(24, Math.min(innerHeight - top - 8, rect.height + padding * 2))}px`;
+      spotlight.style.borderRadius = `${Math.min(28, Math.max(12, parseFloat(getComputedStyle(target).borderRadius) || 16))}px`;
+      spotlight.classList.add('visible');
+      card.style.left = card.style.right = card.style.top = card.style.bottom = 'auto';
+      if (innerWidth <= 700) {
+        card.style.left = '14px';
+        card.style.bottom = 'calc(78px + env(safe-area-inset-bottom))';
+        return;
+      }
+      const cardRect = card.getBoundingClientRect();
+      const gap = 24;
+      let cardLeft;
+      let cardTop;
+      if (innerWidth - rect.right >= cardRect.width + gap) {
+        cardLeft = rect.right + gap;
+        cardTop = rect.top + (rect.height - cardRect.height) / 2;
+      } else if (rect.left >= cardRect.width + gap) {
+        cardLeft = rect.left - cardRect.width - gap;
+        cardTop = rect.top + (rect.height - cardRect.height) / 2;
+      } else if (innerHeight - rect.bottom >= cardRect.height + gap) {
+        cardLeft = rect.left + (rect.width - cardRect.width) / 2;
+        cardTop = rect.bottom + gap;
+      } else {
+        cardLeft = rect.left + (rect.width - cardRect.width) / 2;
+        cardTop = rect.top - cardRect.height - gap;
+      }
+      card.style.left = `${Math.min(Math.max(14, cardLeft), innerWidth - cardRect.width - 14)}px`;
+      card.style.top = `${Math.min(Math.max(14, cardTop), innerHeight - cardRect.height - 14)}px`;
+    };
+    const close = () => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(positionTimer);
+      removeEventListener('resize', place);
+      removeEventListener('scroll', place, true);
+      removeEventListener('keydown', handleKey);
+      document.body.classList.remove('tour-is-active');
+      localStorage.setItem(storageKey, 'complete');
+      if (this._activeTourClose === close) this._activeTourClose = null;
+      layer.classList.add('tour-leaving');
+      if (previouslyFocused?.focus) previouslyFocused.focus({ preventScroll: true });
+      setTimeout(() => layer.remove(), 220);
+    };
+    this._activeTourClose = close;
+    const move = direction => {
+      const next = index + direction;
+      if (next < 0 || next >= steps.length) return close();
+      index = next;
+      render(direction);
+    };
+    const handleKey = event => {
+      if (event.key === 'Escape') close();
+      else if (event.key === 'ArrowRight') { event.preventDefault(); move(1); }
+      else if (event.key === 'ArrowLeft') { event.preventDefault(); move(-1); }
+    };
+    const render = (direction = 1) => {
+      const step = steps[index];
+      target = findTarget(step);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      card.classList.remove('tour-card-enter', 'tour-card-enter-back', 'tour-card-nudge');
+      card.innerHTML = `<button class="tour-close" type="button" aria-label="Close tour"><i class="fa-solid fa-xmark"></i></button><div class="tour-progress" aria-label="Tour progress">${steps.map((_, i) => `<span class="${i <= index ? 'active' : ''}"><i style="width:${i === index ? '100' : '0'}%"></i></span>`).join('')}</div><div class="tour-step-row"><div class="tour-icon"><i class="fa-solid ${step.icon}"></i></div><span class="tour-step-number">${String(index + 1).padStart(2, '0')} / ${String(steps.length).padStart(2, '0')}</span></div><span class="eyebrow">Guided portal tour</span><h2>${this.escape(step.title)}</h2><p>${this.escape(step.body)}</p>${step.action === 'notifications' ? '<button class="btn btn-primary btn-block tour-notification-action"><i class="fa-solid fa-bell"></i> Enable official alerts</button>' : ''}<div class="tour-hint"><i class="fa-solid fa-keyboard"></i> Arrow keys also move through the tour</div><div class="tour-actions"><button class="btn btn-secondary tour-back">${index ? '<i class="fa-solid fa-arrow-left"></i> Back' : 'Skip tour'}</button><button class="btn btn-primary tour-next">${index === steps.length - 1 ? 'Finish <i class="fa-solid fa-check"></i>' : 'Next <i class="fa-solid fa-arrow-right"></i>'}</button></div>`;
+      void card.offsetWidth;
+      card.classList.add(direction < 0 ? 'tour-card-enter-back' : 'tour-card-enter');
+      card.querySelector('.tour-close').onclick = close;
+      card.querySelector('.tour-back').onclick = () => move(-1);
+      card.querySelector('.tour-next').onclick = () => move(1);
+      card.querySelector('.tour-next').focus({ preventScroll: true });
+      clearTimeout(positionTimer);
+      requestAnimationFrame(place);
+      positionTimer = setTimeout(place, 480);
+      const notificationAction = card.querySelector('.tour-notification-action');
+      if (notificationAction) notificationAction.onclick = async () => {
+        if (!this.notificationSupportAvailable()) {
+          notificationAction.innerHTML = '<i class="fa-solid fa-circle-info"></i> Notifications are not supported here';
+          notificationAction.disabled = true;
+          return;
+        }
+        const topButton = document.querySelector('[data-announcement-notifications]');
+        if (topButton) await this.toggleAnnouncementNotifications(topButton);
+        notificationAction.innerHTML = Notification.permission === 'granted'
+          ? '<i class="fa-solid fa-circle-check"></i> Official alerts enabled'
+          : '<i class="fa-solid fa-bell"></i> Enable official alerts';
+        place();
+      };
+    };
+    addEventListener('resize', place);
+    addEventListener('scroll', place, true);
+    addEventListener('keydown', handleKey);
+    layer.querySelector('.app-tour-shade').onclick = () => {
+      card.classList.remove('tour-card-nudge');
+      void card.offsetWidth;
+      card.classList.add('tour-card-nudge');
+    };
+    render();
+  },
   showRoleTour(role, name, force = false) {
+    return this.showAdvancedRoleTour(role, name, force);
     const storageKey = `kc-fpc-tour-${role}-v2`;
     if (!force && localStorage.getItem(storageKey) === 'complete') return;
     document.querySelector('.app-tour-layer')?.remove();
