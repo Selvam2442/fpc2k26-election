@@ -1,10 +1,11 @@
-const CACHE_NAME = 'kc-fpc-shell-v9';
+const CACHE_NAME = 'kc-fpc-shell-v10';
 const APP_SHELL = [
   './',
   './index.html',
   './dashboard.html',
   './students.html',
   './staff.html',
+  './staff-vote.html',
   './admin.html',
   './portal.css',
   './portal.js',

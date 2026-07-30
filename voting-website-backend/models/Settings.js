@@ -11,6 +11,23 @@ const settingsSchema = new mongoose.Schema({
     type: Boolean,
     default: false // Admin can hide candidates until they are ready
   },
+  studentsCanVote: {
+    type: Boolean,
+    default: true
+  },
+  staffCanVote: {
+    type: Boolean,
+    default: false
+  },
+  resultsPublished: {
+    type: Boolean,
+    default: false
+  },
+  currentElectionArchiveId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ElectionArchive',
+    default: null
+  },
   startTime: {
     type: Date,
     default: null

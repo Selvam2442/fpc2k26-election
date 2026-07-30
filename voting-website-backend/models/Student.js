@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const studentSchema = new mongoose.Schema({
   rollNumber: { type: String, required: true, unique: true },
   name: { type: String },
+  voterRole: { type: String, enum: ['student', 'staff'], default: 'student', index: true },
+  voterId: { type: String, trim: true, uppercase: true, index: true },
   hasVoted: { type: Boolean, default: true },
   candidateIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' }],
   votedAt: { type: Date, default: Date.now }

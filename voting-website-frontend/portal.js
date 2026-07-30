@@ -191,7 +191,7 @@ const Portal = {
     if (role === 'staff') return [
       { icon: 'fa-hand-sparkles', title: `Welcome, ${firstName}`, body: 'This staff portal is personalized from the live staff register and keeps student-only tools separate.', target: '.staff-hero' },
       { icon: 'fa-bullhorn', title: 'Staff announcements', body: 'See college-wide and staff-only notices in one official feed.', target: '#announcements' },
-      { icon: 'fa-chart-pie', title: 'Election oversight', body: 'Monitor whether voting is open, participation progress, candidates, and final results without exposing live vote choices.', target: '#election' },
+      { icon: 'fa-chart-pie', title: 'Election participation', body: 'When administration approves staff voting, cast your secure ballot here. Until completion, you will see progress but not candidate totals.', target: '#election' },
       { icon: 'fa-bell', title: 'Enable official alerts', body: 'Allow notifications to receive trusted staff announcements even when the app is closed.', target: '[data-announcement-notifications]', action: 'notifications' }
     ];
     return [
