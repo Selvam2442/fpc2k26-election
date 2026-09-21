@@ -1365,6 +1365,27 @@ app.post('/api/admin/elections/move-to-draft', verifyAdmin, async (req, res) => 
   } catch (error) { res.status(400).json({ message: error.message }); }
 });
 
+// Keep the completed record untouched while allowing administrators to keep a
+// planning copy in Drafts for reference or a future rerun.
+app.post('/api/admin/elections/:id/copy-to-draft', verifyAdmin, async (req, res) => {
+  try {
+    const completed = await ElectionArchive.findOne({ _id: req.params.id, published: true }).lean();
+    if (!completed) return res.status(404).json({ message: 'Completed election not found.' });
+    const title = String(req.body.title || `Draft copy of ${completed.title}`).trim().slice(0, 160);
+    const draft = await ElectionArchive.create({
+      title,
+      academicYear: completed.academicYear,
+      published: false,
+      status: 'DRAFT',
+      eligible: completed.eligible,
+      participation: completed.participation,
+      candidates: completed.candidates,
+      winners: completed.winners
+    });
+    res.status(201).json({ message: 'A planning copy was added to Drafts. The completed result remains unchanged.', archive: draft });
+  } catch (error) { res.status(400).json({ message: error.message }); }
+});
+
 app.get('/api/admin/download-results', verifyAdmin, async (_req, res) => {
   const [candidates, receipts] = await Promise.all([Candidate.find().sort({ posting: 1, votes: -1 }), VoteReceipt.find().sort({ votedAt: 1 })]);
   const workbook = xlsx.utils.book_new();
@@ -1385,7 +1406,8 @@ app.post('/api/admin/reset-election', verifyAdmin, async (req, res) => {
     });
   }
   const receiptResult = await VoteReceipt.deleteMany({});
-  await Candidate.updateMany({}, { votes: 0 });
+  // A new election must never inherit candidates or a prior selection.
+  const candidateResult = await Candidate.deleteMany({});
   await Settings.findOneAndUpdate(
     { settingsId: 'master_config' },
     { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null, studentsCanVote: true, staffCanVote: false, cardTitle: '', cardDescription: '', isCardVisible: false } },
@@ -1394,8 +1416,9 @@ app.post('/api/admin/reset-election', verifyAdmin, async (req, res) => {
   res.json({
     message: archive
       ? 'Election was saved privately in history, then participation and vote totals were reset.'
-      : 'Election participation and vote totals were reset. Existing saved results remain available.',
+      : 'A clean new-election workspace is ready. Existing saved results remain available.',
     deletedReceipts: receiptResult.deletedCount,
+    deletedCandidates: candidateResult.deletedCount,
     archive
   });
 });
