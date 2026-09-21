@@ -4,6 +4,8 @@ const electionArchiveSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 160 },
   academicYear: { type: String, trim: true, default: '' },
   published: { type: Boolean, default: false, index: true },
+  // A saved, unpublished configuration is a draft; a published snapshot is completed.
+  status: { type: String, enum: ['DRAFT', 'COMPLETED'], default: 'DRAFT', index: true },
   eligible: {
     students: { type: Number, default: 0 },
     staff: { type: Number, default: 0 },

@@ -184,6 +184,58 @@ async function notifyLiveAnnouncements() {
   await Promise.all(announcements.map(item => notifyAnnouncementIfLive(item._id)));
 }
 
+async function notifyElectionResultsReleased(archive) {
+  const subscriptions = await PushSubscription.find({ active: true, recipientRole: { $in: ['student', 'staff'] } }).lean();
+  if (!subscriptions.length) return;
+  await getWebPushConfig();
+  const staleIds = [];
+  await Promise.all(subscriptions.map(async subscription => {
+    try {
+      await webPush.sendNotification({ endpoint: subscription.endpoint, keys: subscription.keys }, JSON.stringify({
+        title: 'Kamaraj College • Election results released',
+        body: `${archive.title} has been published. Open the portal to view the final results.`,
+        priority: 'IMPORTANT',
+        tag: `election-results-${archive._id}`,
+        url: subscription.recipientRole === 'staff' ? './staff.html#election' : './dashboard.html#election'
+      }), { TTL: 24 * 60 * 60, urgency: 'high' });
+    } catch (error) {
+      if ([404, 410].includes(error.statusCode)) staleIds.push(subscription._id);
+      else console.error(`Election result push delivery failed: ${error.message}`);
+    }
+  }));
+  if (staleIds.length) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+}
+
+// A reminder is only sent to people who have opted into portal notifications.
+// It deliberately never exposes another person's voting status.
+async function notifyNonVoters(archive) {
+  const [subscriptions, receipts] = await Promise.all([
+    PushSubscription.find({ active: true, recipientRole: { $in: ['student', 'staff'] } }).lean(),
+    VoteReceipt.find().select('voterRole voterId rollNumber').lean()
+  ]);
+  if (!subscriptions.length) return;
+  const voted = new Set(receipts.map(receipt => `${receipt.voterRole || 'student'}:${String(receipt.voterId || receipt.rollNumber || '').trim().toUpperCase()}`));
+  const nonVoters = subscriptions.filter(subscription => !voted.has(`${subscription.recipientRole}:${String(subscription.recipientId).trim().toUpperCase()}`));
+  if (!nonVoters.length) return;
+  await getWebPushConfig();
+  const staleIds = [];
+  await Promise.all(nonVoters.map(async subscription => {
+    try {
+      await webPush.sendNotification({ endpoint: subscription.endpoint, keys: subscription.keys }, JSON.stringify({
+        title: 'Kamaraj College • Election completed',
+        body: `You did not submit a ballot for ${archive.title}. The final results are now available.`,
+        priority: 'IMPORTANT',
+        tag: `election-non-voter-${archive._id}`,
+        url: subscription.recipientRole === 'staff' ? './staff.html#election' : './dashboard.html#election'
+      }), { TTL: 24 * 60 * 60, urgency: 'normal' });
+    } catch (error) {
+      if ([404, 410].includes(error.statusCode)) staleIds.push(subscription._id);
+      else console.error(`Non-voter notification failed: ${error.message}`);
+    }
+  }));
+  if (staleIds.length) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+}
+
 function bearerToken(req) {
   return req.headers.authorization?.startsWith('Bearer ') ? req.headers.authorization.slice(7) : '';
 }
@@ -582,6 +634,7 @@ function candidateResults(candidates) {
   return Object.entries(grouped).flatMap(([position, items]) => {
     items.sort((a, b) => (b.votes || 0) - (a.votes || 0) || a.name.localeCompare(b.name));
     const high = Math.max(...items.map(item => item.votes || 0));
+    if (high <= 0) return [];
     const tied = items.filter(item => (item.votes || 0) === high);
     return tied.map(item => ({
       position,
@@ -591,6 +644,22 @@ function candidateResults(candidates) {
       isTie: tied.length > 1
     }));
   });
+}
+
+async function currentPublishedElectionArchive(settings) {
+  if (!settings?.resultsPublished) return null;
+  if (settings.currentElectionArchiveId) {
+    const archive = await ElectionArchive.findById(settings.currentElectionArchiveId).lean();
+    if (archive?.published) return archive;
+  }
+  return ElectionArchive.findOne({ published: true }).sort({ archivedAt: -1 }).lean();
+}
+
+async function assertCandidateChangesAllowed() {
+  const settings = await Settings.findOne({ settingsId: 'master_config' }).lean();
+  if (settings?.isPublished || settings?.resultsPublished) {
+    throw Object.assign(new Error('Candidate profiles are locked while voting is active or results are published. Reset the election before editing candidates.'), { statusCode: 409 });
+  }
 }
 
 async function archiveCurrentElection({ title, published = false } = {}) {
@@ -604,6 +673,7 @@ async function archiveCurrentElection({ title, published = false } = {}) {
     title: String(title || `Campus Election ${new Date().toLocaleDateString('en-IN')}`).trim(),
     academicYear: settings.academicYear || '',
     published: Boolean(published),
+    status: published ? 'COMPLETED' : 'DRAFT',
     eligible: {
       students: metrics.eligibleStudents,
       staff: metrics.eligibleStaff,
@@ -703,10 +773,10 @@ app.get('/api/portal/public', async (_req, res) => {
       Announcement.find({ published: true, audience: 'ALL', publishAt: { $lte: new Date() }, $and: [{ $or: [{ targetClasses: { $exists: false } }, { targetClasses: { $size: 0 } }] }, { $or: [{ expiresAt: null }, { expiresAt: { $gt: new Date() } }] }] }).sort({ publishAt: -1 }).limit(8).lean()
     ]);
     res.json({ settings: publicSettings(settings), announcements });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) { res.status(error.statusCode || 500).json({ message: error.message }); }
 });
 
-app.get('/api/admin/settings', async (_req, res) => {
+app.get('/api/admin/settings', verifyAdmin, async (_req, res) => {
   try { res.json(publicSettings(await Settings.findOne({ settingsId: 'master_config' }))); }
   catch (error) { res.status(500).json({ message: error.message }); }
 });
@@ -728,7 +798,7 @@ app.post('/api/admin/settings', verifyAdmin, async (req, res) => {
     if (updates.isPublished === true) updates.resultsPublished = false;
     const settings = await Settings.findOneAndUpdate({ settingsId: 'master_config' }, { $set: updates }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true });
     res.json({ message: 'Portal settings updated.', settings });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) { res.status(error.statusCode || 500).json({ message: error.message }); }
 });
 
 app.post('/api/student/login', async (req, res) => {
@@ -774,21 +844,24 @@ app.get('/api/student/announcements', verifyStudent, async (req, res) => {
 app.get('/api/student/election', verifyStudent, async (req, res) => {
   try {
     const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
-    const [metrics, hasVoted, archives, candidates] = await Promise.all([
+    const [metrics, hasVoted, archives, resultArchive] = await Promise.all([
       electionMetrics(settings),
       VoteReceipt.exists({ rollNumber: voteReceiptKey('student', req.user.rollNumber) }),
-      ElectionArchive.find({ published: true, 'eligible.students': { $gt: 0 } }).sort({ archivedAt: -1 }).limit(12).lean(),
-      Candidate.find().sort({ posting: 1, votes: -1, name: 1 }).lean()
+      ElectionArchive.find({ published: true }).sort({ archivedAt: -1 }).limit(12).lean(),
+      currentPublishedElectionArchive(settings)
     ]);
-    const resultsAvailable = Boolean(!settings.isPublished && settings.resultsPublished && settings.studentsCanVote !== false);
+    const resultsAvailable = Boolean(!settings.isPublished && settings.resultsPublished && resultArchive);
     res.json({
       isOpen: Boolean(settings.isPublished),
       votingAllowed: Boolean(settings.isPublished && settings.studentsCanVote !== false),
       hasVoted: Boolean(hasVoted),
       ...metrics,
       resultsAvailable,
-      results: resultsAvailable ? candidates : [],
-      winners: resultsAvailable ? candidateResults(candidates) : [],
+      resultTitle: resultsAvailable ? resultArchive.title : '',
+      revealedAt: resultsAvailable ? resultArchive.archivedAt : null,
+      results: resultsAvailable ? resultArchive.candidates : [],
+      winners: resultsAvailable ? resultArchive.winners : [],
+      electionNotice: settings.isCardVisible && settings.cardTitle ? { title: settings.cardTitle, description: settings.cardDescription || '' } : null,
       archives
     });
   } catch (error) { res.status(500).json({ message: error.message }); }
@@ -810,8 +883,8 @@ app.get('/api/staff/overview', verifyStaff, async (req, res) => {
     const { staff } = await findLiveStaff(req.user.staffId);
     if (!staff) return res.status(404).json({ message: 'Staff record is no longer active.' });
     const now = new Date();
-    const [settings, announcements, candidates, archives, hasVoted] = await Promise.all([
-      Settings.findOne({ settingsId: 'master_config' }).lean(),
+    const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
+    const [announcements, candidates, archives, hasVoted, metrics, resultArchive] = await Promise.all([
       Announcement.find({
         published: true,
         audience: { $in: ['ALL', 'FACULTY'] },
@@ -819,13 +892,12 @@ app.get('/api/staff/overview', verifyStaff, async (req, res) => {
         $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }]
       }).sort({ publishAt: -1 }).limit(20).lean(),
       Candidate.find().select('-votes').sort({ posting: 1, name: 1 }).lean(),
-      ElectionArchive.find({ published: true, 'eligible.staff': { $gt: 0 } }).sort({ archivedAt: -1 }).limit(12).lean(),
-      VoteReceipt.exists({ rollNumber: voteReceiptKey('staff', staff.staffId) })
+      ElectionArchive.find({ published: true }).sort({ archivedAt: -1 }).limit(12).lean(),
+      VoteReceipt.exists({ rollNumber: voteReceiptKey('staff', staff.staffId) }),
+      electionMetrics(settings),
+      currentPublishedElectionArchive(settings)
     ]);
-    const metrics = await electionMetrics(settings);
-    const publishedCandidates = settings?.resultsPublished
-      ? await Candidate.find().sort({ posting: 1, votes: -1, name: 1 }).lean()
-      : [];
+    const resultsAvailable = Boolean(!settings.isPublished && settings.resultsPublished && resultArchive);
     res.json({
       staff: { name: staff.name, staffId: staff.staffId, department: staff.department, designation: staff.designation },
       announcements,
@@ -834,9 +906,11 @@ app.get('/api/staff/overview', verifyStaff, async (req, res) => {
         votingAllowed: Boolean(settings?.isPublished && settings?.staffCanVote),
         hasVoted: Boolean(hasVoted),
         ...metrics,
-        resultsAvailable: Boolean(!settings?.isPublished && settings?.resultsPublished && settings?.staffCanVote),
-        winners: !settings?.isPublished && settings?.resultsPublished && settings?.staffCanVote ? candidateResults(publishedCandidates) : [],
-        results: !settings?.isPublished && settings?.resultsPublished && settings?.staffCanVote ? publishedCandidates : [],
+        resultsAvailable,
+        resultTitle: resultsAvailable ? resultArchive.title : '',
+        revealedAt: resultsAvailable ? resultArchive.archivedAt : null,
+        winners: resultsAvailable ? resultArchive.winners : [],
+        results: resultsAvailable ? resultArchive.candidates : [],
         candidates
       },
       archives
@@ -936,6 +1010,7 @@ app.get('/api/student/timetable', verifyStudent, async (req, res) => {
 
 app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
+    await assertCandidateChangesAllowed();
     if (!req.file) return res.status(400).json({ message: 'Candidate photo is required.' });
     const candidate = await Candidate.create({
       name: req.body.name, posting: req.body.posting, department: req.body.department,
@@ -943,7 +1018,7 @@ app.post('/api/candidates', verifyAdmin, upload.single('photo'), async (req, res
       photo: `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
     });
     res.status(201).json({ message: 'Candidate added.', candidate });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) { res.status(error.statusCode || 500).json({ message: error.message }); }
 });
 
 app.get('/api/candidates', async (_req, res) => {
@@ -956,15 +1031,16 @@ app.get('/api/admin/candidates', verifyAdmin, async (_req, res) => {
 
 app.put('/api/candidates/:id', verifyAdmin, upload.single('photo'), async (req, res) => {
   try {
+    await assertCandidateChangesAllowed();
     const update = { name: req.body.name, posting: req.body.posting, department: req.body.department, year: Number(req.body.year), section: req.body.section || 'None', description: String(req.body.description || '').trim() };
     if (req.file) update.photo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     res.json({ message: 'Candidate updated.', candidate: await Candidate.findByIdAndUpdate(req.params.id, update, { returnDocument: 'after', runValidators: true }) });
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) { res.status(error.statusCode || 500).json({ message: error.message }); }
 });
 
 app.delete('/api/candidates/:id', verifyAdmin, async (req, res) => {
-  try { await Candidate.findByIdAndDelete(req.params.id); res.json({ message: 'Candidate removed.' }); }
-  catch (error) { res.status(500).json({ message: error.message }); }
+  try { await assertCandidateChangesAllowed(); await Candidate.findByIdAndDelete(req.params.id); res.json({ message: 'Candidate removed.' }); }
+  catch (error) { res.status(error.statusCode || 500).json({ message: error.message }); }
 });
 
 async function submitElectionBallot({ role, voterId, name, candidateIds: submittedCandidateIds }) {
@@ -1189,32 +1265,61 @@ app.delete('/api/admin/announcements/:id', verifyAdmin, async (req, res) => {
 app.get('/api/results/final', verifyStudentOrStaff, async (req, res) => {
   const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
   const metrics = await electionMetrics(settings);
-  const roleApproved = req.user.role === 'staff' ? settings.staffCanVote === true : settings.studentsCanVote !== false;
-  if (settings.isPublished || !settings.resultsPublished || !roleApproved) {
+  const resultArchive = await currentPublishedElectionArchive(settings);
+  if (settings.isPublished || !settings.resultsPublished || !resultArchive) {
     return res.json({ isComplete: false, ...metrics, winners: [] });
   }
-  const candidates = await Candidate.find().sort({ posting: 1, votes: -1, name: 1 }).lean();
-  const grouped = candidates.reduce((all, candidate) => ((all[candidate.posting] ||= []).push(candidate), all), {});
-  const winners = Object.entries(grouped).flatMap(([posting, items]) => {
-    const high = Math.max(...items.map(item => item.votes || 0));
-    const tied = items.filter(item => (item.votes || 0) === high);
-    return tied.map(item => ({ ...item, posting, isTie: tied.length > 1 }));
-  });
-  res.json({ isComplete: true, ...metrics, winners });
+  res.json({ isComplete: true, ...metrics, title: resultArchive.title, revealedAt: resultArchive.archivedAt, winners: resultArchive.winners, results: resultArchive.candidates });
 });
 
 app.get('/api/admin/elections/history', verifyAdmin, async (_req, res) => {
   res.json(await ElectionArchive.find().sort({ archivedAt: -1 }).lean());
 });
 
-app.post('/api/admin/elections/complete', verifyAdmin, async (req, res) => {
+app.get('/api/admin/elections/:id/download', verifyAdmin, async (req, res) => {
+  const archive = await ElectionArchive.findById(req.params.id).lean();
+  if (!archive) return res.status(404).json({ message: 'Saved election record not found.' });
+  const workbook = xlsx.utils.book_new();
+  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet([{
+    Election: archive.title,
+    AcademicYear: archive.academicYear || '',
+    SavedAt: archive.archivedAt,
+    StudentsEligible: archive.eligible.students,
+    StaffEligible: archive.eligible.staff,
+    TotalEligible: archive.eligible.total,
+    StudentVotes: archive.participation.students,
+    StaffVotes: archive.participation.staff,
+    TotalVotes: archive.participation.total,
+    Turnout: `${archive.participation.turnout}%`,
+    Publication: archive.published ? 'Published' : 'Private backup'
+  }]), 'Election Summary');
+  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(archive.candidates.map(candidate => ({
+    Name: candidate.name,
+    Position: candidate.posting,
+    Department: candidate.department,
+    Year: candidate.year,
+    Section: candidate.section,
+    Votes: candidate.votes
+  }))), 'Final Results');
+  xlsx.utils.book_append_sheet(workbook, xlsx.utils.json_to_sheet(archive.winners.map(winner => ({
+    Position: winner.position,
+    Winner: winner.name,
+    Department: winner.department,
+    Votes: winner.votes,
+    Result: winner.isTie ? 'Tie' : 'Elected'
+  }))), 'Winners');
+  const filename = `${archive.title || 'Election_Results'}`.replace(/[^a-z0-9_-]+/gi, '_').slice(0, 90) || 'Election_Results';
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}.xlsx"`);
+  res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' }));
+});
+
+async function revealElectionResults(req, res) {
   try {
     const settings = await Settings.findOne({ settingsId: 'master_config' });
     if (settings?.currentElectionArchiveId) {
       const existing = await ElectionArchive.findById(settings.currentElectionArchiveId);
-      return res.json({ message: 'Election results are already completed and saved.', archive: existing });
+      return res.json({ message: 'Election results are already revealed and saved in the cloud.', archive: existing });
     }
-    if (!await VoteReceipt.exists({})) return res.status(400).json({ message: 'No ballots have been submitted yet.' });
     await Settings.updateOne({ settingsId: 'master_config' }, { $set: { isPublished: false } });
     const archive = await archiveCurrentElection({
       title: req.body.title || `Campus Election ${settings?.academicYear || new Date().getFullYear()}`,
@@ -1222,10 +1327,41 @@ app.post('/api/admin/elections/complete', verifyAdmin, async (req, res) => {
     });
     await Settings.findOneAndUpdate(
       { settingsId: 'master_config' },
-      { $set: { isPublished: false, resultsPublished: true, currentElectionArchiveId: archive._id } },
+      { $set: {
+        isPublished: false,
+        resultsPublished: true,
+        currentElectionArchiveId: archive._id,
+        // Do not leave the completed election notice on the next election.
+        cardTitle: '', cardDescription: '', isCardVisible: false
+      } },
       { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
-    res.json({ message: 'Election completed. Results are now visible to approved students and staff and saved in history.', archive });
+    // Candidate details and vote totals live safely in the completed snapshot.
+    // Clearing the active collection prevents the old election from appearing in new-election settings.
+    await Candidate.deleteMany({});
+    notifyElectionResultsReleased(archive).catch(error => console.error(`Election result notification failed: ${error.message}`));
+    notifyNonVoters(archive).catch(error => console.error(`Non-voter notification failed: ${error.message}`));
+    const ballots = archive.participation?.total || 0;
+    res.json({ message: ballots ? 'Election results are revealed, saved securely in the cloud, and now visible to all signed-in students and staff.' : 'Election has been revealed and saved securely in the cloud. No ballots were submitted, so no winners are declared.', archive });
+  } catch (error) { res.status(400).json({ message: error.message }); }
+}
+
+app.post('/api/admin/elections/reveal', verifyAdmin, revealElectionResults);
+app.post('/api/admin/elections/complete', verifyAdmin, revealElectionResults);
+
+app.post('/api/admin/elections/move-to-draft', verifyAdmin, async (req, res) => {
+  try {
+    const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
+    if (settings.isPublished || settings.resultsPublished) return res.status(409).json({ message: 'Pause the active election before moving it to drafts.' });
+    const candidates = await Candidate.countDocuments();
+    if (!candidates) return res.status(400).json({ message: 'Add at least one candidate before saving a draft.' });
+    const archive = await archiveCurrentElection({ title: req.body.title || `Election draft ${new Date().toLocaleDateString('en-IN')}`, published: false });
+    await Promise.all([
+      Candidate.deleteMany({}),
+      VoteReceipt.deleteMany({}),
+      Settings.findOneAndUpdate({ settingsId: 'master_config' }, { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null, studentsCanVote: true, staffCanVote: false, cardTitle: '', cardDescription: '', isCardVisible: false } }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true })
+    ]);
+    res.json({ message: 'Election moved to Drafts. The new-election workspace is ready.', archive });
   } catch (error) { res.status(400).json({ message: error.message }); }
 });
 
@@ -1252,7 +1388,7 @@ app.post('/api/admin/reset-election', verifyAdmin, async (req, res) => {
   await Candidate.updateMany({}, { votes: 0 });
   await Settings.findOneAndUpdate(
     { settingsId: 'master_config' },
-    { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null } },
+    { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null, studentsCanVote: true, staffCanVote: false, cardTitle: '', cardDescription: '', isCardVisible: false } },
     { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
   );
   res.json({
