@@ -101,6 +101,27 @@ const Portal = {
     installPrompt = null;
     document.querySelectorAll('[data-install-app]').forEach(button => button.classList.add('hidden'));
   },
+  async sharePortal(button) {
+    const shareData = { title: document.title, text: 'Open the Kamaraj College Campus Portal.', url: window.location.href };
+    try {
+      if (navigator.share) { await navigator.share(shareData); return; }
+      await navigator.clipboard.writeText(window.location.href);
+      const original = button?.innerHTML;
+      if (button) { button.innerHTML = '<i class="fa-solid fa-check"></i><span>Link copied</span>'; setTimeout(() => { button.innerHTML = original; }, 2200); }
+    } catch (error) {
+      // Sharing can be cancelled by the user; do not show an intrusive browser alert.
+      if (error?.name !== 'AbortError' && button) button.innerHTML = '<i class="fa-solid fa-link"></i><span>Copy unavailable</span>';
+    }
+  },
+  mountFooterActions() {
+    if (document.querySelector('.portal-action-footer')) return;
+    const footer = document.createElement('footer');
+    footer.className = 'portal-action-footer';
+    footer.setAttribute('aria-label', 'Portal actions');
+    footer.innerHTML = `<span><i class="fa-solid fa-shield-heart"></i> Kamaraj College Campus Portal</span><div><button class="btn btn-secondary btn-sm hidden" type="button" data-install-app onclick="Portal.installApp()"><i class="fa-solid fa-download"></i><span>Install app</span></button><button class="btn btn-secondary btn-sm" type="button" onclick="Portal.sharePortal(this)"><i class="fa-solid fa-share-nodes"></i><span>Share</span></button></div>`;
+    document.body.append(footer);
+    if (installPrompt) footer.querySelector('[data-install-app]')?.classList.remove('hidden');
+  },
   notificationSupportAvailable() {
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   },
@@ -392,6 +413,7 @@ const Portal = {
 
 window.Portal = Portal;
 Portal.applyTheme();
+window.addEventListener('DOMContentLoaded', () => Portal.mountFooterActions());
 
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
