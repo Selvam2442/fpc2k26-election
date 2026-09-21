@@ -1143,6 +1143,18 @@ app.get('/api/admin/students', verifyAdmin, async (req, res) => {
   res.json(students.map(student => ({ ...studentView(student), hasVoted: voted.has(student.rollNumber) })));
 });
 
+app.get('/api/admin/staff', verifyAdmin, async (_req, res) => {
+  const result = await refreshStaffDirectory();
+  if (result.failed && !result.staff.length) return res.status(503).json({ message: 'The live staff register is temporarily unavailable.' });
+  const receipts = await VoteReceipt.find({ voterRole: 'staff' }).select('voterId rollNumber').lean();
+  const votedIds = new Set(receipts.map(receipt => String(receipt.voterId || receipt.rollNumber || '').replace(/^STAFF:/i, '').trim().toUpperCase()));
+  const staff = result.staff
+    .map(member => ({ staffId: member.staffId, name: member.name, hasVoted: votedIds.has(member.staffId) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const voted = staff.filter(member => member.hasVoted).length;
+  res.json({ staff, totals: { registered: staff.length, voted, pending: staff.length - voted } });
+});
+
 app.get('/api/admin/classes', verifyAdmin, async (_req, res) => {
   await getStudentDirectory();
   res.json(currentClassDirectory());
