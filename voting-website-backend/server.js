@@ -38,6 +38,16 @@ const DEFAULT_STUDENT_SOURCES = [
     name: 'Student register 3',
     sheetId: '1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII',
     url: 'https://docs.google.com/spreadsheets/d/1P-e1gW0jSkT_fIT1Nh9cVMSqt6CPdo2U9y-OCMwfMII/edit?usp=sharing'
+  },
+  {
+    name: 'Student register 4',
+    sheetId: '10MNpZqULLmqsNIjTaPXDU1oJu0zKLppXTApNHogCDL8',
+    url: 'https://docs.google.com/spreadsheets/d/10MNpZqULLmqsNIjTaPXDU1oJu0zKLppXTApNHogCDL8/edit?usp=sharing'
+  },
+  {
+    name: 'Student register 5',
+    sheetId: '1YQ595Iaw-IDkXawOsSP0KdOsbtkcaJhii7eqAw6LXgM',
+    url: 'https://docs.google.com/spreadsheets/d/1YQ595Iaw-IDkXawOsSP0KdOsbtkcaJhii7eqAw6LXgM/edit?gid=0#gid=0'
   }
 ];
 const STAFF_SOURCE = {
@@ -320,8 +330,11 @@ function normalizeDob(value) {
 
 function classDetailsFor(sheetTitle) {
   const className = String(sheetTitle || '').trim() || 'Unassigned';
-  const year = className.slice(0, 3).trim();
-  const department = className.slice(3).trim() || className;
+  // Class labels begin with 1st, 2nd, or 3rd. Keep that first three-letter
+  // year label separate so it is displayed clearly in each student profile.
+  const yearMatch = className.match(/^(1st|2nd|3rd)\b/i);
+  const year = yearMatch ? yearMatch[1].toLowerCase() : '';
+  const department = (year ? className.slice(year.length) : className).trim() || className;
   return { className, sheetTitle: className, year, department, section: '' };
 }
 
