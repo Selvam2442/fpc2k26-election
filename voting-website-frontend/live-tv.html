@@ -11,8 +11,8 @@
   <style>
     :root {
       --tv-bg: #030a16;
-      --tv-surface: rgba(10, 28, 54, 0.8);
-      --tv-card: rgba(15, 38, 71, 0.9);
+      --tv-surface: rgba(10, 28, 54, 0.85);
+      --tv-card: rgba(15, 38, 71, 0.92);
       --tv-border: rgba(94, 160, 255, 0.22);
       --tv-accent: #246bfd;
       --tv-neon-cyan: #38bdf8;
@@ -68,7 +68,7 @@
     .ambient-2 { bottom: -150px; right: 10%; background: #06b6d4; }
 
     /* =========================================================
-       1. TOP TV BROADCAST HEADER (~60px)
+       1. TOP TV BROADCAST HEADER (~62px)
        ========================================================= */
     .tv-header {
       position: relative;
@@ -198,7 +198,7 @@
     }
 
     /* =========================================================
-       2. COMPACT KPI TELEMETRY BAR (~70px)
+       2. COMPACT KPI TELEMETRY BAR (~72px)
        ========================================================= */
     .tv-kpi-bar {
       position: relative;
@@ -206,9 +206,9 @@
       display: grid;
       grid-template-columns: 1.3fr 1fr 1.2fr 1fr;
       gap: 12px;
-      padding: 10px clamp(16px, 2.5vw, 36px);
+      padding: 8px clamp(16px, 2.5vw, 36px);
       flex-shrink: 0;
-      height: 74px;
+      height: 72px;
     }
 
     .kpi-mini-card {
@@ -293,12 +293,12 @@
     }
 
     /* =========================================================
-       3. MAIN STAGE: SEQUENTIAL FULL-SCREEN SLIDESHOW (FLEX: 1)
+       3. MAIN STAGE: SEQUENTIAL SLIDESHOW (FLEX: 1, 100% CONTAINED)
        ========================================================= */
     .tv-slideshow-stage {
       flex: 1;
-      min-height: 0; /* Critical for viewport containment without overflow */
-      padding: 0 clamp(16px, 2.5vw, 36px) 12px;
+      min-height: 0;
+      padding: 0 clamp(16px, 2.5vw, 36px) 10px;
       position: relative;
       z-index: 10;
       display: flex;
@@ -311,7 +311,7 @@
       background: var(--tv-surface);
       border: 1px solid var(--tv-border);
       border-radius: 20px;
-      padding: clamp(14px, 1.8vw, 22px);
+      padding: clamp(12px, 1.5vw, 20px);
       backdrop-filter: blur(20px);
       display: flex;
       flex-direction: column;
@@ -326,8 +326,8 @@
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 12px;
-      margin-bottom: 12px;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
       flex-shrink: 0;
       gap: 12px;
     }
@@ -339,21 +339,21 @@
     }
 
     .position-icon-badge {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       border-radius: 12px;
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #fff;
       display: grid;
       place-items: center;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
       flex-shrink: 0;
     }
 
     .position-hero-title h2 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+      font-size: clamp(1.3rem, 2vw, 2rem);
       font-weight: 900;
       letter-spacing: -0.02em;
       line-height: 1;
@@ -361,7 +361,7 @@
     }
 
     .position-hero-title p {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--tv-muted);
       font-weight: 600;
       margin-top: 3px;
@@ -375,7 +375,7 @@
 
     .slide-step-counter {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.82rem;
+      font-size: 0.8rem;
       font-weight: 800;
       color: var(--tv-neon-cyan);
       background: rgba(56, 189, 248, 0.12);
@@ -385,8 +385,8 @@
     }
 
     .slide-nav-btn {
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--tv-border);
@@ -394,7 +394,7 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       transition: all 0.2s ease;
     }
     .slide-nav-btn:hover {
@@ -409,7 +409,7 @@
       background: rgba(255, 255, 255, 0.06);
       border-radius: 99px;
       overflow: hidden;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       flex-shrink: 0;
     }
     .slide-progress-bar-fill {
@@ -421,53 +421,48 @@
       transition: width 0.1s linear;
     }
 
-    /* SLIDE VIEWPORT: ANIMATED SWAP FOR ACTIVE POSTING */
+    /* =========================================================
+       SLIDING STAGE VIEWPORT (100% HARDWARE ACCELERATED CAROUSEL)
+       ========================================================= */
     .slide-content-viewport {
       flex: 1;
       min-height: 0;
       position: relative;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      width: 100%;
     }
 
-    /* Grid of candidates inside the single active posting */
-    .candidates-stage-grid {
-      flex: 1;
-      min-height: 0;
+    /* Sliding track holding all posting panels side-by-side */
+    .slideshow-sliding-track {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.05);
+      will-change: transform;
+    }
+
+    /* Individual Posting Panel: takes full width and height of viewport */
+    .position-slide-panel {
+      width: 100%;
+      height: 100%;
+      flex: 0 0 100%;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 12px;
       align-content: center;
-      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 4px 6px;
+      box-sizing: border-box;
     }
 
-    /* Cinematic Slide Transition Animations */
-    .slide-anim-enter-right {
-      animation: slideInFromRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    .slide-anim-enter-left {
-      animation: slideInFromLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    @keyframes slideInFromRight {
-      0% { opacity: 0; transform: translateX(45px); }
-      100% { opacity: 1; transform: translateX(0); }
-    }
-    @keyframes slideInFromLeft {
-      0% { opacity: 0; transform: translateX(-45px); }
-      100% { opacity: 1; transform: translateX(0); }
-    }
-
-    /* Candidate Card in Spotlight */
+    /* Candidate Spotlight Card */
     .candidate-spotlight-card {
-      background: rgba(14, 38, 71, 0.75);
+      background: rgba(14, 38, 71, 0.8);
       border: 1px solid rgba(94, 160, 255, 0.18);
       border-radius: 16px;
-      padding: clamp(12px, 1.4vw, 18px);
+      padding: clamp(12px, 1.3vw, 18px);
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 16px;
+      gap: 14px;
       align-items: center;
       position: relative;
       overflow: hidden;
@@ -476,9 +471,9 @@
     }
 
     .candidate-spotlight-card.is-lead {
-      background: linear-gradient(90deg, rgba(35, 78, 142, 0.8), rgba(15, 38, 71, 0.75));
+      background: linear-gradient(90deg, rgba(35, 78, 142, 0.82), rgba(15, 38, 71, 0.78));
       border-color: rgba(245, 158, 11, 0.55);
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(245, 158, 11, 0.15);
+      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3), 0 0 18px rgba(245, 158, 11, 0.15);
     }
 
     .candidate-spotlight-card.vote-bump {
@@ -491,8 +486,8 @@
 
     .cand-photo-wrap {
       position: relative;
-      width: clamp(54px, 5vw, 68px);
-      height: clamp(54px, 5vw, 68px);
+      width: clamp(52px, 4.8vw, 66px);
+      height: clamp(52px, 4.8vw, 66px);
       flex-shrink: 0;
     }
 
@@ -527,7 +522,7 @@
 
     .cand-info-col h3 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.15rem, 1.5vw, 1.45rem);
+      font-size: clamp(1.1rem, 1.4vw, 1.4rem);
       font-weight: 800;
       color: #fff;
       display: flex;
@@ -549,14 +544,14 @@
     }
 
     .cand-info-col p {
-      font-size: clamp(0.78rem, 0.95vw, 0.88rem);
+      font-size: clamp(0.76rem, 0.9vw, 0.85rem);
       color: var(--tv-muted);
       font-weight: 600;
       margin-bottom: 8px;
     }
 
     .cand-meter-rail {
-      height: 10px;
+      height: 9px;
       background: rgba(4, 15, 30, 0.8);
       border-radius: 99px;
       overflow: hidden;
@@ -577,12 +572,12 @@
 
     .cand-tally-col {
       text-align: right;
-      min-width: 90px;
+      min-width: 85px;
     }
 
     .cand-vote-digits {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+      font-size: clamp(1.7rem, 2.3vw, 2.3rem);
       font-weight: 900;
       color: #fff;
       line-height: 1;
@@ -593,7 +588,7 @@
     }
 
     .cand-plus-pop {
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       color: var(--tv-neon-green);
       font-weight: 800;
       opacity: 0;
@@ -606,7 +601,7 @@
     }
 
     .cand-percent-badge {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 800;
       color: var(--tv-neon-cyan);
       margin-top: 3px;
@@ -736,7 +731,7 @@
       <div class="tv-clock" id="tvLiveClock">00:00:00</div>
       <button class="tv-btn active" id="slidePlayBtn" onclick="toggleSlidePlay()" title="Pause or Play Auto-Slide animation">
         <i class="fa-solid fa-pause" id="slidePlayIcon"></i>
-        <span id="slidePlayLabel">Auto: 7s</span>
+        <span id="slidePlayLabel">Auto: 6s</span>
       </button>
       <button class="tv-btn" id="audioToggleBtn" onclick="toggleAudio()" title="Sound effects on vote jumps">
         <i class="fa-solid fa-volume-xmark" id="audioIcon"></i>
@@ -793,7 +788,7 @@
     </div>
   </section>
 
-  <!-- 3. Main Stage: Sequential Full-Screen Slideshow -->
+  <!-- 3. Main Stage: Hardware-Accelerated Sequential Carousel -->
   <main class="tv-slideshow-stage">
     <div class="slideshow-card">
       <!-- Active Position Spotlight Title Bar -->
@@ -803,7 +798,7 @@
             <i class="fa-solid fa-crown"></i>
           </div>
           <div>
-            <h2 id="activePositionHeroTitle">Loading Position…</h2>
+            <h2 id="activePositionHeroTitle">Position Spotlight</h2>
             <p id="activePositionHeroSub">Live candidate ballot tallies and leadership standing</p>
           </div>
         </div>
@@ -820,10 +815,10 @@
         <div class="slide-progress-bar-fill" id="slideProgressFill"></div>
       </div>
 
-      <!-- Candidates Container in Viewport -->
+      <!-- Viewport containing the continuous sliding track -->
       <div class="slide-content-viewport" id="slideContentViewport">
-        <div class="candidates-stage-grid" id="candidatesStageGrid">
-          <div style="text-align:center;padding:40px;color:var(--tv-muted);width:100%;">Connecting to live election telemetry…</div>
+        <div class="slideshow-sliding-track" id="slideshowTrack">
+          <div style="text-align:center;padding:40px;color:var(--tv-muted);width:100%;display:grid;place-items:center;">Connecting to live election telemetry…</div>
         </div>
       </div>
 
@@ -839,8 +834,8 @@
     </div>
     <div class="ticker-stream" id="tvTickerStream">
       <div class="ticker-bubble"><span class="ticker-dot">●</span> CAMPUS ELECTION LIVE BROADCAST</div>
-      <div class="ticker-bubble"><span class="ticker-dot">●</span> SEQUENTIAL POSITION SLIDESHOW ACTIVE</div>
-      <div class="ticker-bubble"><span class="ticker-dot">●</span> USE DIGITAL TABLET KIOSKS IN THE AUDITORIUM &amp; LIBRARY</div>
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> CONTINUOUS POSITION SLIDESHOW ACTIVE</div>
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> DIGITAL TABLET KIOSKS OPEN IN AUDITORIUM &amp; LIBRARY</div>
       <div class="ticker-bubble"><span class="ticker-dot">●</span> VOTES ARE 100% CONFIDENTIAL &amp; TAMPER-EVIDENT</div>
       <!-- Doubled in JS for infinite scroll -->
     </div>
@@ -852,9 +847,9 @@
     let lastData = null;
     let currentPositionIndex = 0;
     let isSlidePlaying = true;
-    let slideDuration = 7000; // 7 seconds per position
+    let slideDuration = 6000; // 6 seconds per position
     let slideTimerStart = Date.now();
-    let transitionDirection = 'right';
+    let hasRenderedTrack = false;
     let audioEnabled = false;
     let audioCtx = null;
     let previousCandidateVotes = {};
@@ -902,7 +897,7 @@
       const label = document.getElementById('slidePlayLabel');
       btn.classList.toggle('active', isSlidePlaying);
       icon.className = isSlidePlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
-      label.textContent = isSlidePlaying ? 'Auto: 7s' : 'Slide: Paused';
+      label.textContent = isSlidePlaying ? 'Auto: 6s' : 'Slide: Paused';
       if (isSlidePlaying) slideTimerStart = Date.now();
     }
 
@@ -955,98 +950,166 @@
       });
     }
 
-    // Slideshow Navigation
+    // SLIDESHOW CAROUSEL ADVANCEMENT
     function nextSlide() {
       if (!lastData || !lastData.positions || !lastData.positions.length) return;
-      transitionDirection = 'right';
       currentPositionIndex = (currentPositionIndex + 1) % lastData.positions.length;
-      renderCurrentSlide();
+      applySlideTransition();
     }
 
     function prevSlide() {
       if (!lastData || !lastData.positions || !lastData.positions.length) return;
-      transitionDirection = 'left';
       currentPositionIndex = (currentPositionIndex - 1 + lastData.positions.length) % lastData.positions.length;
-      renderCurrentSlide();
+      applySlideTransition();
     }
 
     function goToPosition(index) {
       if (!lastData || !lastData.positions || !lastData.positions[index]) return;
-      transitionDirection = index >= currentPositionIndex ? 'right' : 'left';
       currentPositionIndex = index;
-      renderCurrentSlide();
+      applySlideTransition();
     }
 
-    // Render Current Active Position Slide
-    function renderCurrentSlide() {
-      if (!lastData || !lastData.positions || !lastData.positions.length) {
-        document.getElementById('candidatesStageGrid').innerHTML = '<div style="padding:40px;text-align:center;color:var(--tv-muted);width:100%;">No candidate profiles in active election.</div>';
-        return;
-      }
+    // Apply the 100% Horizontal Slide Transition to the track
+    function applySlideTransition() {
+      const track = document.getElementById('slideshowTrack');
+      if (!track || !lastData || !lastData.positions || !lastData.positions.length) return;
 
       if (currentPositionIndex >= lastData.positions.length) currentPositionIndex = 0;
       const pos = lastData.positions[currentPositionIndex];
 
-      // Update Title & Counter
+      // Smooth horizontal glide
+      track.style.transform = `translateX(-${currentPositionIndex * 100}%)`;
+
+      // Update Top Header Information
       document.getElementById('activePositionHeroTitle').textContent = pos.position;
       document.getElementById('activePositionHeroSub').textContent = `${pos.totalVotes} total ballots cast · ${pos.candidates.length} candidate${pos.candidates.length === 1 ? '' : 's'} competing`;
       document.getElementById('slideStepCounter').textContent = `${currentPositionIndex + 1} / ${lastData.positions.length}`;
 
-      // Update Indicator Pills at bottom
-      const indContainer = document.getElementById('slideshowBottomIndicators');
-      indContainer.innerHTML = lastData.positions.map((p, idx) => `
-        <button class="pos-nav-pill ${idx === currentPositionIndex ? 'active' : ''}" onclick="goToPosition(${idx})">
-          ${Portal.escape(p.position)} <small style="opacity:0.85;">(${p.totalVotes})</small>
-        </button>
-      `).join('');
-
-      // Render Candidate Cards with Slide Animation
-      const grid = document.getElementById('candidatesStageGrid');
-      grid.className = `candidates-stage-grid ${transitionDirection === 'right' ? 'slide-anim-enter-right' : 'slide-anim-enter-left'}`;
-
-      grid.innerHTML = pos.candidates.map(c => {
-        const prevVotes = previousCandidateVotes[c.id] ?? c.votes;
-        const hasGrown = c.votes > prevVotes;
-        const fallbackAvatar = Portal.initialsAvatar ? Portal.initialsAvatar(c.name, c.department) : '';
-
-        return `
-          <article class="candidate-spotlight-card ${c.isLeading ? 'is-lead' : ''} ${hasGrown ? 'vote-bump' : ''}" id="cand-${c.id}">
-            <div class="cand-photo-wrap">
-              <img class="cand-photo-img" src="${Portal.escape(c.photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackAvatar}';">
-              ${c.isLeading ? '<div class="cand-crown-badge"><i class="fa-solid fa-crown"></i></div>' : ''}
-            </div>
-
-            <div class="cand-info-col">
-              <h3>
-                ${Portal.escape(c.name)}
-                ${c.isLeading ? '<span class="lead-tag"><i class="fa-solid fa-crown"></i> LEADER</span>' : ''}
-              </h3>
-              <p>${Portal.escape(c.department)} · Year ${Portal.escape(c.year)}${c.section && c.section !== 'None' ? ` · Section ${Portal.escape(c.section)}` : ''}</p>
-              <div class="cand-meter-rail">
-                <div class="cand-meter-fill" style="width:${c.percent}%;"></div>
-              </div>
-            </div>
-
-            <div class="cand-tally-col">
-              <div class="cand-vote-digits">
-                <span>${c.votes}</span>
-                <span class="cand-plus-pop ${hasGrown ? 'active' : ''}">+1</span>
-              </div>
-              <div class="cand-percent-badge">${c.percent}%</div>
-            </div>
-          </article>
-        `;
-      }).join('');
-
-      // Update cached candidate votes
-      pos.candidates.forEach(c => {
-        previousCandidateVotes[c.id] = c.votes;
+      // Update Bottom Indicator Pills
+      document.querySelectorAll('.pos-nav-pill').forEach((pill, idx) => {
+        pill.classList.toggle('active', idx === currentPositionIndex);
       });
 
       slideTimerStart = Date.now();
     }
 
-    // Progress bar animation loop
+    // Render the initial track layout or update candidate votes in-place
+    function syncSlideshowDOM(positions) {
+      if (!positions || !positions.length) {
+        document.getElementById('slideshowTrack').innerHTML = '<div style="padding:40px;text-align:center;color:var(--tv-muted);width:100%;">No candidate profiles in active election.</div>';
+        hasRenderedTrack = false;
+        return;
+      }
+
+      // Check if positions structure changed
+      const currentTrackPanels = document.querySelectorAll('.position-slide-panel');
+      if (!hasRenderedTrack || currentTrackPanels.length !== positions.length) {
+        buildSlideshowPanels(positions);
+        hasRenderedTrack = true;
+      } else {
+        updateCandidateVotesInPlace(positions);
+      }
+    }
+
+    // Build the full multi-panel track (one 100% width panel for each position)
+    function buildSlideshowPanels(positions) {
+      const track = document.getElementById('slideshowTrack');
+
+      track.innerHTML = positions.map((pos, pIdx) => {
+        return `
+          <div class="position-slide-panel" id="posPanel-${pIdx}">
+            ${pos.candidates.map(c => {
+              const fallbackAvatar = Portal.initialsAvatar ? Portal.initialsAvatar(c.name, c.department) : '';
+              return `
+                <article class="candidate-spotlight-card ${c.isLeading ? 'is-lead' : ''}" id="candCard-${c.id}">
+                  <div class="cand-photo-wrap">
+                    <img class="cand-photo-img" src="${Portal.escape(c.photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackAvatar}';">
+                    ${c.isLeading ? '<div class="cand-crown-badge"><i class="fa-solid fa-crown"></i></div>' : ''}
+                  </div>
+
+                  <div class="cand-info-col">
+                    <h3>
+                      ${Portal.escape(c.name)}
+                      ${c.isLeading ? '<span class="lead-tag"><i class="fa-solid fa-crown"></i> LEADER</span>' : ''}
+                    </h3>
+                    <p>${Portal.escape(c.department)} · Year ${Portal.escape(c.year)}${c.section && c.section !== 'None' ? ` · Section ${Portal.escape(c.section)}` : ''}</p>
+                    <div class="cand-meter-rail">
+                      <div class="cand-meter-fill" id="meter-${c.id}" style="width:${c.percent}%;"></div>
+                    </div>
+                  </div>
+
+                  <div class="cand-tally-col">
+                    <div class="cand-vote-digits">
+                      <span id="votes-${c.id}">${c.votes}</span>
+                      <span class="cand-plus-pop" id="pop-${c.id}">+1</span>
+                    </div>
+                    <div class="cand-percent-badge" id="pct-${c.id}">${c.percent}%</div>
+                  </div>
+                </article>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }).join('');
+
+      // Build bottom navigation pills
+      const indContainer = document.getElementById('slideshowBottomIndicators');
+      indContainer.innerHTML = positions.map((p, idx) => `
+        <button class="pos-nav-pill ${idx === currentPositionIndex ? 'active' : ''}" onclick="goToPosition(${idx})">
+          ${Portal.escape(p.position)} <small style="opacity:0.85;">(${p.totalVotes})</small>
+        </button>
+      `).join('');
+
+      // Cache candidate votes
+      positions.forEach(p => {
+        p.candidates.forEach(c => {
+          previousCandidateVotes[c.id] = c.votes;
+        });
+      });
+
+      applySlideTransition();
+    }
+
+    // Update numbers smoothly without restarting the slide or rebuilding DOM
+    function updateCandidateVotesInPlace(positions) {
+      positions.forEach(pos => {
+        pos.candidates.forEach(c => {
+          const prev = previousCandidateVotes[c.id] ?? c.votes;
+          const hasGrown = c.votes > prev;
+
+          const voteEl = document.getElementById(`votes-${c.id}`);
+          const pctEl = document.getElementById(`pct-${c.id}`);
+          const meterEl = document.getElementById(`meter-${c.id}`);
+          const cardEl = document.getElementById(`candCard-${c.id}`);
+          const popEl = document.getElementById(`pop-${c.id}`);
+
+          if (voteEl && voteEl.textContent !== String(c.votes)) {
+            voteEl.textContent = c.votes;
+          }
+          if (pctEl && pctEl.textContent !== `${c.percent}%`) {
+            pctEl.textContent = `${c.percent}%`;
+          }
+          if (meterEl) {
+            meterEl.style.width = `${c.percent}%`;
+          }
+
+          if (hasGrown && cardEl) {
+            cardEl.classList.remove('vote-bump');
+            void cardEl.offsetWidth;
+            cardEl.classList.add('vote-bump');
+
+            if (popEl) {
+              popEl.classList.add('active');
+              setTimeout(() => popEl.classList.remove('active'), 1200);
+            }
+          }
+
+          previousCandidateVotes[c.id] = c.votes;
+        });
+      });
+    }
+
+    // Continuous Slide Timer Loop (Runs smoothly on requestAnimationFrame)
     function tickSlideTimer() {
       if (isSlidePlaying && lastData && lastData.positions && lastData.positions.length > 1) {
         const elapsed = Date.now() - slideTimerStart;
@@ -1063,7 +1126,7 @@
     }
     requestAnimationFrame(tickSlideTimer);
 
-    // Fetch telemetry from server
+    // Fetch live telemetry from backend
     async function fetchLiveScreenData() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/election/live-screen`);
@@ -1092,8 +1155,8 @@
           document.getElementById('leadingDeptName').textContent = `${data.departments[0].department} (${data.departments[0].turnout}%)`;
         }
 
-        // Render Current Slide
-        renderCurrentSlide();
+        // Sync Slideshow DOM (does NOT interrupt the slide timer!)
+        syncSlideshowDOM(data.positions);
 
         // Update Ticker
         const ticker = document.getElementById('tvTickerStream');
