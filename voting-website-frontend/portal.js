@@ -314,6 +314,7 @@ const Portal = {
     document.body.appendChild(modalWrap);
   },
   initNetworkAlerts() {
+    if (window.location.pathname.includes('live-tv') || window.location.pathname.includes('kiosk')) return;
     let banner = document.querySelector('.offline-banner');
     if (!banner) {
       banner = document.createElement('div');
@@ -330,7 +331,7 @@ const Portal = {
     };
     window.addEventListener('online', update);
     window.addEventListener('offline', update);
-    if (!navigator.onLine) banner.classList.add('visible');
+    banner.classList.toggle('visible', !navigator.onLine);
   },
   logoutStudent() { this.clearStudent(); window.location.href = 'index.html'; },
   logoutStaff() { this.clearStaff(); window.location.href = 'index.html'; },
@@ -354,6 +355,7 @@ const Portal = {
     }
   },
   mountFooterActions() {
+    if (window.location.pathname.includes('live-tv') || window.location.pathname.includes('kiosk')) return;
     if (document.querySelector('.portal-action-footer')) return;
     const footer = document.createElement('footer');
     footer.className = 'portal-action-footer';

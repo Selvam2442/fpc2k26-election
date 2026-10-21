@@ -41,6 +41,22 @@
       position: relative;
     }
 
+    /* Never show portal offline banners or install/share footers on TV broadcast */
+    .offline-banner,
+    .portal-action-footer,
+    .footer-actions-wrap,
+    .footer-actions,
+    [data-install-app],
+    [data-share-portal] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      pointer-events: none !important;
+    }
+
     /* Ambient glow elements */
     body::before {
       content: '';
@@ -441,121 +457,124 @@
       will-change: transform;
     }
 
-    /* Individual Posting Panel: takes full width and height of viewport */
+    /* Individual Posting Panel: stacked vertically one below another ("keela keela") */
     .position-slide-panel {
       width: 100%;
       height: 100%;
       flex: 0 0 100%;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 12px;
-      align-content: center;
-      padding: 4px 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: clamp(14px, 2.2vh, 26px);
+      padding: clamp(10px, 1.8vw, 24px);
       box-sizing: border-box;
+      overflow-y: auto;
     }
 
-    /* Candidate Spotlight Card */
+    /* Candidate Spotlight Card: Large, full-width, prominent TV broadcast styling */
     .candidate-spotlight-card {
-      background: rgba(14, 38, 71, 0.8);
-      border: 1px solid rgba(94, 160, 255, 0.18);
-      border-radius: 16px;
-      padding: clamp(12px, 1.3vw, 18px);
+      width: 100%;
+      background: rgba(14, 38, 71, 0.88);
+      border: 2px solid rgba(94, 160, 255, 0.22);
+      border-radius: 22px;
+      padding: clamp(16px, 1.8vw, 24px) clamp(18px, 2.2vw, 32px);
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 14px;
+      gap: clamp(16px, 2.2vw, 30px);
       align-items: center;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(14px);
-      transition: all 0.3s ease;
+      backdrop-filter: blur(16px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
     }
 
     .candidate-spotlight-card.is-lead {
-      background: linear-gradient(90deg, rgba(35, 78, 142, 0.82), rgba(15, 38, 71, 0.78));
-      border-color: rgba(245, 158, 11, 0.55);
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3), 0 0 18px rgba(245, 158, 11, 0.15);
+      background: linear-gradient(90deg, rgba(38, 85, 155, 0.92), rgba(16, 42, 80, 0.9));
+      border-color: rgba(245, 158, 11, 0.7);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 24px rgba(245, 158, 11, 0.25);
     }
 
     .candidate-spotlight-card.vote-bump {
       animation: candBump 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes candBump {
-      0% { transform: scale(1.025); border-color: var(--tv-neon-green); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+      0% { transform: scale(1.02); border-color: var(--tv-neon-green); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
       100% { transform: scale(1); }
     }
 
     .cand-photo-wrap {
       position: relative;
-      width: clamp(52px, 4.8vw, 66px);
-      height: clamp(52px, 4.8vw, 66px);
+      width: clamp(75px, 6.2vw, 102px);
+      height: clamp(75px, 6.2vw, 102px);
       flex-shrink: 0;
     }
 
     .cand-photo-img {
       width: 100%;
       height: 100%;
-      border-radius: 16px;
+      border-radius: 20px;
       object-fit: cover;
-      border: 2px solid rgba(255, 255, 255, 0.16);
+      border: 2.5px solid rgba(255, 255, 255, 0.2);
       background: #0d2547;
     }
 
     .is-lead .cand-photo-img {
       border-color: #f59e0b;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
     }
 
     .cand-crown-badge {
       position: absolute;
-      top: -8px;
-      right: -6px;
-      width: 24px;
-      height: 24px;
+      top: -10px;
+      right: -8px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       background: linear-gradient(135deg, #fbbf24, #d97706);
       color: #78350f;
       display: grid;
       place-items: center;
-      font-size: 0.75rem;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+      font-size: 1rem;
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.8);
     }
 
     .cand-info-col h3 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.1rem, 1.4vw, 1.4rem);
-      font-weight: 800;
+      font-size: clamp(1.45rem, 2.2vw, 2.35rem);
+      font-weight: 900;
       color: #fff;
       display: flex;
       align-items: center;
-      gap: 8px;
-      margin-bottom: 2px;
-      line-height: 1.2;
+      gap: 12px;
+      margin-bottom: 4px;
+      line-height: 1.15;
     }
 
     .lead-tag {
-      background: rgba(245, 158, 11, 0.2);
-      border: 1px solid rgba(245, 158, 11, 0.5);
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.3));
+      border: 1px solid rgba(245, 158, 11, 0.65);
       color: #fbbf24;
-      font-size: 0.68rem;
-      font-weight: 800;
-      padding: 1px 7px;
+      font-size: 0.82rem;
+      font-weight: 900;
+      padding: 3px 12px;
       border-radius: 99px;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
 
     .cand-info-col p {
-      font-size: clamp(0.76rem, 0.9vw, 0.85rem);
+      font-size: clamp(0.95rem, 1.2vw, 1.25rem);
       color: var(--tv-muted);
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .cand-meter-rail {
-      height: 9px;
-      background: rgba(4, 15, 30, 0.8);
+      height: 14px;
+      background: rgba(4, 15, 30, 0.85);
       border-radius: 99px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .cand-meter-fill {
@@ -567,28 +586,28 @@
 
     .is-lead .cand-meter-fill {
       background: linear-gradient(90deg, #f59e0b, #fbbf24);
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
     }
 
     .cand-tally-col {
       text-align: right;
-      min-width: 85px;
+      min-width: 120px;
     }
 
     .cand-vote-digits {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.7rem, 2.3vw, 2.3rem);
+      font-size: clamp(2.5rem, 4.2vw, 4.2rem);
       font-weight: 900;
       color: #fff;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 3px;
+      gap: 4px;
     }
 
     .cand-plus-pop {
-      font-size: 0.75rem;
+      font-size: 1rem;
       color: var(--tv-neon-green);
       font-weight: 800;
       opacity: 0;
@@ -601,13 +620,21 @@
     }
 
     .cand-percent-badge {
-      font-size: 0.88rem;
-      font-weight: 800;
+      display: inline-block;
+      margin-top: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(1.1rem, 1.4vw, 1.5rem);
+      font-weight: 900;
       color: var(--tv-neon-cyan);
-      margin-top: 3px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 4px 14px;
+      border-radius: 10px;
     }
     .is-lead .cand-percent-badge {
       color: #fbbf24;
+      background: rgba(245, 158, 11, 0.14);
+      border-color: rgba(245, 158, 11, 0.35);
     }
 
     /* Position Indicator Pills at bottom of card */
@@ -731,7 +758,7 @@
       <div class="tv-clock" id="tvLiveClock">00:00:00</div>
       <button class="tv-btn active" id="slidePlayBtn" onclick="toggleSlidePlay()" title="Pause or Play Auto-Slide animation">
         <i class="fa-solid fa-pause" id="slidePlayIcon"></i>
-        <span id="slidePlayLabel">Auto: 6s</span>
+        <span id="slidePlayLabel">Auto: 8s</span>
       </button>
       <button class="tv-btn" id="audioToggleBtn" onclick="toggleAudio()" title="Sound effects on vote jumps">
         <i class="fa-solid fa-volume-xmark" id="audioIcon"></i>
@@ -843,11 +870,14 @@
 
   <script src="portal.js"></script>
   <script>
+    // Clean up any extraneous offline banners or portal action footers
+    document.querySelectorAll('.offline-banner, .portal-action-footer').forEach(el => el.remove());
+
     // State management
     let lastData = null;
     let currentPositionIndex = 0;
     let isSlidePlaying = true;
-    let slideDuration = 6000; // 6 seconds per position
+    let slideDuration = 8000; // 8 seconds per position
     let slideTimerStart = Date.now();
     let hasRenderedTrack = false;
     let audioEnabled = false;
@@ -897,7 +927,7 @@
       const label = document.getElementById('slidePlayLabel');
       btn.classList.toggle('active', isSlidePlaying);
       icon.className = isSlidePlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
-      label.textContent = isSlidePlaying ? 'Auto: 6s' : 'Slide: Paused';
+      label.textContent = isSlidePlaying ? 'Auto: 8s' : 'Slide: Paused';
       if (isSlidePlaying) slideTimerStart = Date.now();
     }
 
