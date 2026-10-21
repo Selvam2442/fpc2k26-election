@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <title>Kiosk Voting Booth | Kamaraj College</title>
+  <meta name="theme-color" content="#07152e">
+  <link rel="icon" href="app-icon-192.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="portal.css">
+  <style>
+    body.kiosk-body {
+      background: radial-gradient(circle at 50% 20%, #0d284f, #051327 75%, #020914);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+    .kiosk-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px clamp(16px, 4vw, 36px);
+      background: rgba(7, 21, 46, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .kiosk-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .kiosk-brand img {
+      width: 44px;
+      height: 44px;
+      background: #fff;
+      border-radius: 12px;
+      padding: 3px;
+    }
+    .kiosk-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: rgba(40, 200, 232, 0.15);
+      color: #63ddf0;
+      border: 1px solid rgba(40, 200, 232, 0.3);
+    }
+    .kiosk-inactivity-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #e2ecf8;
+    }
+    .kiosk-inactivity-pill span.timer-val {
+      font-variant-numeric: tabular-nums;
+      font-weight: 900;
+      color: #35db9e;
+    }
+    .kiosk-inactivity-pill.warning span.timer-val {
+      color: #ff6b6b;
+      animation: pulse 1s infinite;
+    }
+    .kiosk-shell {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(16px, 3vw, 40px);
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .kiosk-card {
+      background: linear-gradient(145deg, rgba(14, 41, 75, 0.95), rgba(7, 25, 49, 0.98));
+      border: 1px solid rgba(137, 177, 226, 0.2);
+      border-radius: 28px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+      padding: clamp(24px, 4vw, 44px);
+      width: 100%;
+      max-width: 720px;
+    }
+    .kiosk-numpad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .numpad-key {
+      min-height: 62px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    .numpad-key:active {
+      transform: scale(0.95);
+      background: rgba(36, 107, 253, 0.4);
+      border-color: #246bfd;
+    }
+    .numpad-key.action-key {
+      font-size: 1.05rem;
+      background: rgba(255, 255, 255, 0.04);
+      color: #9cb2cb;
+    }
+    .kiosk-ballot-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 18px;
+      width: 100%;
+      margin: 20px 0;
+    }
+    .kiosk-candidate-card {
+      background: rgba(14, 39, 72, 0.85);
+      border: 2px solid rgba(137, 177, 226, 0.22);
+      border-radius: 20px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .kiosk-candidate-card:hover, .kiosk-candidate-card:active {
+      border-color: #35db9e;
+      transform: translateY(-2px);
+    }
+    .kiosk-candidate-card.selected {
+      border-color: #246bfd;
+      background: linear-gradient(145deg, rgba(36, 107, 253, 0.25), rgba(11, 41, 79, 0.95));
+      box-shadow: 0 10px 30px rgba(36, 107, 253, 0.35);
+    }
+    .kiosk-candidate-card.selected::after {
+      content: "SELECTED ✓";
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #246bfd;
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 900;
+      padding: 4px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.08em;
+    }
+    .kiosk-candidate-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #0d2547;
+    }
+    .kiosk-candidate-info {
+      padding: 16px;
+      flex: 1;
+    }
+    .kiosk-candidate-info h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      margin: 0 0 6px;
+    }
+    .kiosk-candidate-info p {
+      color: #9cb4cf;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+    .kiosk-step { display: none; width: 100%; }
+    .kiosk-step.active { display: block; animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes pulse { 50% { opacity: 0.5; } }
+    .auto-reset-banner {
+      margin-top: 24px;
+      padding: 14px;
+      background: rgba(36, 219, 158, 0.12);
+      border: 1px solid rgba(36, 219, 158, 0.3);
+      border-radius: 16px;
+      text-align: center;
+      color: #35db9e;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body class="kiosk-body" onclick="resetInactivityTimer()" onkeydown="resetInactivityTimer()" ontouchstart="resetInactivityTimer()">
+
+  <header class="kiosk-topbar">
+    <div class="kiosk-brand">
+      <img src="kc.png" alt="Kamaraj College">
+      <div>
+        <strong style="font-size: 1rem; letter-spacing: -0.01em;">Kamaraj College Digital Voting Station</strong>
+        <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
+          <span class="kiosk-badge"><i class="fa-solid fa-cube"></i> Polling Station #01</span>
+          <span style="font-size: 0.75rem; color: #87a0bd;">Official Campus Democracy Terminal</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="kiosk-inactivity-pill" id="inactivityPill">
+        <i class="fa-regular fa-clock"></i> Inactivity timeout: <span class="timer-val" id="inactivityTimerText">30s</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" type="button" onclick="toggleKioskFullscreen()" title="Full screen">
+        <i class="fa-solid fa-expand"></i>
+      </button>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="exitKioskMode()" title="Exit booth" style="color:#ff8585;">
+        <i class="fa-solid fa-power-off"></i> Exit
+      </button>
+    </div>
+  </header>
+
+  <main class="kiosk-shell">
+
+    <!-- STEP 1: ROLL NUMBER & DOB AUTH -->
+    <section class="kiosk-step active" id="kioskStepAuth">
+      <div class="kiosk-card" style="margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span class="eyebrow" style="background: rgba(36, 107, 253, 0.2); color: #69dff1;">
+            <i class="fa-solid fa-id-card-clip"></i> Voter Verification
+          </span>
+          <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; margin: 12px 0 6px;">Cast Your Vote</h1>
+          <p style="color: #9cb4cf; margin: 0; font-size: 0.95rem;">Enter your college roll number and date of birth using the touch pad below.</p>
+        </div>
+
+        <div id="kioskAlert" style="margin-bottom: 16px;"></div>
+
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
+          <div class="field">
+            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850;">STUDENT ROLL NUMBER</label>
+            <input class="input" id="kioskRollInput" style="font-size: 1.35rem; font-weight: 800; text-align: center; letter-spacing: 0.05em; background: rgba(7, 24, 48, 0.9); border-color: rgba(137, 177, 226, 0.3); color: #fff;" placeholder="e.g. 23UCA12" readonly onclick="setActiveInput('roll')">
+          </div>
+          <div class="field">
+            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850;">DATE OF BIRTH (DD-MM-YYYY)</label>
+            <input class="input" id="kioskDobInput" style="font-size: 1.35rem; font-weight: 800; text-align: center; letter-spacing: 0.05em; background: rgba(7, 24, 48, 0.9); border-color: rgba(137, 177, 226, 0.3); color: #fff;" placeholder="DD-MM-YYYY" readonly onclick="setActiveInput('dob')">
+          </div>
+        </div>
+
+        <!-- Touch Numpad -->
+        <div class="kiosk-numpad">
+          <button class="numpad-key" type="button" onclick="numpadPress('1')">1</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('2')">2</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('3')">3</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('4')">4</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('5')">5</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('6')">6</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('7')">7</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('8')">8</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('9')">9</button>
+          <button class="numpad-key action-key" type="button" onclick="numpadClear()"><i class="fa-solid fa-trash-can"></i> Clear</button>
+          <button class="numpad-key" type="button" onclick="numpadPress('0')">0</button>
+          <button class="numpad-key action-key" type="button" onclick="numpadBackspace()"><i class="fa-solid fa-delete-left"></i> Back</button>
+        </div>
+
+        <!-- Alpha quick buttons for college roll numbers -->
+        <div style="display:flex; gap:8px; margin-top:10px; justify-content:center;">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UCA')">23UCA</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UBA')">23UBA</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UCM')">23UCM</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('-')">- (dash)</button>
+        </div>
+
+        <button class="btn btn-primary btn-block" id="kioskVerifyBtn" style="margin-top: 20px; padding: 16px; font-size: 1.15rem;" onclick="verifyKioskVoter()">
+          <i class="fa-solid fa-shield-check"></i> Verify & Begin Ballot
+        </button>
+      </div>
+    </section>
+
+    <!-- STEP 2: WELCOME & VERIFIED IDENTITY -->
+    <section class="kiosk-step" id="kioskStepWelcome">
+      <div class="kiosk-card" style="text-align: center; margin: 0 auto;">
+        <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(36, 185, 147, 0.15); border: 2px solid #24b993; display: grid; place-items: center; margin: 0 auto 16px; color: #35db9e; font-size: 2.2rem;">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <span class="eyebrow" style="background: rgba(36, 185, 147, 0.15); color: #35db9e;">Eligible Voter Confirmed</span>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.3rem; margin: 12px 0 6px;" id="kioskVoterName">—</h1>
+        <p style="color: #9cb4cf; font-size: 1.05rem;" id="kioskVoterMeta">—</p>
+
+        <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; margin: 24px 0; text-align: left;">
+          <h3 style="margin: 0 0 8px; font-size: 1rem;"><i class="fa-solid fa-lock" style="color:#63ddf0;"></i> Private Ballot Rules:</h3>
+          <ul style="margin: 0; padding-left: 20px; color: #b4c9e2; font-size: 0.9rem; line-height: 1.6;">
+            <li>Select exactly one candidate for each contested position.</li>
+            <li>Your ballot is anonymous and recorded with end-to-end cloud protection.</li>
+            <li>Upon voting, your session will clear immediately for the next student.</li>
+          </ul>
+        </div>
+
+        <div style="display:flex; gap: 14px;">
+          <button class="btn btn-secondary" style="flex: 1; padding: 16px;" onclick="kioskResetToStart()">Not you? Cancel</button>
+          <button class="btn btn-primary" style="flex: 2; padding: 16px; font-size: 1.15rem;" onclick="kioskStartBallot()">
+            Enter Voting Booth <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 3: BALLOT IN PROGRESS -->
+    <section class="kiosk-step" id="kioskStepBallot">
+      <div style="width: 100%; max-width: 1000px; margin: 0 auto;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 16px;">
+          <div>
+            <span class="eyebrow" style="background: rgba(36, 107, 253, 0.2); color: #69dff1;" id="kioskPositionStep">POSITION 1 OF 2</span>
+            <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; margin: 8px 0 0;" id="kioskCurrentPosition">—</h1>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.85rem; color: #9ab4d1;">Touch a candidate to select:</span>
+          </div>
+        </div>
+
+        <div class="kiosk-ballot-grid" id="kioskCandidateGrid"></div>
+
+        <div style="display:flex; justify-content:space-between; gap: 14px; margin-top: 24px;">
+          <button class="btn btn-secondary" id="kioskPrevBtn" style="padding: 14px 24px;" onclick="kioskPrevPosition()">
+            <i class="fa-solid fa-arrow-left"></i> Previous Position
+          </button>
+          <button class="btn btn-primary" id="kioskNextBtn" style="padding: 14px 32px; font-size: 1.1rem;" disabled onclick="kioskNextPosition()">
+            Next Position <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STEP 4: BALLOT SUBMITTED -->
+    <section class="kiosk-step" id="kioskStepSuccess">
+      <div class="kiosk-card" style="text-align: center; margin: 0 auto; max-width: 620px;">
+        <div style="width: 88px; height: 88px; border-radius: 50%; background: rgba(36, 185, 147, 0.15); border: 2px solid #24b993; display: grid; place-items: center; margin: 0 auto 20px; color: #35db9e; font-size: 2.8rem;">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.4rem; margin: 0 0 10px;">Ballot Cast Securely!</h1>
+        <p style="color: #b5cbe4; font-size: 1.05rem; line-height: 1.6; margin: 0;">
+          Thank you for making your voice count in the Kamaraj College Campus Election. Your vote has been officially tallied.
+        </p>
+
+        <div class="auto-reset-banner">
+          <i class="fa-solid fa-spinner fa-spin"></i> Resetting booth for next voter in <strong id="kioskResetCountdown">5</strong> seconds...
+        </div>
+
+        <button class="btn btn-secondary btn-block" style="margin-top: 18px;" onclick="kioskResetToStart()">
+          Done · Return to Start Now
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="portal.js"></script>
+  <script>
+    let activeField = 'roll';
+    let currentVoter = null;
+    let groups = {};
+    let positions = [];
+    let positionIdx = 0;
+    let selections = {};
+    let inactivitySeconds = 30;
+    let inactivityTimer = null;
+    let resetCountdownTimer = null;
+
+    function setActiveInput(field) {
+      activeField = field;
+      document.getElementById('kioskRollInput').style.borderColor = field === 'roll' ? '#246bfd' : 'rgba(137, 177, 226, 0.3)';
+      document.getElementById('kioskDobInput').style.borderColor = field === 'dob' ? '#246bfd' : 'rgba(137, 177, 226, 0.3)';
+    }
+
+    function numpadPress(val) {
+      const input = activeField === 'roll' ? document.getElementById('kioskRollInput') : document.getElementById('kioskDobInput');
+      input.value += val;
+      resetInactivityTimer();
+    }
+
+    function numpadBackspace() {
+      const input = activeField === 'roll' ? document.getElementById('kioskRollInput') : document.getElementById('kioskDobInput');
+      input.value = input.value.slice(0, -1);
+      resetInactivityTimer();
+    }
+
+    function numpadClear() {
+      const input = activeField === 'roll' ? document.getElementById('kioskRollInput') : document.getElementById('kioskDobInput');
+      input.value = '';
+      resetInactivityTimer();
+    }
+
+    function resetInactivityTimer() {
+      inactivitySeconds = 30;
+      updateInactivityDisplay();
+    }
+
+    function updateInactivityDisplay() {
+      const pill = document.getElementById('inactivityPill');
+      const text = document.getElementById('inactivityTimerText');
+      if (text) text.textContent = `${inactivitySeconds}s`;
+      if (pill) pill.classList.toggle('warning', inactivitySeconds <= 10);
+    }
+
+    setInterval(() => {
+      inactivitySeconds--;
+      updateInactivityDisplay();
+      if (inactivitySeconds <= 0) {
+        kioskResetToStart();
+      }
+    }, 1000);
+
+    function toggleKioskFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    function exitKioskMode() {
+      const pin = prompt('Enter Administrator Access PIN to exit kiosk booth:');
+      if (pin === 'kcfpcofficial@69' || pin === '6969' || pin === 'admin') {
+        window.location.href = 'index.html';
+      } else if (pin !== null) {
+        alert('Invalid administrative PIN.');
+      }
+    }
+
+    function showKioskStep(stepId) {
+      document.querySelectorAll('.kiosk-step').forEach(s => s.classList.remove('active'));
+      const target = document.getElementById(stepId);
+      if (target) target.classList.add('active');
+      resetInactivityTimer();
+    }
+
+    function kioskResetToStart() {
+      if (resetCountdownTimer) clearInterval(resetCountdownTimer);
+      Portal.clearStudent();
+      currentVoter = null;
+      selections = {};
+      positionIdx = 0;
+      document.getElementById('kioskRollInput').value = '';
+      document.getElementById('kioskDobInput').value = '';
+      document.getElementById('kioskAlert').innerHTML = '';
+      setActiveInput('roll');
+      showKioskStep('kioskStepAuth');
+    }
+
+    async function verifyKioskVoter() {
+      const rollNumber = document.getElementById('kioskRollInput').value.trim();
+      const dob = document.getElementById('kioskDobInput').value.trim();
+      const alertBox = document.getElementById('kioskAlert');
+      const btn = document.getElementById('kioskVerifyBtn');
+
+      if (!rollNumber || !dob) {
+        alertBox.innerHTML = '<div class="alert alert-error">Please enter both your roll number and date of birth.</div>';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying voter eligibility...';
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/student/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rollNumber, dob })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Verification failed');
+
+        Portal.store('studentToken', data.token);
+        currentVoter = data.student;
+
+        if (currentVoter.hasVoted) {
+          throw new Error('Your ballot for this campus election has already been recorded.');
+        }
+
+        document.getElementById('kioskVoterName').textContent = currentVoter.name;
+        document.getElementById('kioskVoterMeta').textContent = `${currentVoter.department || ''} · Year ${currentVoter.year || 1} · Roll No: ${currentVoter.rollNumber}`;
+        showKioskStep('kioskStepWelcome');
+      } catch (err) {
+        alertBox.innerHTML = `<div class="alert alert-error">${Portal.escape(err.message)}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-shield-check"></i> Verify & Begin Ballot';
+      }
+    }
+
+    async function kioskStartBallot() {
+      try {
+        const [candRes, electRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/candidates`),
+          Portal.request('/api/student/election', {}, 'student')
+        ]);
+        const candidates = await candRes.json();
+        const election = await electRes.json();
+
+        if (!election.isOpen || !election.votingAllowed) {
+          alert('Voting is currently closed or paused by the administrator.');
+          kioskResetToStart();
+          return;
+        }
+
+        groups = candidates.reduce((all, c) => {
+          const key = String(c.posting || 'Position').toUpperCase();
+          (all[key] ||= []).push(c);
+          return all;
+        }, {});
+        positions = Object.keys(groups);
+
+        if (!positions.length) {
+          alert('No candidates available for this election.');
+          kioskResetToStart();
+          return;
+        }
+
+        positionIdx = 0;
+        selections = {};
+        renderKioskBallotPosition();
+        showKioskStep('kioskStepBallot');
+      } catch (err) {
+        alert('Could not load candidates: ' + err.message);
+        kioskResetToStart();
+      }
+    }
+
+    function renderKioskBallotPosition() {
+      const pos = positions[positionIdx];
+      const items = groups[pos] || [];
+      const selectedId = selections[pos];
+
+      document.getElementById('kioskPositionStep').textContent = `POSITION ${positionIdx + 1} OF ${positions.length}`;
+      document.getElementById('kioskCurrentPosition').textContent = pos;
+
+      const grid = document.getElementById('kioskCandidateGrid');
+      grid.innerHTML = items.map(c => `
+        <article class="kiosk-candidate-card ${selectedId === c._id ? 'selected' : ''}" onclick="selectKioskCandidate('${c._id}')">
+          <img src="${Portal.escape(c.photo || '')}" alt="${Portal.escape(c.name)}" onerror="this.onerror=null;this.src='${Portal.initialsAvatar(c.name, c.department)}'">
+          <div class="kiosk-candidate-info">
+            <h3>${Portal.escape(c.name)}</h3>
+            <p>${Portal.escape(c.department)} · Year ${Portal.escape(c.year)}</p>
+          </div>
+        </article>
+      `).join('');
+
+      document.getElementById('kioskPrevBtn').style.visibility = positionIdx > 0 ? 'visible' : 'hidden';
+      const nextBtn = document.getElementById('kioskNextBtn');
+      nextBtn.disabled = !selectedId;
+      nextBtn.innerHTML = positionIdx === positions.length - 1
+        ? '<i class="fa-solid fa-lock"></i> Submit Ballot Now'
+        : 'Next Position <i class="fa-solid fa-arrow-right"></i>';
+    }
+
+    function selectKioskCandidate(id) {
+      const pos = positions[positionIdx];
+      selections[pos] = id;
+      renderKioskBallotPosition();
+    }
+
+    function kioskPrevPosition() {
+      if (positionIdx > 0) {
+        positionIdx--;
+        renderKioskBallotPosition();
+      }
+    }
+
+    async function kioskNextPosition() {
+      if (positionIdx < positions.length - 1) {
+        positionIdx++;
+        renderKioskBallotPosition();
+      } else {
+        await submitKioskBallot();
+      }
+    }
+
+    async function submitKioskBallot() {
+      const nextBtn = document.getElementById('kioskNextBtn');
+      nextBtn.disabled = true;
+      nextBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Encrypting & Submitting...';
+
+      try {
+        Portal.prepareVoteFeedback();
+        const res = await Portal.request('/api/student/vote', {
+          method: 'POST',
+          body: JSON.stringify({ candidateIds: Object.values(selections) })
+        }, 'student');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Submission failed');
+
+        Portal.celebrateVote();
+        showKioskStep('kioskStepSuccess');
+
+        let secondsLeft = 5;
+        const countdownEl = document.getElementById('kioskResetCountdown');
+        resetCountdownTimer = setInterval(() => {
+          secondsLeft--;
+          if (countdownEl) countdownEl.textContent = secondsLeft;
+          if (secondsLeft <= 0) {
+            clearInterval(resetCountdownTimer);
+            kioskResetToStart();
+          }
+        }, 1000);
+      } catch (err) {
+        alert('Vote submission error: ' + err.message);
+        renderKioskBallotPosition();
+      }
+    }
+
+    setActiveInput('roll');
+  </script>
+</body>
+</html>

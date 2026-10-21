@@ -73,8 +73,8 @@ mongoose.connect(process.env.MONGO_URI)
       [{ $set: { voterRole: 'student', voterId: '$rollNumber' } }],
       { updatePipeline: true }
     ).catch(error => console.error(`Vote receipt migration failed: ${error.message}`));
-    try { await Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true })]); }
-    catch (error) { console.error(`Initial student sync failed: ${error.message}`); }
+    try { await Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true }), deduplicateElectionDrafts()]); }
+    catch (error) { console.error(`Initial directory/draft sync failed: ${error.message}`); }
     const timer = setInterval(() => {
       Promise.all([refreshStudentDirectory({ force: true }), refreshStaffDirectory({ force: true })])
         .catch(error => console.error(`Scheduled directory sync failed: ${error.message}`));
@@ -1297,8 +1297,193 @@ app.get('/api/results/final', verifyStudentOrStaff, async (req, res) => {
   res.json({ isComplete: true, ...metrics, title: resultArchive.title, revealedAt: resultArchive.archivedAt, winners: resultArchive.winners, results: resultArchive.candidates });
 });
 
+app.get('/api/election/department-turnout', async (_req, res) => {
+  try {
+    const students = await getStudentDirectory();
+    const receipts = await VoteReceipt.find({ voterRole: 'student' }).select('rollNumber voterId').lean();
+    const votedRolls = new Set(receipts.map(r => String(r.voterId || r.rollNumber || '').trim().toUpperCase()));
+
+    const deptMap = {};
+    for (const s of students) {
+      const dept = String(s.department || s.className || 'General').trim();
+      if (!deptMap[dept]) deptMap[dept] = { department: dept, total: 0, voted: 0 };
+      deptMap[dept].total++;
+      if (votedRolls.has(String(s.rollNumber || '').trim().toUpperCase())) {
+        deptMap[dept].voted++;
+      }
+    }
+
+    const list = Object.values(deptMap).map(d => ({
+      ...d,
+      turnout: d.total ? Math.round((d.voted / d.total) * 100) : 0
+    })).sort((a, b) => b.turnout - a.turnout || b.voted - a.voted || a.department.localeCompare(b.department));
+
+    res.json({ departments: list, totalStudents: students.length, totalVoted: receipts.length });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/push/analytics', verifyAdmin, async (_req, res) => {
+  try {
+    const subscriptions = await PushSubscription.find({ active: true }).lean();
+    const total = subscriptions.length;
+    const students = subscriptions.filter(s => s.recipientRole === 'student').length;
+    const staff = subscriptions.filter(s => s.recipientRole === 'staff').length;
+    const classes = {};
+    subscriptions.filter(s => s.className).forEach(s => {
+      classes[s.className] = (classes[s.className] || 0) + 1;
+    });
+    const recentPushes = await Announcement.find({ pushNotifiedAt: { $ne: null } })
+      .sort({ pushNotifiedAt: -1 })
+      .limit(6)
+      .select('title priority audience pushNotifiedAt')
+      .lean();
+
+    res.json({
+      totalDevices: total,
+      studentDevices: students,
+      staffDevices: staff,
+      classes,
+      recentPushes
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/admin/push/broadcast', verifyAdmin, async (req, res) => {
+  try {
+    const title = String(req.body.title || '').trim().slice(0, 100);
+    const body = String(req.body.body || '').trim().slice(0, 300);
+    const priority = ['URGENT', 'IMPORTANT', 'NORMAL'].includes(req.body.priority) ? req.body.priority : 'IMPORTANT';
+    const audience = req.body.audience || 'ALL';
+    const targetClass = req.body.targetClass || '';
+
+    if (!title || !body) return res.status(400).json({ message: 'Title and body are required for broadcast.' });
+
+    const subscriptionQuery = { active: true };
+    if (audience === 'FACULTY') subscriptionQuery.recipientRole = 'staff';
+    else if (audience === 'STUDENTS') subscriptionQuery.recipientRole = 'student';
+    if (targetClass) subscriptionQuery.className = targetClass;
+
+    const subscriptions = await PushSubscription.find(subscriptionQuery).lean();
+    if (!subscriptions.length) return res.json({ message: 'No active device subscriptions match this target audience.', sent: 0, failed: 0 });
+
+    await getWebPushConfig();
+    let sent = 0;
+    let failed = 0;
+    const staleIds = [];
+
+    await Promise.all(subscriptions.map(async sub => {
+      try {
+        await webPush.sendNotification({
+          endpoint: sub.endpoint,
+          keys: sub.keys
+        }, JSON.stringify({
+          title: `Kamaraj College • ${title}`,
+          body,
+          priority,
+          tag: `broadcast-${Date.now()}`,
+          url: sub.recipientRole === 'staff' ? './staff.html#announcements' : './dashboard.html#announcements'
+        }), { TTL: 24 * 60 * 60, urgency: priority === 'URGENT' ? 'high' : 'normal' });
+        sent++;
+      } catch (err) {
+        failed++;
+        if ([404, 410].includes(err.statusCode)) staleIds.push(sub._id);
+      }
+    }));
+
+    if (staleIds.length) await PushSubscription.deleteMany({ _id: { $in: staleIds } });
+
+    res.json({
+      message: `Emergency broadcast successfully delivered to ${sent} subscriber device${sent === 1 ? '' : 's'}.`,
+      sent,
+      failed
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+function escapeRegex(string) {
+  return String(string || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function deduplicateElectionDrafts() {
+  try {
+    const drafts = await ElectionArchive.find({ published: false }).sort({ updatedAt: -1, archivedAt: -1 });
+    const seen = new Set();
+    const duplicateIds = [];
+    for (const draft of drafts) {
+      const key = `${(draft.title || '').trim().toLowerCase()}__${draft.academicYear || ''}`;
+      if (seen.has(key)) {
+        duplicateIds.push(draft._id);
+      } else {
+        seen.add(key);
+      }
+    }
+    if (duplicateIds.length > 0) {
+      await ElectionArchive.deleteMany({ _id: { $in: duplicateIds } });
+      console.log(`Deduplicated: removed ${duplicateIds.length} redundant election draft(s).`);
+    }
+  } catch (error) {
+    console.error(`Election draft deduplication error: ${error.message}`);
+  }
+}
+
 app.get('/api/admin/elections/history', verifyAdmin, async (_req, res) => {
+  await deduplicateElectionDrafts();
   res.json(await ElectionArchive.find().sort({ archivedAt: -1 }).lean());
+});
+
+app.delete('/api/admin/elections/:id', verifyAdmin, async (req, res) => {
+  try {
+    const archive = await ElectionArchive.findById(req.params.id);
+    if (!archive) return res.status(404).json({ message: 'Saved election not found.' });
+    if (archive.published) {
+      return res.status(400).json({ message: 'Published completed election records are protected and cannot be deleted. Only drafts can be deleted.' });
+    }
+    await ElectionArchive.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Election draft deleted successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/admin/elections/:id/load-to-workspace', verifyAdmin, async (req, res) => {
+  try {
+    const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
+    if (settings.isPublished) return res.status(409).json({ message: 'Pause the current active election before loading a draft.' });
+    const archive = await ElectionArchive.findById(req.params.id).lean();
+    if (!archive) return res.status(404).json({ message: 'Draft record not found.' });
+    if (!archive.candidates || !archive.candidates.length) {
+      return res.status(400).json({ message: 'This draft has no candidate profiles to load.' });
+    }
+    await Promise.all([
+      Candidate.deleteMany({}),
+      VoteReceipt.deleteMany({})
+    ]);
+    const candidatesToInsert = archive.candidates.map(candidate => ({
+      name: candidate.name,
+      posting: candidate.posting,
+      department: candidate.department,
+      year: candidate.year || 1,
+      section: candidate.section || 'None',
+      description: candidate.description || '',
+      photo: candidate.photo || '',
+      votes: 0
+    }));
+    await Candidate.insertMany(candidatesToInsert);
+    await Settings.findOneAndUpdate(
+      { settingsId: 'master_config' },
+      { $set: { isPublished: false, resultsPublished: false, currentElectionArchiveId: null, cardTitle: '', cardDescription: '', isCardVisible: false } },
+      { upsert: true }
+    );
+    res.json({ message: `Successfully loaded ${candidatesToInsert.length} candidates from "${archive.title}" into the active election workspace.` });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 app.get('/api/admin/elections/:id/download', verifyAdmin, async (req, res) => {
@@ -1380,7 +1565,15 @@ app.post('/api/admin/elections/move-to-draft', verifyAdmin, async (req, res) => 
     if (settings.isPublished || settings.resultsPublished) return res.status(409).json({ message: 'Pause the active election before moving it to drafts.' });
     const candidates = await Candidate.countDocuments();
     if (!candidates) return res.status(400).json({ message: 'Add at least one candidate before saving a draft.' });
-    const archive = await archiveCurrentElection({ title: req.body.title || `Election draft ${new Date().toLocaleDateString('en-IN')}`, published: false });
+    const draftTitle = String(req.body.title || `Election draft ${new Date().toLocaleDateString('en-IN')}`).trim().slice(0, 160);
+
+    // Prevent duplicate drafts with the same title
+    await ElectionArchive.deleteMany({
+      published: false,
+      title: { $regex: new RegExp(`^${escapeRegex(draftTitle)}$`, 'i') }
+    });
+
+    const archive = await archiveCurrentElection({ title: draftTitle, published: false });
     await Promise.all([
       Candidate.deleteMany({}),
       VoteReceipt.deleteMany({}),
@@ -1391,17 +1584,47 @@ app.post('/api/admin/elections/move-to-draft', verifyAdmin, async (req, res) => 
 });
 
 // Keep the completed record untouched while allowing administrators to keep a
-// planning copy in Drafts for reference or a future rerun.
+// planning copy in Drafts for reference or a future rerun, without creating duplicates.
 app.post('/api/admin/elections/:id/copy-to-draft', verifyAdmin, async (req, res) => {
   try {
     const completed = await ElectionArchive.findOne({ _id: req.params.id, published: true }).lean();
     if (!completed) return res.status(404).json({ message: 'Completed election not found.' });
     const title = String(req.body.title || `Draft copy of ${completed.title}`).trim().slice(0, 160);
+
+    // Check if an unpublished draft with this title or copied from this completed election already exists
+    const existingDraft = await ElectionArchive.findOne({
+      published: false,
+      $or: [
+        { title: { $regex: new RegExp(`^${escapeRegex(title)}$`, 'i') } },
+        { sourceElectionId: completed._id }
+      ]
+    });
+
+    if (existingDraft) {
+      // Refresh/update existing draft rather than creating a redundant duplicate document
+      existingDraft.title = title;
+      existingDraft.academicYear = completed.academicYear;
+      existingDraft.eligible = completed.eligible;
+      existingDraft.participation = completed.participation;
+      existingDraft.candidates = completed.candidates;
+      existingDraft.winners = completed.winners;
+      existingDraft.sourceElectionId = completed._id;
+      existingDraft.archivedAt = new Date();
+      await existingDraft.save();
+
+      return res.status(200).json({
+        message: 'A planning draft for this election already exists in Drafts. Existing draft was updated without creating duplicates.',
+        archive: existingDraft,
+        isExisting: true
+      });
+    }
+
     const draft = await ElectionArchive.create({
       title,
       academicYear: completed.academicYear,
       published: false,
       status: 'DRAFT',
+      sourceElectionId: completed._id,
       eligible: completed.eligible,
       participation: completed.participation,
       candidates: completed.candidates,
