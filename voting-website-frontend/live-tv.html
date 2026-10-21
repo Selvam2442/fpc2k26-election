@@ -11,15 +11,13 @@
   <style>
     :root {
       --tv-bg: #030a16;
-      --tv-surface: rgba(10, 28, 54, 0.75);
-      --tv-card: rgba(15, 38, 71, 0.85);
+      --tv-surface: rgba(10, 28, 54, 0.8);
+      --tv-card: rgba(15, 38, 71, 0.9);
       --tv-border: rgba(94, 160, 255, 0.22);
-      --tv-border-glow: rgba(56, 189, 248, 0.5);
       --tv-accent: #246bfd;
       --tv-neon-cyan: #38bdf8;
       --tv-neon-green: #10b981;
       --tv-neon-gold: #f59e0b;
-      --tv-neon-rose: #f43f5e;
       --tv-text: #f8fafc;
       --tv-muted: #94a3b8;
     }
@@ -30,79 +28,85 @@
       padding: 0;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden; /* Strict Single-Screen View: No Page Scrollbars */
       background: radial-gradient(circle at 50% 0%, #0d274c 0%, #040d1a 60%, #02060e 100%);
       color: var(--tv-text);
       font-family: 'Plus Jakarta Sans', sans-serif;
-      min-height: 100vh;
-      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       position: relative;
     }
 
+    /* Ambient glow elements */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-      background-size: 60px 60px;
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+      background-size: 50px 50px;
       pointer-events: none;
       z-index: 0;
     }
 
     .ambient-glow {
       position: fixed;
-      width: 600px;
-      height: 600px;
+      width: 500px;
+      height: 500px;
       border-radius: 50%;
       filter: blur(140px);
-      opacity: 0.18;
+      opacity: 0.16;
       pointer-events: none;
       z-index: 0;
     }
-    .ambient-1 { top: -200px; left: 10%; background: #2563eb; }
-    .ambient-2 { bottom: -200px; right: 10%; background: #06b6d4; }
+    .ambient-1 { top: -150px; left: 10%; background: #2563eb; }
+    .ambient-2 { bottom: -150px; right: 10%; background: #06b6d4; }
 
-    /* Top TV Broadcast Header */
+    /* =========================================================
+       1. TOP TV BROADCAST HEADER (~60px)
+       ========================================================= */
     .tv-header {
       position: relative;
-      z-index: 10;
+      z-index: 20;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: clamp(12px, 1.8vw, 22px) clamp(18px, 3vw, 44px);
-      background: rgba(4, 14, 28, 0.9);
+      padding: 10px clamp(16px, 2.5vw, 36px);
+      background: rgba(4, 14, 28, 0.92);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--tv-border);
-      gap: 16px;
-      flex-wrap: wrap;
+      flex-shrink: 0;
+      height: 64px;
+      gap: 14px;
     }
 
     .tv-brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .tv-brand-emblem {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
       background: linear-gradient(135deg, #2563eb, #38bdf8);
       display: grid;
       place-items: center;
       color: #fff;
-      font-size: 1.4rem;
-      box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
+      font-size: 1.25rem;
+      box-shadow: 0 0 20px rgba(37, 99, 235, 0.6);
       flex-shrink: 0;
     }
 
     .tv-brand-info h1 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+      font-size: clamp(1.05rem, 1.4vw, 1.35rem);
       font-weight: 800;
       letter-spacing: -0.02em;
       line-height: 1.1;
@@ -112,37 +116,35 @@
     }
 
     .tv-brand-info p {
-      font-size: 0.82rem;
+      font-size: 0.75rem;
       color: var(--tv-muted);
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 2px;
     }
 
     .live-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(239, 68, 68, 0.18);
+      gap: 5px;
+      background: rgba(239, 68, 68, 0.2);
       border: 1px solid rgba(239, 68, 68, 0.5);
       color: #f87171;
-      padding: 3px 10px;
+      padding: 2px 8px;
       border-radius: 99px;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 800;
-      letter-spacing: 0.08em;
     }
 
     .live-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #ef4444;
-      box-shadow: 0 0 10px #ef4444;
+      box-shadow: 0 0 8px #ef4444;
       animation: pulseLive 1.4s infinite ease-in-out;
     }
 
@@ -155,18 +157,17 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      flex-wrap: wrap;
     }
 
     .tv-clock {
       font-family: 'JetBrains Mono', monospace;
-      font-size: clamp(0.95rem, 1.25vw, 1.2rem);
+      font-size: clamp(0.9rem, 1.1vw, 1.1rem);
       font-weight: 700;
       color: #93c5fd;
       background: rgba(14, 38, 71, 0.7);
       border: 1px solid var(--tv-border);
-      padding: 6px 14px;
-      border-radius: 10px;
+      padding: 5px 12px;
+      border-radius: 8px;
       letter-spacing: 0.05em;
     }
 
@@ -174,15 +175,15 @@
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--tv-border);
       color: #fff;
-      padding: 7px 13px;
-      border-radius: 10px;
+      padding: 6px 12px;
+      border-radius: 8px;
       font-family: 'Plus Jakarta Sans', sans-serif;
       font-weight: 700;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 7px;
+      gap: 6px;
       transition: all 0.2s ease;
       user-select: none;
     }
@@ -196,123 +197,85 @@
       color: #34d399;
     }
 
-    /* Main Broadcast Stage */
-    .tv-stage {
-      flex: 1;
+    /* =========================================================
+       2. COMPACT KPI TELEMETRY BAR (~70px)
+       ========================================================= */
+    .tv-kpi-bar {
       position: relative;
       z-index: 10;
-      padding: clamp(14px, 2.2vw, 28px) clamp(16px, 2.8vw, 40px);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      max-width: 1920px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    /* Top KPI Metric Hero Ribbon */
-    .tv-metrics-ribbon {
       display: grid;
-      grid-template-columns: 1.4fr 1.1fr 1.1fr 1fr;
-      gap: 16px;
+      grid-template-columns: 1.3fr 1fr 1.2fr 1fr;
+      gap: 12px;
+      padding: 10px clamp(16px, 2.5vw, 36px);
+      flex-shrink: 0;
+      height: 74px;
     }
 
-    @media (max-width: 1100px) {
-      .tv-metrics-ribbon {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-    @media (max-width: 650px) {
-      .tv-metrics-ribbon {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .tv-kpi-card {
+    .kpi-mini-card {
       background: var(--tv-card);
       border: 1px solid var(--tv-border);
-      border-radius: 18px;
-      padding: clamp(14px, 1.8vw, 20px);
+      border-radius: 14px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(14px);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      backdrop-filter: blur(12px);
     }
 
-    .tv-kpi-card::after {
+    .kpi-mini-card::before {
       content: '';
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, var(--card-glow, var(--tv-accent)), transparent);
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--kpi-glow, #38bdf8), transparent);
     }
 
-    .tv-kpi-card.flash-pulse {
-      animation: kpiFlash 1s ease-out;
-    }
-    @keyframes kpiFlash {
-      0% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.7); border-color: var(--tv-neon-cyan); }
-      100% { box-shadow: none; border-color: var(--tv-border); }
-    }
-
-    .kpi-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .kpi-header span {
-      font-size: 0.82rem;
-      font-weight: 700;
-      color: var(--tv-muted);
+    .kpi-mini-left small {
+      display: block;
+      font-size: 0.68rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-    }
-    .kpi-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 9px;
-      background: rgba(255, 255, 255, 0.06);
-      display: grid;
-      place-items: center;
-      color: var(--card-glow, #38bdf8);
-      font-size: 0.95rem;
+      color: var(--tv-muted);
+      margin-bottom: 2px;
     }
 
-    /* ODOMETER / SCROLLING NUMBER WHEEL */
-    .odometer-wrap {
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-      margin: 2px 0 4px;
-    }
-
-    .odometer {
-      display: inline-flex;
-      align-items: center;
+    .kpi-mini-val {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(2.3rem, 3.8vw, 3.5rem);
+      font-size: 1.55rem;
       font-weight: 900;
       line-height: 1;
       color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+
+    .kpi-mini-val small {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--tv-muted);
+    }
+
+    /* ODOMETER */
+    .odometer {
+      display: inline-flex;
+      align-items: center;
       overflow: hidden;
       height: 1.15em;
     }
-
     .odometer-digit {
       display: inline-block;
       height: 1.15em;
       position: relative;
       overflow: hidden;
-      width: 0.65em;
+      width: 0.62em;
       text-align: center;
     }
-
     .odometer-ribbon {
       display: flex;
       flex-direction: column;
@@ -322,7 +285,6 @@
       width: 100%;
       transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
     .odometer-ribbon span {
       display: block;
       height: 1.15em;
@@ -330,558 +292,404 @@
       text-align: center;
     }
 
-    .kpi-subtext {
-      font-size: 0.8rem;
-      color: var(--tv-muted);
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-    }
-
-    /* Turnout Circular SVG Meter */
-    .turnout-meter-wrap {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .turnout-svg {
-      width: 58px;
-      height: 58px;
-      transform: rotate(-90deg);
-      flex-shrink: 0;
-    }
-    .turnout-svg-bg {
-      fill: none;
-      stroke: rgba(255, 255, 255, 0.08);
-      stroke-width: 7;
-    }
-    .turnout-svg-val {
-      fill: none;
-      stroke: var(--tv-neon-cyan);
-      stroke-width: 7;
-      stroke-linecap: round;
-      stroke-dasharray: 220;
-      stroke-dashoffset: 220;
-      transition: stroke-dashoffset 1s ease-out;
-    }
-
     /* =========================================================
-       SIDE-BY-SIDE ALL POSTINGS SHOWCASE & SLIDE CAROUSEL
+       3. MAIN STAGE: SEQUENTIAL FULL-SCREEN SLIDESHOW (FLEX: 1)
        ========================================================= */
-    .tv-broadcast-arena {
-      display: grid;
-      grid-template-columns: 2.3fr 1fr;
-      gap: 20px;
+    .tv-slideshow-stage {
       flex: 1;
-    }
-
-    @media (max-width: 1200px) {
-      .tv-broadcast-arena {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Main Showcase Box */
-    .showcase-wrapper {
-      background: var(--tv-surface);
-      border: 1px solid var(--tv-border);
-      border-radius: 22px;
-      padding: clamp(16px, 2vw, 24px);
-      backdrop-filter: blur(16px);
+      min-height: 0; /* Critical for viewport containment without overflow */
+      padding: 0 clamp(16px, 2.5vw, 36px) 12px;
+      position: relative;
+      z-index: 10;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      overflow: hidden;
     }
 
-    .showcase-header {
+    .slideshow-card {
+      flex: 1;
+      min-height: 0;
+      background: var(--tv-surface);
+      border: 1px solid var(--tv-border);
+      border-radius: 20px;
+      padding: clamp(14px, 1.8vw, 22px);
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Top Position Spotlight Banner */
+    .slideshow-top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       padding-bottom: 12px;
-      flex-wrap: wrap;
+      margin-bottom: 12px;
+      flex-shrink: 0;
       gap: 12px;
     }
 
-    .showcase-title-left h2 {
-      font-family: 'Outfit', sans-serif;
-      font-size: clamp(1.2rem, 1.7vw, 1.6rem);
-      font-weight: 800;
-      color: #fff;
+    .position-hero-title {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 12px;
     }
 
-    .showcase-title-left p {
-      font-size: 0.82rem;
+    .position-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 1.25rem;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+      flex-shrink: 0;
+    }
+
+    .position-hero-title h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .position-hero-title p {
+      font-size: 0.8rem;
       color: var(--tv-muted);
       font-weight: 600;
+      margin-top: 3px;
     }
 
-    .showcase-actions {
+    .slideshow-controls-right {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .slide-arrow-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+    .slide-step-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--tv-neon-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    .slide-nav-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--tv-border);
       color: #fff;
       display: grid;
       place-items: center;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: 0.85rem;
       transition: all 0.2s ease;
     }
-    .slide-arrow-btn:hover {
+    .slide-nav-btn:hover {
       background: rgba(56, 189, 248, 0.25);
       border-color: var(--tv-neon-cyan);
     }
 
-    /* Position Indicators / Slide Dots */
-    .slide-indicators-bar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .slide-pill {
+    /* Slide Countdown Timer Line */
+    .slide-progress-bar-wrap {
+      width: 100%;
+      height: 4px;
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid var(--tv-border);
-      color: var(--tv-muted);
-      padding: 5px 12px;
-      border-radius: 99px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .slide-pill:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-    .slide-pill.active {
-      background: linear-gradient(135deg, #2563eb, #38bdf8);
-      border-color: #60a5fa;
-      color: #fff;
-      box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
-    }
-
-    /* Slide Timer Progress Bar */
-    .slide-timer-track {
-      height: 3px;
-      background: rgba(255, 255, 255, 0.08);
       border-radius: 99px;
       overflow: hidden;
-      width: 100%;
-      position: relative;
+      margin-bottom: 12px;
+      flex-shrink: 0;
     }
-    .slide-timer-fill {
+    .slide-progress-bar-fill {
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #2563eb, #38bdf8);
-      box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
       border-radius: 99px;
       transition: width 0.1s linear;
     }
 
-    /* VIEWPORT & TRACK FOR SIDE-BY-SIDE POSTINGS */
-    .positions-viewport {
-      width: 100%;
-      overflow: hidden;
-      position: relative;
-    }
-
-    /* Track in Slide Mode */
-    .positions-track {
-      display: flex;
-      gap: 20px;
-      transition: transform 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.05);
-      will-change: transform;
-    }
-
-    /* Track in Grid Mode (All Side-by-Side) */
-    .positions-track.grid-mode {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      transform: none !important;
-      transition: none;
-      gap: 18px;
-    }
-
-    /* Each Individual Position Column Card */
-    .position-col-card {
-      flex: 0 0 calc((100% - 20px) / 2);
-      min-width: 340px;
-      background: rgba(14, 35, 65, 0.75);
-      border: 1px solid rgba(94, 160, 255, 0.18);
-      border-radius: 20px;
-      padding: 18px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      position: relative;
-      transition: all 0.4s ease;
-      backdrop-filter: blur(12px);
-    }
-
-    @media (max-width: 1400px) {
-      .position-col-card {
-        flex: 0 0 100%;
-      }
-    }
-
-    .position-col-card.active-focus {
-      border-color: rgba(56, 189, 248, 0.6);
-      box-shadow: 0 0 30px rgba(37, 99, 235, 0.25), inset 0 0 20px rgba(56, 189, 248, 0.05);
-    }
-
-    .pos-card-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 10px;
-    }
-
-    .pos-title-badge {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .pos-title-badge h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: #fff;
-      letter-spacing: -0.01em;
-    }
-
-    .pos-tally-pill {
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #93c5fd;
-      background: rgba(37, 99, 235, 0.2);
-      border: 1px solid rgba(96, 165, 250, 0.35);
-      padding: 3px 9px;
-      border-radius: 99px;
-    }
-
-    /* Candidate list inside each posting */
-    .pos-candidates-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+    /* SLIDE VIEWPORT: ANIMATED SWAP FOR ACTIVE POSTING */
+    .slide-content-viewport {
       flex: 1;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    .candidate-row {
-      background: rgba(10, 26, 50, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 14px;
-      padding: 12px 14px;
+    /* Grid of candidates inside the single active posting */
+    .candidates-stage-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 12px;
+      align-content: center;
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Cinematic Slide Transition Animations */
+    .slide-anim-enter-right {
+      animation: slideInFromRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .slide-anim-enter-left {
+      animation: slideInFromLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideInFromRight {
+      0% { opacity: 0; transform: translateX(45px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes slideInFromLeft {
+      0% { opacity: 0; transform: translateX(-45px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Candidate Card in Spotlight */
+    .candidate-spotlight-card {
+      background: rgba(14, 38, 71, 0.75);
+      border: 1px solid rgba(94, 160, 255, 0.18);
+      border-radius: 16px;
+      padding: clamp(12px, 1.4vw, 18px);
       display: grid;
       grid-template-columns: auto 1fr auto;
-      gap: 14px;
+      gap: 16px;
       align-items: center;
       position: relative;
       overflow: hidden;
+      backdrop-filter: blur(14px);
       transition: all 0.3s ease;
     }
 
-    .candidate-row.is-leader {
-      background: linear-gradient(90deg, rgba(32, 70, 126, 0.75), rgba(13, 33, 62, 0.65));
-      border-color: rgba(245, 158, 11, 0.45);
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), 0 0 14px rgba(245, 158, 11, 0.12);
+    .candidate-spotlight-card.is-lead {
+      background: linear-gradient(90deg, rgba(35, 78, 142, 0.8), rgba(15, 38, 71, 0.75));
+      border-color: rgba(245, 158, 11, 0.55);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(245, 158, 11, 0.15);
     }
 
-    .candidate-row.vote-bump {
+    .candidate-spotlight-card.vote-bump {
       animation: candBump 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
     @keyframes candBump {
-      0% { transform: scale(1.025); border-color: var(--tv-neon-green); box-shadow: 0 0 25px rgba(16, 185, 129, 0.5); }
+      0% { transform: scale(1.025); border-color: var(--tv-neon-green); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
       100% { transform: scale(1); }
     }
 
-    .cand-avatar-frame {
+    .cand-photo-wrap {
       position: relative;
-      width: 52px;
-      height: 52px;
+      width: clamp(54px, 5vw, 68px);
+      height: clamp(54px, 5vw, 68px);
+      flex-shrink: 0;
     }
 
-    .cand-avatar-img {
+    .cand-photo-img {
       width: 100%;
       height: 100%;
-      border-radius: 14px;
+      border-radius: 16px;
       object-fit: cover;
-      border: 2px solid rgba(255, 255, 255, 0.14);
-      background: #0d2345;
+      border: 2px solid rgba(255, 255, 255, 0.16);
+      background: #0d2547;
     }
 
-    .is-leader .cand-avatar-img {
+    .is-lead .cand-photo-img {
       border-color: #f59e0b;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
     }
 
-    .cand-crown {
+    .cand-crown-badge {
       position: absolute;
       top: -8px;
       right: -6px;
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background: linear-gradient(135deg, #fbbf24, #d97706);
       color: #78350f;
       display: grid;
       place-items: center;
-      font-size: 0.7rem;
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+      font-size: 0.75rem;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
     }
 
-    .cand-details h4 {
+    .cand-info-col h3 {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.05rem;
+      font-size: clamp(1.15rem, 1.5vw, 1.45rem);
       font-weight: 800;
       color: #fff;
       display: flex;
       align-items: center;
-      gap: 7px;
+      gap: 8px;
       margin-bottom: 2px;
+      line-height: 1.2;
     }
 
-    .leader-tag {
+    .lead-tag {
       background: rgba(245, 158, 11, 0.2);
       border: 1px solid rgba(245, 158, 11, 0.5);
       color: #fbbf24;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 800;
-      padding: 1px 6px;
+      padding: 1px 7px;
       border-radius: 99px;
       letter-spacing: 0.05em;
     }
 
-    .cand-details p {
-      font-size: 0.78rem;
+    .cand-info-col p {
+      font-size: clamp(0.78rem, 0.95vw, 0.88rem);
       color: var(--tv-muted);
       font-weight: 600;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
-    .cand-bar-rail {
-      height: 8px;
+    .cand-meter-rail {
+      height: 10px;
       background: rgba(4, 15, 30, 0.8);
       border-radius: 99px;
       overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
-    .cand-bar-fill {
+    .cand-meter-fill {
       height: 100%;
       border-radius: 99px;
       background: linear-gradient(90deg, #2563eb, #38bdf8);
       transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .is-leader .cand-bar-fill {
+    .is-lead .cand-meter-fill {
       background: linear-gradient(90deg, #f59e0b, #fbbf24);
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
     }
 
-    .cand-tally-box {
+    .cand-tally-col {
       text-align: right;
-      min-width: 75px;
+      min-width: 90px;
     }
 
-    .cand-vote-num {
+    .cand-vote-digits {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.55rem;
+      font-size: clamp(1.8rem, 2.5vw, 2.5rem);
       font-weight: 900;
       color: #fff;
       line-height: 1;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      gap: 4px;
+      gap: 3px;
     }
 
-    .cand-plus-badge {
-      font-size: 0.75rem;
+    .cand-plus-pop {
+      font-size: 0.8rem;
       color: var(--tv-neon-green);
       font-weight: 800;
       opacity: 0;
       transform: translateY(6px);
       transition: all 0.35s ease;
     }
-    .cand-plus-badge.active {
+    .cand-plus-pop.active {
       opacity: 1;
       transform: translateY(-4px);
     }
 
-    .cand-percent-num {
-      font-size: 0.82rem;
+    .cand-percent-badge {
+      font-size: 0.9rem;
       font-weight: 800;
       color: var(--tv-neon-cyan);
       margin-top: 3px;
     }
-    .is-leader .cand-percent-num {
+    .is-lead .cand-percent-badge {
       color: #fbbf24;
     }
 
-    /* Side Column: Department Turnout Heatmap */
-    .tv-side-panel {
+    /* Position Indicator Pills at bottom of card */
+    .slideshow-bottom-indicators {
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
-    .dept-card {
-      background: var(--tv-surface);
+    .pos-nav-pill {
+      background: rgba(255, 255, 255, 0.06);
       border: 1px solid var(--tv-border);
-      border-radius: 22px;
-      padding: clamp(16px, 1.8vw, 22px);
-      backdrop-filter: blur(16px);
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .dept-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 10px;
-    }
-
-    .dept-card-header h3 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .dept-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 480px;
-      overflow-y: auto;
-      padding-right: 4px;
-    }
-    .dept-list::-webkit-scrollbar {
-      width: 4px;
-    }
-    .dept-list::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
+      color: var(--tv-muted);
+      padding: 4px 12px;
       border-radius: 99px;
-    }
-
-    .dept-item {
-      background: rgba(14, 38, 71, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .dept-item-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .dept-rank-name {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.88rem;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: #e2e8f0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pos-nav-pill:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+    .pos-nav-pill.active {
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.5);
     }
 
-    .dept-rank-pill {
-      font-weight: 900;
-      font-size: 0.85rem;
-      min-width: 22px;
-    }
-
-    .dept-stat {
-      font-weight: 800;
-      font-size: 0.9rem;
-      color: var(--dept-color, #38bdf8);
-    }
-
-    .dept-track {
-      height: 6px;
-      background: rgba(4, 15, 30, 0.8);
-      border-radius: 99px;
-      overflow: hidden;
-    }
-
-    .dept-fill {
-      height: 100%;
-      background: var(--dept-color, #38bdf8);
-      border-radius: 99px;
-      transition: width 0.8s ease;
-    }
-
-    /* Bottom Breaking News Marquee Ticker */
-    .tv-ticker-wrap {
+    /* =========================================================
+       4. BOTTOM BREAKING NEWS TICKER (~40px)
+       ========================================================= */
+    .tv-ticker-bar {
       position: relative;
-      z-index: 10;
+      z-index: 20;
       background: linear-gradient(90deg, #b91c1c, #dc2626);
       border-top: 1px solid rgba(255, 255, 255, 0.2);
       display: flex;
       align-items: center;
-      height: 46px;
+      height: 40px;
       overflow: hidden;
-      box-shadow: 0 -5px 25px rgba(220, 38, 38, 0.3);
+      flex-shrink: 0;
+      box-shadow: 0 -4px 20px rgba(220, 38, 38, 0.3);
     }
 
-    .ticker-lead {
+    .ticker-tag {
       background: #7f1d1d;
       color: #fef2f2;
       font-family: 'Outfit', sans-serif;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 900;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      padding: 0 16px;
+      padding: 0 14px;
       height: 100%;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       flex-shrink: 0;
       z-index: 2;
-      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
     }
 
-    .ticker-track {
+    .ticker-stream {
       display: flex;
       white-space: nowrap;
       animation: tickerRoll 35s linear infinite;
     }
 
-    .ticker-track:hover {
+    .ticker-stream:hover {
       animation-play-state: paused;
     }
 
@@ -890,18 +698,18 @@
       100% { transform: translateX(-50%); }
     }
 
-    .ticker-item {
+    .ticker-bubble {
       display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-size: 0.88rem;
+      gap: 10px;
+      font-size: 0.84rem;
       font-weight: 700;
       color: #fff;
       padding: 0 20px;
     }
-    .ticker-bullet {
+    .ticker-dot {
       color: #fca5a5;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
     }
   </style>
 </head>
@@ -909,7 +717,7 @@
   <div class="ambient-glow ambient-1"></div>
   <div class="ambient-glow ambient-2"></div>
 
-  <!-- Top TV Broadcast Header -->
+  <!-- 1. Top TV Broadcast Header -->
   <header class="tv-header">
     <div class="tv-brand">
       <div class="tv-brand-emblem">
@@ -918,21 +726,17 @@
       <div class="tv-brand-info">
         <h1 id="tvElectionTitle">Campus Election Broadcast</h1>
         <p>
-          <span class="live-badge"><span class="live-dot"></span> LIVE ELECTION TV</span>
-          <span id="tvStatusChip">Voting In Progress</span>
+          <span class="live-badge"><span class="live-dot"></span> LIVE BROADCAST</span>
+          <span id="tvStatusChip">Voting Active</span>
         </p>
       </div>
     </div>
 
     <div class="tv-controls">
       <div class="tv-clock" id="tvLiveClock">00:00:00</div>
-      <button class="tv-btn" id="viewModeToggleBtn" onclick="toggleViewMode()" title="Toggle between Side-by-Side Slide Showcase and All-in-Grid">
-        <i class="fa-solid fa-table-columns" id="viewModeIcon"></i>
-        <span id="viewModeLabel">Slide Showcase</span>
-      </button>
       <button class="tv-btn active" id="slidePlayBtn" onclick="toggleSlidePlay()" title="Pause or Play Auto-Slide animation">
         <i class="fa-solid fa-pause" id="slidePlayIcon"></i>
-        <span id="slidePlayLabel">Auto-Slide: 7s</span>
+        <span id="slidePlayLabel">Auto: 7s</span>
       </button>
       <button class="tv-btn" id="audioToggleBtn" onclick="toggleAudio()" title="Sound effects on vote jumps">
         <i class="fa-solid fa-volume-xmark" id="audioIcon"></i>
@@ -945,130 +749,100 @@
     </div>
   </header>
 
-  <!-- Main Broadcast Content Stage -->
-  <main class="tv-stage">
-    <!-- Massive KPI Hero Ribbon -->
-    <section class="tv-metrics-ribbon">
-      <!-- 1. Total Ballots Cast Odometer -->
-      <article class="tv-kpi-card" id="cardTotalVotes" style="--card-glow:#38bdf8;">
-        <div class="kpi-header">
-          <span>Total Ballots Cast</span>
-          <div class="kpi-icon"><i class="fa-solid fa-check-to-slot"></i></div>
-        </div>
-        <div class="odometer-wrap">
+  <!-- 2. Compact KPI Telemetry Bar -->
+  <section class="tv-kpi-bar">
+    <!-- Total Ballots -->
+    <div class="kpi-mini-card" style="--kpi-glow:#38bdf8;">
+      <div class="kpi-mini-left">
+        <small>Total Ballots Cast</small>
+        <div class="kpi-mini-val">
           <div class="odometer" id="odometerTotalVotes">
             <div class="odometer-digit"><div class="odometer-ribbon"><span>0</span></div></div>
           </div>
-          <span style="font-size:1.1rem;font-weight:800;color:var(--tv-muted);margin-left:4px;">ballots</span>
+          <small>ballots</small>
         </div>
-        <div class="kpi-subtext">
-          <i class="fa-solid fa-circle-check" style="color:var(--tv-neon-cyan);"></i>
-          <span id="kpiStudentStaffBreakdown">0 students · 0 staff</span>
-        </div>
-      </article>
+      </div>
+      <i class="fa-solid fa-check-to-slot" style="color:var(--tv-neon-cyan);font-size:1.2rem;"></i>
+    </div>
 
-      <!-- 2. Turnout Percentage Gauge -->
-      <article class="tv-kpi-card" style="--card-glow:#10b981;">
-        <div class="kpi-header">
-          <span>Campus Turnout</span>
-          <div class="kpi-icon"><i class="fa-solid fa-chart-pie"></i></div>
-        </div>
-        <div class="turnout-meter-wrap">
-          <svg class="turnout-svg" viewBox="0 0 80 80">
-            <circle class="turnout-svg-bg" cx="40" cy="40" r="32"></circle>
-            <circle class="turnout-svg-val" id="turnoutSvgCircle" cx="40" cy="40" r="32"></circle>
-          </svg>
+    <!-- Overall Turnout -->
+    <div class="kpi-mini-card" style="--kpi-glow:#10b981;">
+      <div class="kpi-mini-left">
+        <small>Campus Turnout</small>
+        <div class="kpi-mini-val" id="turnoutPercentText">0% <small id="turnoutRatioText">(0 / 0)</small></div>
+      </div>
+      <i class="fa-solid fa-chart-pie" style="color:var(--tv-neon-green);font-size:1.2rem;"></i>
+    </div>
+
+    <!-- Leading Department -->
+    <div class="kpi-mini-card" style="--kpi-glow:#f59e0b;">
+      <div class="kpi-mini-left" style="overflow:hidden;">
+        <small>Highest Turnout Dept</small>
+        <div class="kpi-mini-val" style="font-size:1.15rem;color:#fbbf24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="leadingDeptName">—</div>
+      </div>
+      <i class="fa-solid fa-trophy" style="color:var(--tv-neon-gold);font-size:1.2rem;"></i>
+    </div>
+
+    <!-- Digital Kiosks -->
+    <div class="kpi-mini-card" style="--kpi-glow:#ec4899;">
+      <div class="kpi-mini-left">
+        <small>Digital Kiosks</small>
+        <div class="kpi-mini-val" style="font-size:1.1rem;color:#f472b6;">Active Booths</div>
+      </div>
+      <i class="fa-solid fa-fingerprint" style="color:#f472b6;font-size:1.2rem;"></i>
+    </div>
+  </section>
+
+  <!-- 3. Main Stage: Sequential Full-Screen Slideshow -->
+  <main class="tv-slideshow-stage">
+    <div class="slideshow-card">
+      <!-- Active Position Spotlight Title Bar -->
+      <div class="slideshow-top-row">
+        <div class="position-hero-title">
+          <div class="position-icon-badge">
+            <i class="fa-solid fa-crown"></i>
+          </div>
           <div>
-            <div style="font-family:'Outfit',sans-serif;font-size:2.5rem;font-weight:900;line-height:1;" id="turnoutPercentText">0%</div>
-            <div class="kpi-subtext" id="turnoutRatioText">0 of 0 registered</div>
-          </div>
-        </div>
-      </article>
-
-      <!-- 3. Leading Department -->
-      <article class="tv-kpi-card" style="--card-glow:#f59e0b;">
-        <div class="kpi-header">
-          <span>Top Voter Turnout</span>
-          <div class="kpi-icon"><i class="fa-solid fa-trophy"></i></div>
-        </div>
-        <div>
-          <div style="font-family:'Outfit',sans-serif;font-size:1.55rem;font-weight:900;color:#fbbf24;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="leadingDeptName">—</div>
-          <div class="kpi-subtext" id="leadingDeptTurnout">Leaderboard ranking active</div>
-        </div>
-      </article>
-
-      <!-- 4. Active Polling Status -->
-      <article class="tv-kpi-card" style="--card-glow:#ec4899;">
-        <div class="kpi-header">
-          <span>Digital Kiosks</span>
-          <div class="kpi-icon"><i class="fa-solid fa-fingerprint"></i></div>
-        </div>
-        <div>
-          <div style="font-family:'Outfit',sans-serif;font-size:1.5rem;font-weight:800;color:#f472b6;margin-bottom:3px;">Booth Mode Active</div>
-          <div class="kpi-subtext">Auditorium &amp; Library Voting Stations</div>
-        </div>
-      </article>
-    </section>
-
-    <!-- SIDE-BY-SIDE ALL POSTINGS ARENA -->
-    <section class="tv-broadcast-arena">
-      <!-- Main Showcase Container -->
-      <div class="showcase-wrapper">
-        <div class="showcase-header">
-          <div class="showcase-title-left">
-            <h2><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> Live Position Battlegrounds</h2>
-            <p id="showcaseSubtitle">Displaying all postings side-by-side with animated slide telemetry</p>
-          </div>
-
-          <div class="showcase-actions">
-            <!-- Position quick-slide pill selectors -->
-            <div class="slide-indicators-bar" id="slideIndicatorsBar"></div>
-
-            <!-- Slide navigation buttons -->
-            <button class="slide-arrow-btn" onclick="prevSlide()" title="Previous Posting"><i class="fa-solid fa-chevron-left"></i></button>
-            <button class="slide-arrow-btn" onclick="nextSlide()" title="Next Posting"><i class="fa-solid fa-chevron-right"></i></button>
+            <h2 id="activePositionHeroTitle">Loading Position…</h2>
+            <p id="activePositionHeroSub">Live candidate ballot tallies and leadership standing</p>
           </div>
         </div>
 
-        <!-- Slide Countdown Line Indicator -->
-        <div class="slide-timer-track">
-          <div class="slide-timer-fill" id="slideTimerFill"></div>
-        </div>
-
-        <!-- VIEWPORT CONTAINING ALL POSTINGS SIDE-BY-SIDE -->
-        <div class="positions-viewport" id="positionsViewport">
-          <div class="positions-track" id="positionsTrack">
-            <div style="padding:40px;text-align:center;color:var(--tv-muted);width:100%;">Connecting to live election telemetry...</div>
-          </div>
+        <div class="slideshow-controls-right">
+          <span class="slide-step-counter" id="slideStepCounter">1 / 1</span>
+          <button class="slide-nav-btn" onclick="prevSlide()" title="Previous Position (Left Arrow)"><i class="fa-solid fa-chevron-left"></i></button>
+          <button class="slide-nav-btn" onclick="nextSlide()" title="Next Position (Right Arrow)"><i class="fa-solid fa-chevron-right"></i></button>
         </div>
       </div>
 
-      <!-- Department Turnout Leaderboard Column -->
-      <div class="tv-side-panel">
-        <div class="dept-card">
-          <div class="dept-card-header">
-            <h3><i class="fa-solid fa-ranking-star" style="color:#38bdf8;"></i> Dept Turnout Race</h3>
-            <span style="font-size:0.75rem;color:var(--tv-muted);font-weight:800;">LIVE RANKING</span>
-          </div>
-          <div class="dept-list" id="tvDeptList">
-            <div style="color:var(--tv-muted);font-size:0.85rem;text-align:center;padding:20px;">Reading voter turnout...</div>
-          </div>
+      <!-- Slide Timer Line -->
+      <div class="slide-progress-bar-wrap">
+        <div class="slide-progress-bar-fill" id="slideProgressFill"></div>
+      </div>
+
+      <!-- Candidates Container in Viewport -->
+      <div class="slide-content-viewport" id="slideContentViewport">
+        <div class="candidates-stage-grid" id="candidatesStageGrid">
+          <div style="text-align:center;padding:40px;color:var(--tv-muted);width:100%;">Connecting to live election telemetry…</div>
         </div>
       </div>
-    </section>
+
+      <!-- Position Selector Pills at bottom -->
+      <div class="slideshow-bottom-indicators" id="slideshowBottomIndicators"></div>
+    </div>
   </main>
 
-  <!-- Bottom Breaking News Marquee Ticker -->
-  <footer class="tv-ticker-wrap">
-    <div class="ticker-lead">
+  <!-- 4. Bottom Breaking News Marquee Ticker -->
+  <footer class="tv-ticker-bar">
+    <div class="ticker-tag">
       <i class="fa-solid fa-bolt"></i> LIVE TICKER
     </div>
-    <div class="ticker-track" id="tvTickerTrack">
-      <div class="ticker-item"><span class="ticker-bullet">●</span> CAMPUS ELECTION 2026-2027 LIVE BROADCAST</div>
-      <div class="ticker-item"><span class="ticker-bullet">●</span> ALL POSTINGS LIVE ON DISPLAY WITH SLIDE ANIMATION</div>
-      <div class="ticker-item"><span class="ticker-bullet">●</span> POLLING STATIONS OPEN ACROSS AUDITORIUM &amp; LIBRARY</div>
-      <div class="ticker-item"><span class="ticker-bullet">●</span> DIGITAL KIOSK TABLETS ACTIVE FOR RAPID VOTING</div>
-      <!-- Duplicated in JS for infinite scroll -->
+    <div class="ticker-stream" id="tvTickerStream">
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> CAMPUS ELECTION LIVE BROADCAST</div>
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> SEQUENTIAL POSITION SLIDESHOW ACTIVE</div>
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> USE DIGITAL TABLET KIOSKS IN THE AUDITORIUM &amp; LIBRARY</div>
+      <div class="ticker-bubble"><span class="ticker-dot">●</span> VOTES ARE 100% CONFIDENTIAL &amp; TAMPER-EVIDENT</div>
+      <!-- Doubled in JS for infinite scroll -->
     </div>
   </footer>
 
@@ -1076,18 +850,17 @@
   <script>
     // State management
     let lastData = null;
-    let currentSlideIndex = 0;
+    let currentPositionIndex = 0;
     let isSlidePlaying = true;
-    let viewMode = 'slide'; // 'slide' or 'grid'
-    let slideTimerDuration = 7000;
-    let slideTimerStartTime = Date.now();
-    let slideAnimationTimer = null;
+    let slideDuration = 7000; // 7 seconds per position
+    let slideTimerStart = Date.now();
+    let transitionDirection = 'right';
     let audioEnabled = false;
     let audioCtx = null;
     let previousCandidateVotes = {};
     let previousTotalVotes = 0;
 
-    // Web Audio Synthesizer for high-tech broadcast vote chime
+    // Web Audio Synthesizer for high-tech vote chime
     function playVoteChime() {
       if (!audioEnabled) return;
       try {
@@ -1122,31 +895,6 @@
       if (audioEnabled) playVoteChime();
     }
 
-    // Toggle View Mode: Slide Showcase vs All Side-by-Side Grid
-    function toggleViewMode() {
-      viewMode = viewMode === 'slide' ? 'grid' : 'slide';
-      const btn = document.getElementById('viewModeToggleBtn');
-      const icon = document.getElementById('viewModeIcon');
-      const label = document.getElementById('viewModeLabel');
-      const track = document.getElementById('positionsTrack');
-
-      if (viewMode === 'grid') {
-        btn.classList.add('active');
-        icon.className = 'fa-solid fa-grip';
-        label.textContent = 'All Side-by-Side';
-        track.classList.add('grid-mode');
-        track.style.transform = 'none';
-        document.getElementById('slideTimerFill').style.width = '0%';
-      } else {
-        btn.classList.remove('active');
-        icon.className = 'fa-solid fa-table-columns';
-        label.textContent = 'Slide Showcase';
-        track.classList.remove('grid-mode');
-        updateSlidePosition();
-      }
-    }
-
-    // Toggle Auto-Slide Play / Pause
     function toggleSlidePlay() {
       isSlidePlaying = !isSlidePlaying;
       const btn = document.getElementById('slidePlayBtn');
@@ -1154,13 +902,10 @@
       const label = document.getElementById('slidePlayLabel');
       btn.classList.toggle('active', isSlidePlaying);
       icon.className = isSlidePlaying ? 'fa-solid fa-pause' : 'fa-solid fa-play';
-      label.textContent = isSlidePlaying ? 'Auto-Slide: 7s' : 'Slide: Paused';
-      if (isSlidePlaying) {
-        slideTimerStartTime = Date.now();
-      }
+      label.textContent = isSlidePlaying ? 'Auto: 7s' : 'Slide: Paused';
+      if (isSlidePlaying) slideTimerStart = Date.now();
     }
 
-    // Fullscreen Toggle
     function toggleFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => console.log(err));
@@ -1184,7 +929,7 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Rolling Odometer Renderer
+    // Rolling Odometer
     function updateOdometer(elementId, targetNumber) {
       const el = document.getElementById(elementId);
       if (!el) return;
@@ -1210,239 +955,155 @@
       });
     }
 
-    // Slide Carousel Management
+    // Slideshow Navigation
     function nextSlide() {
       if (!lastData || !lastData.positions || !lastData.positions.length) return;
-      currentSlideIndex = (currentSlideIndex + 1) % lastData.positions.length;
-      updateSlidePosition();
+      transitionDirection = 'right';
+      currentPositionIndex = (currentPositionIndex + 1) % lastData.positions.length;
+      renderCurrentSlide();
     }
 
     function prevSlide() {
       if (!lastData || !lastData.positions || !lastData.positions.length) return;
-      currentSlideIndex = (currentSlideIndex - 1 + lastData.positions.length) % lastData.positions.length;
-      updateSlidePosition();
+      transitionDirection = 'left';
+      currentPositionIndex = (currentPositionIndex - 1 + lastData.positions.length) % lastData.positions.length;
+      renderCurrentSlide();
     }
 
-    function goToSlide(index) {
+    function goToPosition(index) {
       if (!lastData || !lastData.positions || !lastData.positions[index]) return;
-      currentSlideIndex = index;
-      updateSlidePosition();
+      transitionDirection = index >= currentPositionIndex ? 'right' : 'left';
+      currentPositionIndex = index;
+      renderCurrentSlide();
     }
 
-    function updateSlidePosition() {
-      if (viewMode === 'grid') return;
-      const track = document.getElementById('positionsTrack');
-      const cards = track.querySelectorAll('.position-col-card');
-      if (!cards.length) return;
-
-      if (currentSlideIndex >= cards.length) currentSlideIndex = 0;
-
-      // Calculate sliding offset
-      const card = cards[0];
-      const cardWidth = card.offsetWidth;
-      const gap = 20; // 20px gap
-      const offset = currentSlideIndex * (cardWidth + gap);
-      track.style.transform = `translateX(-${offset}px)`;
-
-      // Active styling
-      cards.forEach((c, idx) => {
-        c.classList.toggle('active-focus', idx === currentSlideIndex);
-      });
-
-      // Update indicator pills
-      document.querySelectorAll('.slide-pill').forEach((pill, idx) => {
-        pill.classList.toggle('active', idx === currentSlideIndex);
-      });
-
-      slideTimerStartTime = Date.now();
-    }
-
-    // Animation frame timer for progress bar
-    function tickSlideTimer() {
-      if (viewMode === 'slide' && isSlidePlaying && lastData && lastData.positions && lastData.positions.length > 1) {
-        const elapsed = Date.now() - slideTimerStartTime;
-        const progress = Math.min((elapsed / slideTimerDuration) * 100, 100);
-        document.getElementById('slideTimerFill').style.width = `${progress}%`;
-
-        if (elapsed >= slideTimerDuration) {
-          nextSlide();
-        }
-      } else {
-        document.getElementById('slideTimerFill').style.width = '0%';
-      }
-      requestAnimationFrame(tickSlideTimer);
-    }
-    requestAnimationFrame(tickSlideTimer);
-
-    // Render All Positions Side-by-Side
-    function renderPositionsSideBySide() {
+    // Render Current Active Position Slide
+    function renderCurrentSlide() {
       if (!lastData || !lastData.positions || !lastData.positions.length) {
-        document.getElementById('positionsTrack').innerHTML = '<div style="padding:40px;text-align:center;color:var(--tv-muted);width:100%;">No candidate profiles in active election.</div>';
+        document.getElementById('candidatesStageGrid').innerHTML = '<div style="padding:40px;text-align:center;color:var(--tv-muted);width:100%;">No candidate profiles in active election.</div>';
         return;
       }
 
-      // Render Indicators
-      const indBar = document.getElementById('slideIndicatorsBar');
-      indBar.innerHTML = lastData.positions.map((pos, idx) => `
-        <button class="slide-pill ${idx === currentSlideIndex ? 'active' : ''}" onclick="goToSlide(${idx})">
-          <span>${Portal.escape(pos.position)}</span>
-          <small style="opacity:0.8;">(${pos.totalVotes})</small>
+      if (currentPositionIndex >= lastData.positions.length) currentPositionIndex = 0;
+      const pos = lastData.positions[currentPositionIndex];
+
+      // Update Title & Counter
+      document.getElementById('activePositionHeroTitle').textContent = pos.position;
+      document.getElementById('activePositionHeroSub').textContent = `${pos.totalVotes} total ballots cast · ${pos.candidates.length} candidate${pos.candidates.length === 1 ? '' : 's'} competing`;
+      document.getElementById('slideStepCounter').textContent = `${currentPositionIndex + 1} / ${lastData.positions.length}`;
+
+      // Update Indicator Pills at bottom
+      const indContainer = document.getElementById('slideshowBottomIndicators');
+      indContainer.innerHTML = lastData.positions.map((p, idx) => `
+        <button class="pos-nav-pill ${idx === currentPositionIndex ? 'active' : ''}" onclick="goToPosition(${idx})">
+          ${Portal.escape(p.position)} <small style="opacity:0.85;">(${p.totalVotes})</small>
         </button>
       `).join('');
 
-      // Render Position Cards
-      const track = document.getElementById('positionsTrack');
-      track.innerHTML = lastData.positions.map((pos, pIdx) => {
+      // Render Candidate Cards with Slide Animation
+      const grid = document.getElementById('candidatesStageGrid');
+      grid.className = `candidates-stage-grid ${transitionDirection === 'right' ? 'slide-anim-enter-right' : 'slide-anim-enter-left'}`;
+
+      grid.innerHTML = pos.candidates.map(c => {
+        const prevVotes = previousCandidateVotes[c.id] ?? c.votes;
+        const hasGrown = c.votes > prevVotes;
+        const fallbackAvatar = Portal.initialsAvatar ? Portal.initialsAvatar(c.name, c.department) : '';
+
         return `
-          <article class="position-col-card ${pIdx === currentSlideIndex ? 'active-focus' : ''}" id="posCard-${pIdx}">
-            <div class="pos-card-head">
-              <div class="pos-title-badge">
-                <i class="fa-solid fa-crown" style="color:#f59e0b;font-size:0.95rem;"></i>
-                <h3>${Portal.escape(pos.position)}</h3>
-              </div>
-              <span class="pos-tally-pill">${pos.totalVotes} votes</span>
+          <article class="candidate-spotlight-card ${c.isLeading ? 'is-lead' : ''} ${hasGrown ? 'vote-bump' : ''}" id="cand-${c.id}">
+            <div class="cand-photo-wrap">
+              <img class="cand-photo-img" src="${Portal.escape(c.photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackAvatar}';">
+              ${c.isLeading ? '<div class="cand-crown-badge"><i class="fa-solid fa-crown"></i></div>' : ''}
             </div>
 
-            <div class="pos-candidates-list">
-              ${pos.candidates.map(c => {
-                const prevVotes = previousCandidateVotes[c.id] ?? c.votes;
-                const hasGrown = c.votes > prevVotes;
-                const fallbackAvatar = Portal.initialsAvatar ? Portal.initialsAvatar(c.name, c.department) : '';
+            <div class="cand-info-col">
+              <h3>
+                ${Portal.escape(c.name)}
+                ${c.isLeading ? '<span class="lead-tag"><i class="fa-solid fa-crown"></i> LEADER</span>' : ''}
+              </h3>
+              <p>${Portal.escape(c.department)} · Year ${Portal.escape(c.year)}${c.section && c.section !== 'None' ? ` · Section ${Portal.escape(c.section)}` : ''}</p>
+              <div class="cand-meter-rail">
+                <div class="cand-meter-fill" style="width:${c.percent}%;"></div>
+              </div>
+            </div>
 
-                return `
-                  <div class="candidate-row ${c.isLeading ? 'is-leader' : ''} ${hasGrown ? 'vote-bump' : ''}" id="cand-${c.id}">
-                    <div class="cand-avatar-frame">
-                      <img class="cand-avatar-img" src="${Portal.escape(c.photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackAvatar}';">
-                      ${c.isLeading ? '<div class="cand-crown"><i class="fa-solid fa-crown"></i></div>' : ''}
-                    </div>
-
-                    <div class="cand-details">
-                      <h4>
-                        ${Portal.escape(c.name)}
-                        ${c.isLeading ? '<span class="leader-tag"><i class="fa-solid fa-crown"></i> LEADER</span>' : ''}
-                      </h4>
-                      <p>${Portal.escape(c.department)} · Yr ${Portal.escape(c.year)}${c.section && c.section !== 'None' ? ` · Sec ${Portal.escape(c.section)}` : ''}</p>
-                      <div class="cand-bar-rail">
-                        <div class="cand-bar-fill" style="width:${c.percent}%;"></div>
-                      </div>
-                    </div>
-
-                    <div class="cand-tally-box">
-                      <div class="cand-vote-num">
-                        <span>${c.votes}</span>
-                        <span class="cand-plus-badge ${hasGrown ? 'active' : ''}">+1</span>
-                      </div>
-                      <div class="cand-percent-num">${c.percent}%</div>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
+            <div class="cand-tally-col">
+              <div class="cand-vote-digits">
+                <span>${c.votes}</span>
+                <span class="cand-plus-pop ${hasGrown ? 'active' : ''}">+1</span>
+              </div>
+              <div class="cand-percent-badge">${c.percent}%</div>
             </div>
           </article>
         `;
       }).join('');
 
       // Update cached candidate votes
-      lastData.positions.forEach(p => {
-        p.candidates.forEach(c => {
-          previousCandidateVotes[c.id] = c.votes;
-        });
+      pos.candidates.forEach(c => {
+        previousCandidateVotes[c.id] = c.votes;
       });
 
-      if (viewMode === 'slide') {
-        updateSlidePosition();
-      }
+      slideTimerStart = Date.now();
     }
 
-    // Render Departments
-    function renderDepartments(depts) {
-      const container = document.getElementById('tvDeptList');
-      if (!depts || !depts.length) {
-        container.innerHTML = '<div style="color:var(--tv-muted);text-align:center;padding:20px;">No department records available.</div>';
-        return;
-      }
+    // Progress bar animation loop
+    function tickSlideTimer() {
+      if (isSlidePlaying && lastData && lastData.positions && lastData.positions.length > 1) {
+        const elapsed = Date.now() - slideTimerStart;
+        const progress = Math.min((elapsed / slideDuration) * 100, 100);
+        document.getElementById('slideProgressFill').style.width = `${progress}%`;
 
-      container.innerHTML = depts.map((d, idx) => {
-        const rank = idx + 1;
-        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
-        const color = d.turnout >= 75 ? '#10b981' : d.turnout >= 50 ? '#38bdf8' : d.turnout >= 25 ? '#f59e0b' : '#ef4444';
-        return `
-          <div class="dept-item" style="--dept-color:${color};">
-            <div class="dept-item-top">
-              <div class="dept-rank-name">
-                <span class="dept-rank-pill">${medal}</span>
-                <span>${Portal.escape(d.department)}</span>
-              </div>
-              <div class="dept-stat">${d.turnout}% <small style="font-size:0.75rem;color:var(--tv-muted);margin-left:3px;">(${d.voted}/${d.total})</small></div>
-            </div>
-            <div class="dept-track">
-              <div class="dept-fill" style="width:${d.turnout}%;"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      if (depts[0]) {
-        document.getElementById('leadingDeptName').textContent = depts[0].department;
-        document.getElementById('leadingDeptTurnout').textContent = `${depts[0].turnout}% Turnout (${depts[0].voted} of ${depts[0].total} votes)`;
+        if (elapsed >= slideDuration) {
+          nextSlide();
+        }
+      } else {
+        document.getElementById('slideProgressFill').style.width = '0%';
       }
+      requestAnimationFrame(tickSlideTimer);
     }
+    requestAnimationFrame(tickSlideTimer);
 
-    // Fetch live screen telemetry
+    // Fetch telemetry from server
     async function fetchLiveScreenData() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/election/live-screen`);
         if (!res.ok) throw new Error('Live telemetry error');
         const data = await res.json();
 
-        // Check if votes jumped
+        // Vote jump detection
         if (previousTotalVotes > 0 && data.totalVotes > previousTotalVotes) {
           playVoteChime();
-          const card = document.getElementById('cardTotalVotes');
-          if (card) {
-            card.classList.remove('flash-pulse');
-            void card.offsetWidth;
-            card.classList.add('flash-pulse');
-          }
         }
         previousTotalVotes = data.totalVotes;
 
         lastData = data;
 
-        // Title and status
+        // Top Header
         document.getElementById('tvElectionTitle').textContent = data.title || 'Campus Election Broadcast';
-        document.getElementById('tvStatusChip').textContent = data.isCompleted ? 'Final Results' : data.isLive ? 'Live Voting Active' : 'Voting Paused';
+        document.getElementById('tvStatusChip').textContent = data.isCompleted ? 'Final Results' : data.isLive ? 'Voting Active' : 'Voting Paused';
 
-        // Odometer
+        // KPI Bar
         updateOdometer('odometerTotalVotes', data.totalVotes || 0);
-
-        // Turnout circular meter
         const turnoutVal = Math.min(Math.max(data.turnout || 0, 0), 100);
-        document.getElementById('turnoutPercentText').textContent = `${turnoutVal}%`;
-        document.getElementById('turnoutRatioText').textContent = `${data.totalVotes} of ${data.totalEligible} registered`;
-        const circle = document.getElementById('turnoutSvgCircle');
-        if (circle) {
-          const strokeOffset = 201 - (201 * turnoutVal) / 100;
-          circle.style.strokeDashoffset = strokeOffset;
+        document.getElementById('turnoutPercentText').innerHTML = `${turnoutVal}% <small>(${data.totalVotes} / ${data.totalEligible})</small>`;
+
+        // Leading Dept
+        if (data.departments && data.departments[0]) {
+          document.getElementById('leadingDeptName').textContent = `${data.departments[0].department} (${data.departments[0].turnout}%)`;
         }
 
-        // Student/Staff breakdown
-        document.getElementById('kpiStudentStaffBreakdown').textContent = `${data.studentVotes || 0} students · ${data.staffVotes || 0} staff`;
-
-        // Render Side-by-Side Postings & Departments
-        renderPositionsSideBySide();
-        renderDepartments(data.departments);
+        // Render Current Slide
+        renderCurrentSlide();
 
         // Update Ticker
-        const ticker = document.getElementById('tvTickerTrack');
+        const ticker = document.getElementById('tvTickerStream');
         const leadDept = data.departments?.[0] ? `${data.departments[0].department} (${data.departments[0].turnout}%)` : 'COMPETING';
         const tickerHTML = `
-          <div class="ticker-item"><span class="ticker-bullet">●</span> ${Portal.escape(data.title)}</div>
-          <div class="ticker-item"><span class="ticker-bullet">●</span> TOTAL BALLOTS CAST: ${data.totalVotes}</div>
-          <div class="ticker-item"><span class="ticker-bullet">●</span> CAMPUS TURNOUT: ${turnoutVal}%</div>
-          <div class="ticker-item"><span class="ticker-bullet">●</span> LEADING DEPARTMENT: ${Portal.escape(leadDept)}</div>
-          <div class="ticker-item"><span class="ticker-bullet">●</span> ALL POSTINGS BROADCASTING SIDE-BY-SIDE</div>
-          <div class="ticker-item"><span class="ticker-bullet">●</span> DIGITAL KIOSK TABLETS OPEN ACROSS AUDITORIUM &amp; LIBRARY</div>
+          <div class="ticker-bubble"><span class="ticker-dot">●</span> ${Portal.escape(data.title)}</div>
+          <div class="ticker-bubble"><span class="ticker-dot">●</span> TOTAL BALLOTS CAST: ${data.totalVotes}</div>
+          <div class="ticker-bubble"><span class="ticker-dot">●</span> OVERALL TURNOUT: ${turnoutVal}%</div>
+          <div class="ticker-bubble"><span class="ticker-dot">●</span> LEADING DEPARTMENT: ${Portal.escape(leadDept)}</div>
+          <div class="ticker-bubble"><span class="ticker-dot">●</span> DIGITAL TABLET KIOSKS IN AUDITORIUM &amp; LIBRARY</div>
         `;
         ticker.innerHTML = tickerHTML + tickerHTML;
       } catch (err) {
@@ -1450,7 +1111,7 @@
       }
     }
 
-    // Keyboard controls for TV remotes / wireless presentation clickers
+    // Keyboard Shortcuts for TV presentation clickers
     window.addEventListener('keydown', e => {
       if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
@@ -1463,13 +1124,7 @@
         nextSlide();
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         prevSlide();
-      } else if (e.key === 'v' || e.key === 'V') {
-        toggleViewMode();
       }
-    });
-
-    window.addEventListener('resize', () => {
-      if (viewMode === 'slide') updateSlidePosition();
     });
 
     // Initial load + poll every 4 seconds
