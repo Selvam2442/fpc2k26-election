@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live TV Election Broadcast · Campus Voting Screen</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --tv-bg: #030a16;
+      --tv-surface: rgba(10, 28, 54, 0.75);
+      --tv-card: rgba(15, 38, 71, 0.85);
+      --tv-border: rgba(94, 160, 255, 0.22);
+      --tv-border-glow: rgba(56, 189, 248, 0.5);
+      --tv-accent: #246bfd;
+      --tv-neon-cyan: #38bdf8;
+      --tv-neon-green: #10b981;
+      --tv-neon-gold: #f59e0b;
+      --tv-neon-rose: #f43f5e;
+      --tv-text: #f8fafc;
+      --tv-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #0d274c 0%, #040d1a 60%, #02060e 100%);
+      color: var(--tv-text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Subtle background grid & glowing ambient orbs */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      filter: blur(140px);
+      opacity: 0.18;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .ambient-1 { top: -200px; left: 10%; background: #2563eb; }
+    .ambient-2 { bottom: -200px; right: 10%; background: #06b6d4; }
+
+    /* Top TV Broadcast Header */
+    .tv-header {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: clamp(12px, 1.8vw, 24px) clamp(18px, 3vw, 48px);
+      background: rgba(4, 14, 28, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--tv-border);
+      gap: 16px;
+    }
+
+    .tv-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .tv-brand-emblem {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #2563eb, #38bdf8);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 1.4rem;
+      box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
+    }
+
+    .tv-brand-info h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.1rem, 1.6vw, 1.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      background: linear-gradient(90deg, #ffffff, #93c5fd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tv-brand-info p {
+      font-size: 0.82rem;
+      color: var(--tv-muted);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #f87171;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 10px #ef4444;
+      animation: pulseLive 1.4s infinite ease-in-out;
+    }
+
+    @keyframes pulseLive {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    .tv-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .tv-clock {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: clamp(0.95rem, 1.3vw, 1.25rem);
+      font-weight: 700;
+      color: #93c5fd;
+      background: rgba(14, 38, 71, 0.7);
+      border: 1px solid var(--tv-border);
+      padding: 6px 14px;
+      border-radius: 10px;
+      letter-spacing: 0.05em;
+    }
+
+    .tv-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--tv-border);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .tv-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--tv-neon-cyan);
+    }
+    .tv-btn.active {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: var(--tv-neon-green);
+      color: #34d399;
+    }
+
+    /* Main Broadcast Stage */
+    .tv-stage {
+      flex: 1;
+      position: relative;
+      z-index: 10;
+      padding: clamp(16px, 2.5vw, 36px) clamp(18px, 3vw, 48px);
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1920px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Top KPI Metric Hero Ribbon */
+    .tv-metrics-ribbon {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 1100px) {
+      .tv-metrics-ribbon {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 650px) {
+      .tv-metrics-ribbon {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tv-kpi-card {
+      background: var(--tv-card);
+      border: 1px solid var(--tv-border);
+      border-radius: 20px;
+      padding: clamp(16px, 2vw, 24px);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .tv-kpi-card::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--card-glow, var(--tv-accent)), transparent);
+    }
+
+    .tv-kpi-card.flash-pulse {
+      animation: kpiFlash 1s ease-out;
+    }
+    @keyframes kpiFlash {
+      0% { box-shadow: 0 0 35px rgba(56, 189, 248, 0.7); border-color: var(--tv-neon-cyan); }
+      100% { box-shadow: none; border-color: var(--tv-border); }
+    }
+
+    .kpi-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .kpi-header span {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--tv-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .kpi-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      color: var(--card-glow, #38bdf8);
+      font-size: 1rem;
+    }
+
+    /* ODOMETER / SCROLLING NUMBER WHEEL */
+    .odometer-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      margin: 4px 0 6px;
+    }
+
+    .odometer {
+      display: inline-flex;
+      align-items: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2.4rem, 4vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1;
+      color: #fff;
+      overflow: hidden;
+      height: 1.15em;
+    }
+
+    .odometer-digit {
+      display: inline-block;
+      height: 1.15em;
+      position: relative;
+      overflow: hidden;
+      width: 0.65em;
+      text-align: center;
+    }
+
+    .odometer-ribbon {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .odometer-ribbon span {
+      display: block;
+      height: 1.15em;
+      line-height: 1.15em;
+      text-align: center;
+    }
+
+    .kpi-subtext {
+      font-size: 0.82rem;
+      color: var(--tv-muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Turnout Circular SVG Meter */
+    .turnout-meter-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .turnout-svg {
+      width: 64px;
+      height: 64px;
+      transform: rotate(-90deg);
+    }
+    .turnout-svg-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 7;
+    }
+    .turnout-svg-val {
+      fill: none;
+      stroke: var(--tv-neon-cyan);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-dasharray: 220;
+      stroke-dashoffset: 220;
+      transition: stroke-dashoffset 1s ease-out;
+    }
+
+    /* Contest View Arena */
+    .tv-arena {
+      display: grid;
+      grid-template-columns: 2.1fr 1fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    @media (max-width: 1200px) {
+      .tv-arena {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Position Battle Board */
+    .tv-board {
+      background: var(--tv-surface);
+      border: 1px solid var(--tv-border);
+      border-radius: 24px;
+      padding: clamp(18px, 2.5vw, 30px);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .board-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .board-title-group h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.2rem, 1.8vw, 1.7rem);
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .board-title-group p {
+      font-size: 0.85rem;
+      color: var(--tv-muted);
+      font-weight: 600;
+    }
+
+    /* Position Switcher Tabs */
+    .pos-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pos-tab {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--tv-border);
+      color: var(--tv-muted);
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pos-tab.active {
+      background: var(--tv-accent);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 0 15px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Candidate Race Cards */
+    .candidate-race-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .race-card {
+      background: rgba(15, 38, 71, 0.7);
+      border: 1px solid rgba(94, 160, 255, 0.16);
+      border-radius: 18px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 18px;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .race-card.leader {
+      background: linear-gradient(90deg, rgba(30, 64, 115, 0.85), rgba(15, 38, 71, 0.75));
+      border-color: rgba(245, 158, 11, 0.45);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), 0 0 20px rgba(245, 158, 11, 0.15);
+    }
+
+    .race-card.vote-bump {
+      animation: voteBump 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes voteBump {
+      0% { transform: scale(1.02); border-color: var(--tv-neon-green); box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); }
+      100% { transform: scale(1); }
+    }
+
+    .race-avatar-wrap {
+      position: relative;
+      width: 64px;
+      height: 64px;
+    }
+
+    .race-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      background: #0f274a;
+    }
+
+    .leader .race-avatar {
+      border-color: #f59e0b;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+    }
+
+    .crown-badge {
+      position: absolute;
+      top: -10px;
+      right: -8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fbbf24, #d97706);
+      color: #78350f;
+      display: grid;
+      place-items: center;
+      font-size: 0.8rem;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+    }
+
+    .race-info h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 3px;
+    }
+
+    .leader-badge {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.05em;
+    }
+
+    .race-info p {
+      font-size: 0.86rem;
+      color: var(--tv-muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* Live Progress Bar with Glow */
+    .race-bar-track {
+      height: 12px;
+      background: rgba(4, 15, 30, 0.7);
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      position: relative;
+    }
+
+    .race-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #2563eb, #38bdf8);
+      transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .leader .race-bar-fill {
+      background: linear-gradient(90deg, #f59e0b, #fbbf24);
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+    }
+
+    /* Live Vote Count Display */
+    .race-votes-box {
+      text-align: right;
+      min-width: 100px;
+    }
+
+    .race-vote-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .vote-plus-one {
+      font-size: 0.85rem;
+      color: var(--tv-neon-green);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s ease;
+    }
+    .vote-plus-one.active {
+      opacity: 1;
+      transform: translateY(-5px);
+    }
+
+    .race-percent {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--tv-neon-cyan);
+      margin-top: 4px;
+    }
+    .leader .race-percent {
+      color: #fbbf24;
+    }
+
+    /* Side Column: Department Turnout Heatmap */
+    .tv-side-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .dept-card {
+      background: var(--tv-surface);
+      border: 1px solid var(--tv-border);
+      border-radius: 24px;
+      padding: clamp(18px, 2vw, 26px);
+      backdrop-filter: blur(16px);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dept-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+
+    .dept-card-header h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dept-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .dept-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .dept-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 99px;
+    }
+
+    .dept-item {
+      background: rgba(14, 38, 71, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dept-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .dept-rank-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .dept-rank-pill {
+      font-weight: 900;
+      font-size: 0.9rem;
+      min-width: 24px;
+    }
+
+    .dept-stat {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--dept-color, #38bdf8);
+    }
+
+    .dept-track {
+      height: 7px;
+      background: rgba(4, 15, 30, 0.8);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .dept-fill {
+      height: 100%;
+      background: var(--dept-color, #38bdf8);
+      border-radius: 99px;
+      transition: width 0.8s ease;
+    }
+
+    /* Bottom Breaking News Marquee Ticker */
+    .tv-ticker-wrap {
+      position: relative;
+      z-index: 10;
+      background: linear-gradient(90deg, #b91c1c, #dc2626);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      height: 48px;
+      overflow: hidden;
+      box-shadow: 0 -5px 25px rgba(220, 38, 38, 0.3);
+    }
+
+    .ticker-lead {
+      background: #7f1d1d;
+      color: #fef2f2;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0 18px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      z-index: 2;
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .ticker-track {
+      display: flex;
+      white-space: nowrap;
+      animation: tickerRoll 35s linear infinite;
+    }
+
+    .ticker-track:hover {
+      animation-play-state: paused;
+    }
+
+    @keyframes tickerRoll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      padding: 0 24px;
+    }
+    .ticker-bullet {
+      color: #fca5a5;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-glow ambient-1"></div>
+  <div class="ambient-glow ambient-2"></div>
+
+  <!-- Top TV Broadcast Header -->
+  <header class="tv-header">
+    <div class="tv-brand">
+      <div class="tv-brand-emblem">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div class="tv-brand-info">
+        <h1 id="tvElectionTitle">Campus Election Broadcast</h1>
+        <p>
+          <span class="live-badge"><span class="live-dot"></span> LIVE ELECTION TV</span>
+          <span id="tvStatusChip">Voting In Progress</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="tv-controls">
+      <div class="tv-clock" id="tvLiveClock">00:00:00</div>
+      <button class="tv-btn" id="audioToggleBtn" onclick="toggleAudio()" title="Sound effects on vote jumps">
+        <i class="fa-solid fa-volume-xmark" id="audioIcon"></i>
+        <span id="audioLabel">Sound: Off</span>
+      </button>
+      <button class="tv-btn" id="autoCycleBtn" onclick="toggleAutoCycle()" title="Automatically rotate through positions every 8 seconds">
+        <i class="fa-solid fa-arrows-rotate"></i>
+        <span id="autoCycleLabel">Auto-cycle: Off</span>
+      </button>
+      <button class="tv-btn" onclick="toggleFullscreen()" title="Full screen for classroom TV or projector">
+        <i class="fa-solid fa-expand" id="fullscreenIcon"></i>
+        <span id="fullscreenLabel">Fullscreen</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Broadcast Content Stage -->
+  <main class="tv-stage">
+    <!-- Massive KPI Hero Ribbon -->
+    <section class="tv-metrics-ribbon">
+      <!-- 1. Total Ballots Cast Odometer -->
+      <article class="tv-kpi-card" id="cardTotalVotes" style="--card-glow:#38bdf8;">
+        <div class="kpi-header">
+          <span>Total Ballots Cast</span>
+          <div class="kpi-icon"><i class="fa-solid fa-check-to-slot"></i></div>
+        </div>
+        <div class="odometer-wrap">
+          <div class="odometer" id="odometerTotalVotes">
+            <!-- Dynamic rolling digits rendered via JS -->
+            <div class="odometer-digit"><div class="odometer-ribbon"><span>0</span></div></div>
+          </div>
+          <span style="font-size:1.1rem;font-weight:800;color:var(--tv-muted);margin-left:4px;">ballots</span>
+        </div>
+        <div class="kpi-subtext">
+          <i class="fa-solid fa-circle-check" style="color:var(--tv-neon-cyan);"></i>
+          <span id="kpiStudentStaffBreakdown">0 students · 0 staff</span>
+        </div>
+      </article>
+
+      <!-- 2. Turnout Percentage Gauge -->
+      <article class="tv-kpi-card" style="--card-glow:#10b981;">
+        <div class="kpi-header">
+          <span>Overall Campus Turnout</span>
+          <div class="kpi-icon"><i class="fa-solid fa-chart-pie"></i></div>
+        </div>
+        <div class="turnout-meter-wrap">
+          <svg class="turnout-svg" viewBox="0 0 80 80">
+            <circle class="turnout-svg-bg" cx="40" cy="40" r="32"></circle>
+            <circle class="turnout-svg-val" id="turnoutSvgCircle" cx="40" cy="40" r="32"></circle>
+          </svg>
+          <div>
+            <div style="font-family:'Outfit',sans-serif;font-size:2.8rem;font-weight:900;line-height:1;" id="turnoutPercentText">0%</div>
+            <div class="kpi-subtext" id="turnoutRatioText">0 of 0 registered</div>
+          </div>
+        </div>
+      </article>
+
+      <!-- 3. Leading Department -->
+      <article class="tv-kpi-card" style="--card-glow:#f59e0b;">
+        <div class="kpi-header">
+          <span>Highest Voter Turnout</span>
+          <div class="kpi-icon"><i class="fa-solid fa-trophy"></i></div>
+        </div>
+        <div>
+          <div style="font-family:'Outfit',sans-serif;font-size:1.75rem;font-weight:900;color:#fbbf24;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="leadingDeptName">—</div>
+          <div class="kpi-subtext" id="leadingDeptTurnout">Leaderboard ranking active</div>
+        </div>
+      </article>
+
+      <!-- 4. Active Polling Status -->
+      <article class="tv-kpi-card" style="--card-glow:#ec4899;">
+        <div class="kpi-header">
+          <span>Polling Stations</span>
+          <div class="kpi-icon"><i class="fa-solid fa-fingerprint"></i></div>
+        </div>
+        <div>
+          <div style="font-family:'Outfit',sans-serif;font-size:1.6rem;font-weight:800;color:#f472b6;margin-bottom:4px;">Digital Kiosks Active</div>
+          <div class="kpi-subtext">Instant ballot clearance & auto-logout</div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Contest View Arena -->
+    <section class="tv-arena">
+      <!-- Main Battle Board -->
+      <div class="tv-board">
+        <div class="board-header">
+          <div class="board-title-group">
+            <h2 id="activePositionTitle"><i class="fa-solid fa-fire" style="color:#f59e0b;"></i> Candidate Live Race</h2>
+            <p id="activePositionSub">Real-time candidate ballot tally & leadership rankings</p>
+          </div>
+          <!-- Position Tabs for filtering or auto-cycle -->
+          <div class="pos-tabs" id="posTabsContainer"></div>
+        </div>
+
+        <!-- Candidate Race Cards Container -->
+        <div class="candidate-race-grid" id="candidateRaceGrid">
+          <div style="text-align:center;padding:40px;color:var(--tv-muted);">Connecting to live election telemetry...</div>
+        </div>
+      </div>
+
+      <!-- Department Turnout Leaderboard Column -->
+      <div class="tv-side-col">
+        <div class="dept-card">
+          <div class="dept-card-header">
+            <h3><i class="fa-solid fa-ranking-star" style="color:#38bdf8;"></i> Dept Turnout Race</h3>
+            <span style="font-size:0.8rem;color:var(--tv-muted);font-weight:700;">LIVE RANKING</span>
+          </div>
+          <div class="dept-list" id="tvDeptList">
+            <div style="color:var(--tv-muted);font-size:0.88rem;text-align:center;padding:20px;">Reading voter turnout...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Breaking News Marquee Ticker -->
+  <footer class="tv-ticker-wrap">
+    <div class="ticker-lead">
+      <i class="fa-solid fa-bolt"></i> LIVE TICKER
+    </div>
+    <div class="ticker-track" id="tvTickerTrack">
+      <div class="ticker-item"><span class="ticker-bullet">●</span> CAMPUS ELECTION 2026-2027 LIVE BROADCAST</div>
+      <div class="ticker-item"><span class="ticker-bullet">●</span> POLLING STATIONS OPEN ACROSS AUDITORIUM &amp; LIBRARY</div>
+      <div class="ticker-item"><span class="ticker-bullet">●</span> USE DIGITAL KIOSK TABLETS TO CAST YOUR VOTE SECURELY</div>
+      <div class="ticker-item"><span class="ticker-bullet">●</span> REMEMBER YOUR STUDENT ROLL NUMBER &amp; DOB</div>
+      <!-- Cloned for infinite loop in JS -->
+    </div>
+  </footer>
+
+  <script src="portal.js"></script>
+  <script>
+    // State management
+    let lastData = null;
+    let selectedPositionIndex = 0;
+    let autoCycleEnabled = false;
+    let autoCycleInterval = null;
+    let audioEnabled = false;
+    let audioCtx = null;
+    let previousCandidateVotes = {};
+    let previousTotalVotes = 0;
+
+    // Web Audio Synthesizer for high-tech broadcast vote chime
+    function playVoteChime() {
+      if (!audioEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.12); // A5
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+      } catch (err) {
+        console.warn('Audio chime warning:', err);
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      const icon = document.getElementById('audioIcon');
+      const label = document.getElementById('audioLabel');
+      btn.classList.toggle('active', audioEnabled);
+      icon.className = audioEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+      label.textContent = audioEnabled ? 'Sound: On' : 'Sound: Off';
+      if (audioEnabled) playVoteChime();
+    }
+
+    // Fullscreen Toggle
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.log(err));
+      } else {
+        document.exitFullscreen().catch(err => console.log(err));
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFull = !!document.fullscreenElement;
+      document.getElementById('fullscreenIcon').className = isFull ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+      document.getElementById('fullscreenLabel').textContent = isFull ? 'Exit Fullscreen' : 'Fullscreen';
+    });
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-IN', { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('tvLiveClock').textContent = timeStr.toUpperCase();
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Rolling Odometer Renderer
+    function updateOdometer(elementId, targetNumber) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const numStr = String(Math.max(0, targetNumber));
+      const currentDigits = el.querySelectorAll('.odometer-digit');
+
+      // Rebuild digit slots if length changed
+      if (currentDigits.length !== numStr.length) {
+        el.innerHTML = numStr.split('').map(() => `
+          <div class="odometer-digit">
+            <div class="odometer-ribbon">
+              <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const ribbons = el.querySelectorAll('.odometer-ribbon');
+      numStr.split('').forEach((char, index) => {
+        const val = parseInt(char, 10);
+        if (!isNaN(val) && ribbons[index]) {
+          ribbons[index].style.transform = `translateY(-${val * 10}%)`;
+        }
+      });
+    }
+
+    // Auto-cycle through positions
+    function toggleAutoCycle() {
+      autoCycleEnabled = !autoCycleEnabled;
+      const btn = document.getElementById('autoCycleBtn');
+      const label = document.getElementById('autoCycleLabel');
+      btn.classList.toggle('active', autoCycleEnabled);
+      label.textContent = autoCycleEnabled ? 'Auto-cycle: 8s' : 'Auto-cycle: Off';
+
+      if (autoCycleEnabled) {
+        autoCycleInterval = setInterval(() => {
+          if (!lastData || !lastData.positions || lastData.positions.length <= 1) return;
+          selectedPositionIndex = (selectedPositionIndex + 1) % lastData.positions.length;
+          renderPositionBoard();
+        }, 8000);
+      } else {
+        if (autoCycleInterval) clearInterval(autoCycleInterval);
+        autoCycleInterval = null;
+      }
+    }
+
+    // Render Position Race Board
+    function renderPositionBoard() {
+      if (!lastData || !lastData.positions || !lastData.positions.length) {
+        document.getElementById('candidateRaceGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--tv-muted);">No candidate profiles in active election.</div>';
+        return;
+      }
+
+      if (selectedPositionIndex >= lastData.positions.length) selectedPositionIndex = 0;
+      const pos = lastData.positions[selectedPositionIndex];
+
+      document.getElementById('activePositionTitle').innerHTML = `<i class="fa-solid fa-fire" style="color:#f59e0b;"></i> ${Portal.escape(pos.position)}`;
+      document.getElementById('activePositionSub').textContent = `${pos.totalVotes} total ballots cast for this office · ${pos.candidates.length} candidates competing`;
+
+      // Render Tabs
+      const tabsWrap = document.getElementById('posTabsContainer');
+      tabsWrap.innerHTML = lastData.positions.map((p, idx) => `
+        <button class="pos-tab ${idx === selectedPositionIndex ? 'active' : ''}" onclick="selectPosition(${idx})">
+          ${Portal.escape(p.position)} <small style="opacity:0.8;">(${p.totalVotes})</small>
+        </button>
+      `).join('');
+
+      // Render Candidates
+      const grid = document.getElementById('candidateRaceGrid');
+      grid.innerHTML = pos.candidates.map(c => {
+        const prevVotes = previousCandidateVotes[c.id] ?? c.votes;
+        const hasGrown = c.votes > prevVotes;
+        const fallbackAvatar = Portal.initialsAvatar ? Portal.initialsAvatar(c.name, c.department) : '';
+
+        return `
+          <article class="race-card ${c.isLeading ? 'leader' : ''} ${hasGrown ? 'vote-bump' : ''}" id="card-cand-${c.id}">
+            <div class="race-avatar-wrap">
+              <img class="race-avatar" src="${Portal.escape(c.photo)}" alt="" onerror="this.onerror=null;this.src='${fallbackAvatar}';">
+              ${c.isLeading ? '<div class="crown-badge"><i class="fa-solid fa-crown"></i></div>' : ''}
+            </div>
+
+            <div class="race-info">
+              <h3>
+                ${Portal.escape(c.name)}
+                ${c.isLeading ? '<span class="leader-badge"><i class="fa-solid fa-crown"></i> LEADER</span>' : ''}
+              </h3>
+              <p>${Portal.escape(c.department)} · Year ${Portal.escape(c.year)}${c.section && c.section !== 'None' ? ` · Section ${Portal.escape(c.section)}` : ''}</p>
+              <div class="race-bar-track">
+                <div class="race-bar-fill" style="width:${c.percent}%;"></div>
+              </div>
+            </div>
+
+            <div class="race-votes-box">
+              <div class="race-vote-num">
+                <span>${c.votes}</span>
+                <span class="vote-plus-one ${hasGrown ? 'active' : ''}">+1</span>
+              </div>
+              <div class="race-percent">${c.percent}%</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      // Update vote cache
+      pos.candidates.forEach(c => {
+        previousCandidateVotes[c.id] = c.votes;
+      });
+    }
+
+    function selectPosition(index) {
+      selectedPositionIndex = index;
+      renderPositionBoard();
+    }
+
+    // Render Departments
+    function renderDepartments(depts) {
+      const container = document.getElementById('tvDeptList');
+      if (!depts || !depts.length) {
+        container.innerHTML = '<div style="color:var(--tv-muted);text-align:center;padding:20px;">No department records available.</div>';
+        return;
+      }
+
+      container.innerHTML = depts.map((d, idx) => {
+        const rank = idx + 1;
+        const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+        const color = d.turnout >= 75 ? '#10b981' : d.turnout >= 50 ? '#38bdf8' : d.turnout >= 25 ? '#f59e0b' : '#ef4444';
+        return `
+          <div class="dept-item" style="--dept-color:${color};">
+            <div class="dept-item-top">
+              <div class="dept-rank-name">
+                <span class="dept-rank-pill">${medal}</span>
+                <span>${Portal.escape(d.department)}</span>
+              </div>
+              <div class="dept-stat">${d.turnout}% <small style="font-size:0.75rem;color:var(--tv-muted);margin-left:4px;">(${d.voted}/${d.total})</small></div>
+            </div>
+            <div class="dept-track">
+              <div class="dept-fill" style="width:${d.turnout}%;"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      if (depts[0]) {
+        document.getElementById('leadingDeptName').textContent = depts[0].department;
+        document.getElementById('leadingDeptTurnout').textContent = `${depts[0].turnout}% Turnout (${depts[0].voted} of ${depts[0].total} votes)`;
+      }
+    }
+
+    // Fetch live screen data
+    async function fetchLiveScreenData() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/election/live-screen`);
+        if (!res.ok) throw new Error('Live telemetry error');
+        const data = await res.json();
+
+        // Check if votes jumped
+        if (previousTotalVotes > 0 && data.totalVotes > previousTotalVotes) {
+          playVoteChime();
+          const card = document.getElementById('cardTotalVotes');
+          if (card) {
+            card.classList.remove('flash-pulse');
+            void card.offsetWidth;
+            card.classList.add('flash-pulse');
+          }
+        }
+        previousTotalVotes = data.totalVotes;
+
+        lastData = data;
+
+        // Title and status
+        document.getElementById('tvElectionTitle').textContent = data.title || 'Campus Election Broadcast';
+        document.getElementById('tvStatusChip').textContent = data.isCompleted ? 'Final Results' : data.isLive ? 'Live Voting Active' : 'Voting Paused';
+
+        // Odometer
+        updateOdometer('odometerTotalVotes', data.totalVotes || 0);
+
+        // Turnout circular meter
+        const turnoutVal = Math.min(Math.max(data.turnout || 0, 0), 100);
+        document.getElementById('turnoutPercentText').textContent = `${turnoutVal}%`;
+        document.getElementById('turnoutRatioText').textContent = `${data.totalVotes} of ${data.totalEligible} registered`;
+        const circle = document.getElementById('turnoutSvgCircle');
+        if (circle) {
+          // Circumference for r=32 is 2 * PI * 32 ≈ 201
+          const strokeOffset = 201 - (201 * turnoutVal) / 100;
+          circle.style.strokeDashoffset = strokeOffset;
+        }
+
+        // Student/Staff breakdown
+        document.getElementById('kpiStudentStaffBreakdown').textContent = `${data.studentVotes || 0} students · ${data.staffVotes || 0} staff`;
+
+        // Render boards
+        renderPositionBoard();
+        renderDepartments(data.departments);
+
+        // Update Ticker
+        const ticker = document.getElementById('tvTickerTrack');
+        const leadDept = data.departments?.[0] ? `${data.departments[0].department} (${data.departments[0].turnout}%)` : 'COMPETING';
+        const tickerHTML = `
+          <div class="ticker-item"><span class="ticker-bullet">●</span> ${Portal.escape(data.title)}</div>
+          <div class="ticker-item"><span class="ticker-bullet">●</span> TOTAL BALLOTS CAST: ${data.totalVotes}</div>
+          <div class="ticker-item"><span class="ticker-bullet">●</span> CAMPUS TURNOUT: ${turnoutVal}%</div>
+          <div class="ticker-item"><span class="ticker-bullet">●</span> LEADING DEPARTMENT: ${Portal.escape(leadDept)}</div>
+          <div class="ticker-item"><span class="ticker-bullet">●</span> DIGITAL KIOSK BOOTHS OPEN IN AUDITORIUM &amp; LIBRARY</div>
+          <div class="ticker-item"><span class="ticker-bullet">●</span> CONFIDENTIAL &amp; TAMPER-EVIDENT BALLOT TELEMETRY</div>
+        `;
+        ticker.innerHTML = tickerHTML + tickerHTML; // doubled for smooth infinite loop
+      } catch (err) {
+        console.warn('Telemetry poll error:', err.message);
+      }
+    }
+
+    // Keyboard shortcuts for classroom TV remotes / wireless presenter remotes
+    window.addEventListener('keydown', e => {
+      if (e.key === 'f' || e.key === 'F') {
+        toggleFullscreen();
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleAudio();
+      } else if (e.key === 'c' || e.key === 'C') {
+        toggleAutoCycle();
+      } else if (e.key === 'ArrowRight' || e.key === ' ') {
+        if (lastData && lastData.positions && lastData.positions.length) {
+          selectedPositionIndex = (selectedPositionIndex + 1) % lastData.positions.length;
+          renderPositionBoard();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (lastData && lastData.positions && lastData.positions.length) {
+          selectedPositionIndex = (selectedPositionIndex - 1 + lastData.positions.length) % lastData.positions.length;
+          renderPositionBoard();
+        }
+      }
+    });
+
+    // Initial load + poll every 4 seconds
+    fetchLiveScreenData();
+    setInterval(fetchLiveScreenData, 4000);
+  </script>
+</body>
+</html>

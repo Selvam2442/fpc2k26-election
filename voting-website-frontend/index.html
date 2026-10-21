@@ -11,7 +11,10 @@
 </head>
 <body class="auth-page">
   <script>try{const savedTheme=localStorage.getItem('portalTheme')||localStorage.getItem('studentTheme')||'light';document.body.classList.add(`theme-${savedTheme}`);document.documentElement.style.colorScheme=savedTheme}catch(_){document.body.classList.add('theme-light')}</script>
-  <a class="btn btn-ghost btn-sm auth-theme-toggle" href="kiosk.html" style="right:auto;left:20px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:999px;color:#dce8f8;text-decoration:none;" title="Open Physical Tablet Voting Booth"><i class="fa-solid fa-tablet-screen-button"></i><span>Kiosk Booth</span></a>
+  <div style="position:fixed;top:20px;left:20px;display:flex;gap:10px;z-index:90;">
+    <a class="btn btn-ghost btn-sm" href="kiosk.html" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:999px;color:#dce8f8;text-decoration:none;" title="Open Physical Tablet Voting Booth"><i class="fa-solid fa-tablet-screen-button"></i><span>Kiosk Booth</span></a>
+    <a class="btn btn-ghost btn-sm" href="live-tv.html" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.08);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:999px;color:#dce8f8;text-decoration:none;" title="Open Classroom & Auditorium TV Screen"><i class="fa-solid fa-tv"></i><span>Live TV</span></a>
+  </div>
   <button class="btn btn-ghost btn-sm auth-theme-toggle" type="button" data-theme-toggle onclick="Portal.toggleTheme()" aria-label="Use dark theme" aria-pressed="false"><i class="fa-solid fa-moon"></i><span>Dark</span></button>
   <main class="auth-wrap">
     <section class="auth-story">

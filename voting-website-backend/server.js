@@ -1324,6 +1324,95 @@ app.get('/api/election/department-turnout', async (_req, res) => {
   }
 });
 
+app.get('/api/election/live-screen', async (_req, res) => {
+  try {
+    const settings = await Settings.findOne({ settingsId: 'master_config' }).lean() || {};
+    const [students, receipts, currentArchive] = await Promise.all([
+      getStudentDirectory(),
+      VoteReceipt.find().select('voterRole rollNumber voterId votedAt').lean(),
+      currentPublishedElectionArchive(settings)
+    ]);
+
+    const studentVotes = receipts.filter(r => r.voterRole === 'student').length;
+    const staffVotes = receipts.filter(r => r.voterRole === 'staff').length;
+    const totalVotes = receipts.length;
+    const totalEligible = students.length + (settings.staffCanVote ? 100 : 0);
+    const turnout = totalEligible ? Math.round((totalVotes / totalEligible) * 100) : 0;
+
+    let candidateList = [];
+    const isCompleted = Boolean(!settings.isPublished && settings.resultsPublished && currentArchive);
+    const title = settings.cardTitle || (isCompleted ? currentArchive.title : `Campus Election ${settings.academicYear || new Date().getFullYear()}`);
+
+    if (isCompleted) {
+      candidateList = currentArchive.candidates || [];
+    } else {
+      candidateList = await Candidate.find().sort({ posting: 1, votes: -1 }).lean();
+    }
+
+    const positionsMap = {};
+    for (const c of candidateList) {
+      const pos = String(c.posting || 'General').toUpperCase();
+      if (!positionsMap[pos]) positionsMap[pos] = [];
+      positionsMap[pos].push(c);
+    }
+
+    const positions = Object.entries(positionsMap).map(([posName, cList]) => {
+      const sorted = [...cList].sort((a, b) => (b.votes || 0) - (a.votes || 0));
+      const posTotalVotes = sorted.reduce((sum, c) => sum + (Number(c.votes) || 0), 0);
+      const topVotes = sorted[0]?.votes || 0;
+      return {
+        position: posName,
+        totalVotes: posTotalVotes,
+        candidates: sorted.map((c, idx) => ({
+          id: c._id || c.candidateId,
+          name: c.name,
+          posting: c.posting,
+          department: c.department,
+          year: c.year,
+          section: c.section,
+          photo: c.photo,
+          votes: Number(c.votes) || 0,
+          percent: posTotalVotes ? Math.round(((c.votes || 0) / posTotalVotes) * 100) : 0,
+          isLeading: (c.votes || 0) === topVotes && topVotes > 0,
+          rank: idx + 1
+        }))
+      };
+    });
+
+    const votedRolls = new Set(receipts.filter(r => r.voterRole === 'student').map(r => String(r.voterId || r.rollNumber || '').trim().toUpperCase()));
+    const deptMap = {};
+    for (const s of students) {
+      const dept = String(s.department || s.className || 'General').trim();
+      if (!deptMap[dept]) deptMap[dept] = { department: dept, total: 0, voted: 0 };
+      deptMap[dept].total++;
+      if (votedRolls.has(String(s.rollNumber || '').trim().toUpperCase())) {
+        deptMap[dept].voted++;
+      }
+    }
+    const departments = Object.values(deptMap).map(d => ({
+      ...d,
+      turnout: d.total ? Math.round((d.voted / d.total) * 100) : 0
+    })).sort((a, b) => b.turnout - a.turnout || b.voted - a.voted);
+
+    res.json({
+      title,
+      isLive: Boolean(settings.isPublished),
+      isCompleted,
+      totalEligible,
+      totalVotes: isCompleted ? (currentArchive.participation?.total || totalVotes) : totalVotes,
+      studentVotes: isCompleted ? (currentArchive.participation?.students || studentVotes) : studentVotes,
+      staffVotes: isCompleted ? (currentArchive.participation?.staff || staffVotes) : staffVotes,
+      turnout: isCompleted ? (currentArchive.participation?.turnout || turnout) : turnout,
+      positions,
+      departments,
+      winners: isCompleted ? (currentArchive.winners || []) : [],
+      updatedAt: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.get('/api/admin/push/analytics', verifyAdmin, async (_req, res) => {
   try {
     const subscriptions = await PushSubscription.find({ active: true }).lean();
@@ -1412,17 +1501,40 @@ function escapeRegex(string) {
 
 async function deduplicateElectionDrafts() {
   try {
-    const drafts = await ElectionArchive.find({ published: false }).sort({ updatedAt: -1, archivedAt: -1 });
+    const [drafts, publishedList] = await Promise.all([
+      ElectionArchive.find({ published: false }).sort({ updatedAt: -1, archivedAt: -1 }),
+      ElectionArchive.find({ published: true }).lean()
+    ]);
     const seen = new Set();
     const duplicateIds = [];
+
+    // Purge redundant drafts that clone an existing published election
+    for (const pub of publishedList) {
+      const pubTitleClean = (pub.title || '').trim().toLowerCase();
+      for (const draft of drafts) {
+        const draftTitleClean = (draft.title || '').trim().toLowerCase();
+        if (
+          String(draft.sourceElectionId) === String(pub._id) ||
+          draftTitleClean === `draft copy of ${pubTitleClean}` ||
+          draftTitleClean === pubTitleClean
+        ) {
+          if (!duplicateIds.some(id => String(id) === String(draft._id))) {
+            duplicateIds.push(draft._id);
+          }
+        }
+      }
+    }
+
     for (const draft of drafts) {
       const key = `${(draft.title || '').trim().toLowerCase()}__${draft.academicYear || ''}`;
-      if (seen.has(key)) {
-        duplicateIds.push(draft._id);
+      const isAlreadyMarked = duplicateIds.some(id => String(id) === String(draft._id));
+      if (seen.has(key) || isAlreadyMarked) {
+        if (!isAlreadyMarked) duplicateIds.push(draft._id);
       } else {
         seen.add(key);
       }
     }
+
     if (duplicateIds.length > 0) {
       await ElectionArchive.deleteMany({ _id: { $in: duplicateIds } });
       console.log(`Deduplicated: removed ${duplicateIds.length} redundant election draft(s).`);
@@ -1437,15 +1549,91 @@ app.get('/api/admin/elections/history', verifyAdmin, async (_req, res) => {
   res.json(await ElectionArchive.find().sort({ archivedAt: -1 }).lean());
 });
 
+app.post('/api/admin/elections/:id/unpublish', verifyAdmin, async (req, res) => {
+  try {
+    const archive = await ElectionArchive.findById(req.params.id);
+    if (!archive) return res.status(404).json({ message: 'Saved election not found.' });
+
+    archive.published = false;
+    archive.status = 'DRAFT';
+    await archive.save();
+
+    // Clean up any cloned "Draft copy of ..." for this election
+    await ElectionArchive.deleteMany({
+      published: false,
+      _id: { $ne: archive._id },
+      $or: [
+        { sourceElectionId: archive._id },
+        { title: { $regex: new RegExp(`^Draft copy of ${escapeRegex(archive.title)}$`, 'i') } }
+      ]
+    });
+
+    // Update settings if this was the published election in master_config
+    const settings = await Settings.findOne({ settingsId: 'master_config' });
+    if (settings && String(settings.currentElectionArchiveId) === String(archive._id)) {
+      await Settings.updateOne(
+        { settingsId: 'master_config' },
+        { $set: { resultsPublished: false, currentElectionArchiveId: null } }
+      );
+    }
+
+    res.json({ message: `"${archive.title}" unpublished and moved to Drafts.`, archive });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.post('/api/admin/elections/:id/publish', verifyAdmin, async (req, res) => {
+  try {
+    const archive = await ElectionArchive.findById(req.params.id);
+    if (!archive) return res.status(404).json({ message: 'Saved election not found.' });
+
+    archive.published = true;
+    archive.status = 'COMPLETED';
+    archive.archivedAt = new Date();
+    await archive.save();
+
+    // Clean up any cloned "Draft copy of ..."
+    await ElectionArchive.deleteMany({
+      published: false,
+      _id: { $ne: archive._id },
+      $or: [
+        { sourceElectionId: archive._id },
+        { title: { $regex: new RegExp(`^Draft copy of ${escapeRegex(archive.title)}$`, 'i') } }
+      ]
+    });
+
+    // Update settings so signed-in students and staff can view the results
+    await Settings.updateOne(
+      { settingsId: 'master_config' },
+      { $set: { isPublished: false, resultsPublished: true, currentElectionArchiveId: archive._id } },
+      { upsert: true }
+    );
+
+    res.json({ message: `"${archive.title}" published as official results.`, archive });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.delete('/api/admin/elections/:id', verifyAdmin, async (req, res) => {
   try {
     const archive = await ElectionArchive.findById(req.params.id);
     if (!archive) return res.status(404).json({ message: 'Saved election not found.' });
-    if (archive.published) {
-      return res.status(400).json({ message: 'Published completed election records are protected and cannot be deleted. Only drafts can be deleted.' });
+
+    // If it was the published election in settings, clear it
+    const settings = await Settings.findOne({ settingsId: 'master_config' });
+    if (settings && String(settings.currentElectionArchiveId) === String(archive._id)) {
+      await Settings.updateOne(
+        { settingsId: 'master_config' },
+        { $set: { resultsPublished: false, currentElectionArchiveId: null } }
+      );
     }
+
     await ElectionArchive.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Election draft deleted successfully.' });
+    await ElectionArchive.deleteMany({ sourceElectionId: archive._id });
+
+    res.json({ message: `Election "${archive.title}" deleted successfully.` });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
