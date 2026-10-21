@@ -39,22 +39,22 @@
       </div>
       <div id="alert" aria-live="polite"></div>
       <form id="studentForm">
-        <div class="field" style="margin-bottom:14px"><label for="rollNumber">Roll number</label><input class="input" id="rollNumber" autocomplete="username" placeholder="Enter your roll number" required></div>
-        <div class="field" style="margin-bottom:14px"><label for="dob">Date of birth</label><input class="input" type="date" id="dob" autocomplete="bday" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="rollNumber">Roll number</label><input class="input" id="rollNumber" autocomplete="username" placeholder="e.g. 23BCA01" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="dob">Date of birth</label><input class="input" type="date" id="dob" autocomplete="bday" required><small style="color:var(--muted);font-size:.73rem;margin-top:4px"><i class="fa-regular fa-calendar-check"></i> Pick from calendar (DD-MM-YYYY)</small></div>
         <label class="check" style="margin:16px 0"><input type="checkbox" id="rememberMe" checked> Keep me signed in on this device</label>
         <button class="btn btn-primary btn-block" id="studentSubmit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open student portal</button>
         <p style="color:var(--muted);font-size:.78rem;line-height:1.5;margin:14px 0 0"><i class="fa-solid fa-shield-halved"></i> Only your secure session is remembered. Your date of birth is never stored on this device.</p>
       </form>
       <form id="staffForm" class="hidden">
         <div class="field" style="margin-bottom:14px"><label for="staffId">Staff ID</label><input class="input" id="staffId" autocomplete="username" placeholder="Enter your staff ID" required></div>
-        <div class="field" style="margin-bottom:14px"><label for="staffDob">Date of birth</label><input class="input" type="date" id="staffDob" autocomplete="bday" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="staffDob">Date of birth</label><input class="input" type="date" id="staffDob" autocomplete="bday" required><small style="color:var(--muted);font-size:.73rem;margin-top:4px"><i class="fa-regular fa-calendar-check"></i> Pick from calendar (DD-MM-YYYY)</small></div>
         <label class="check" style="margin:16px 0"><input type="checkbox" id="rememberStaff" checked> Keep me signed in on this device</label>
         <button class="btn btn-primary btn-block" id="staffSubmit"><i class="fa-solid fa-arrow-right-to-bracket"></i> Open staff portal</button>
         <p style="color:var(--muted);font-size:.78rem;line-height:1.5;margin:14px 0 0"><i class="fa-solid fa-shield-halved"></i> Your identity is checked against the live staff register. Your date of birth is never stored.</p>
       </form>
       <form id="adminForm" class="hidden">
-        <div class="field" style="margin-bottom:14px"><label for="adminId">Administrator ID</label><input class="input" id="adminId" autocomplete="username" required></div>
-        <div class="field" style="margin-bottom:18px"><label for="adminPassword">Password</label><input class="input" type="password" id="adminPassword" autocomplete="current-password" required></div>
+        <div class="field" style="margin-bottom:14px"><label for="adminId">Administrator ID</label><input class="input" id="adminId" autocomplete="username" placeholder="Enter administrator ID" required></div>
+        <div class="field" style="margin-bottom:18px"><label for="adminPassword">Password</label><div class="password-field-wrap"><input class="input" type="password" id="adminPassword" autocomplete="current-password" placeholder="Enter password" required><button type="button" class="password-toggle-btn" onclick="Portal.togglePassword('adminPassword', this)" aria-label="Toggle password visibility"><i class="fa-solid fa-eye"></i></button></div></div>
         <button class="btn btn-dark btn-block" id="adminSubmit"><i class="fa-solid fa-lock-open"></i> Open administration</button>
       </form>
     </section>
@@ -63,7 +63,25 @@
   <script>
     const alertBox=document.getElementById('alert');
     function showAlert(message,type='error'){alertBox.innerHTML=`<div class="alert alert-${type}">${Portal.escape(message)}</div>`}
-    function choose(role){studentForm.classList.toggle('hidden',role!=='student');staffForm.classList.toggle('hidden',role!=='staff');adminForm.classList.toggle('hidden',role!=='admin');studentTab.classList.toggle('active',role==='student');staffTab.classList.toggle('active',role==='staff');adminTab.classList.toggle('active',role==='admin');portalStatus.textContent=role==='student'?'Verified student access':role==='staff'?'Verified staff access':'Protected administration access';alertBox.innerHTML=''}
+    function parseDate(val){
+      if(!val)return '';
+      const parts=val.trim().split(/[-/.]/);
+      if(parts.length!==3)return val;
+      if(parts[0].length===4)return `${parts[2].padStart(2,'0')}-${parts[1].padStart(2,'0')}-${parts[0]}`;
+      return `${parts[0].padStart(2,'0')}-${parts[1].padStart(2,'0')}-${parts[2]}`;
+    }
+    function choose(role){
+      studentForm.classList.toggle('hidden',role!=='student');
+      staffForm.classList.toggle('hidden',role!=='staff');
+      adminForm.classList.toggle('hidden',role!=='admin');
+      studentTab.classList.toggle('active',role==='student');
+      staffTab.classList.toggle('active',role==='staff');
+      adminTab.classList.toggle('active',role==='admin');
+      portalStatus.textContent=role==='student'?'Verified student access':role==='staff'?'Verified staff access':'Protected administration access';
+      alertBox.innerHTML='';
+      const firstInput=(role==='student'?studentForm:role==='staff'?staffForm:adminForm).querySelector('input:not([type="checkbox"])');
+      if(firstInput)setTimeout(()=>firstInput.focus(),100);
+    }
     studentTab.onclick=()=>choose('student');staffTab.onclick=()=>choose('staff');adminTab.onclick=()=>choose('admin');
     if(Portal.studentToken()) window.location.href='dashboard.html';
     else if(Portal.staffToken()) window.location.href='staff.html';
@@ -72,7 +90,7 @@
     document.getElementById('studentForm').onsubmit=async event=>{
       event.preventDefault();const button=document.getElementById('studentSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying student record';
       try{
-        const raw=document.getElementById('dob').value.split('-');const dob=`${raw[2]}-${raw[1]}-${raw[0]}`;
+        const dob=parseDate(document.getElementById('dob').value);
         const response=await Portal.request('/api/student/login',{method:'POST',body:JSON.stringify({rollNumber:document.getElementById('rollNumber').value,dob})});const data=await response.json();
         if(!response.ok)throw new Error(data.message||'Sign in failed.');
         const remember=document.getElementById('rememberMe').checked;localStorage.setItem('rememberStudent',String(remember));
@@ -84,7 +102,7 @@
     document.getElementById('staffForm').onsubmit=async event=>{
       event.preventDefault();const button=document.getElementById('staffSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying staff record';
       try{
-        const raw=document.getElementById('staffDob').value.split('-');const dob=`${raw[2]}-${raw[1]}-${raw[0]}`;
+        const dob=parseDate(document.getElementById('staffDob').value);
         const response=await Portal.request('/api/staff/login',{method:'POST',body:JSON.stringify({staffId:document.getElementById('staffId').value,dob})});const data=await response.json();
         if(!response.ok)throw new Error(data.message||'Sign in failed.');
         const remember=document.getElementById('rememberStaff').checked;localStorage.setItem('rememberStaff',String(remember));
@@ -94,8 +112,8 @@
       }catch(error){showAlert(error.message);button.disabled=false;button.innerHTML='<i class="fa-solid fa-arrow-right-to-bracket"></i> Open staff portal'}
     };
     document.getElementById('adminForm').onsubmit=async event=>{
-      event.preventDefault();const button=document.getElementById('adminSubmit');button.disabled=true;
-      try{const response=await Portal.request('/api/admin/login',{method:'POST',body:JSON.stringify({username:adminId.value,password:adminPassword.value})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Sign in failed.');Portal.clearStudent();Portal.clearStaff();localStorage.setItem('adminToken',data.token);window.location.href='admin.html'}catch(error){showAlert(error.message);button.disabled=false}
+      event.preventDefault();const button=document.getElementById('adminSubmit');button.disabled=true;button.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Verifying credentials';
+      try{const response=await Portal.request('/api/admin/login',{method:'POST',body:JSON.stringify({username:adminId.value,password:adminPassword.value})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Sign in failed.');Portal.clearStudent();Portal.clearStaff();localStorage.setItem('adminToken',data.token);window.location.href='admin.html'}catch(error){showAlert(error.message);button.disabled=false;button.innerHTML='<i class="fa-solid fa-lock-open"></i> Open administration'}
     };
   </script>
 </body></html>

@@ -90,6 +90,247 @@ const Portal = {
       play(523.25, 0, 0.2); play(659.25, 0.16, 0.22); play(783.99, 0.34, 0.34);
       setTimeout(() => { context.close().catch(() => {}); this._voteAudioContext = null; }, 1000);
     } catch (_) {}
+    this.launchConfetti();
+  },
+  toast(message, type = 'info', duration = 4000) {
+    let container = document.querySelector('.portal-toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'portal-toast-container';
+      document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.className = `portal-toast toast-${type}`;
+    const icon = type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-circle-info';
+    toast.innerHTML = `<i class="fa-solid ${icon}"></i><span>${this.escape(message)}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.classList.add('toast-leaving');
+      setTimeout(() => toast.remove(), 260);
+    }, duration);
+  },
+  togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPass = input.type === 'password';
+    input.type = isPass ? 'text' : 'password';
+    if (button) {
+      button.innerHTML = `<i class="fa-solid fa-${isPass ? 'eye-slash' : 'eye'}"></i>`;
+      button.setAttribute('aria-label', isPass ? 'Hide password' : 'Show password');
+    }
+  },
+  initialsAvatar(name, department = '') {
+    const initials = (name || 'KC')
+      .split(/\s+/)
+      .map(part => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || 'KC';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0b2447"/><stop offset="100%" stop-color="#1e5bb8"/></linearGradient></defs><rect width="200" height="200" fill="url(#g)"/><text x="50%" y="54%" font-family="sans-serif" font-weight="800" font-size="64" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">${initials}</text></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+  },
+  launchConfetti() {
+    try {
+      let canvas = document.querySelector('.portal-confetti-canvas');
+      if (!canvas) {
+        canvas = document.createElement('canvas');
+        canvas.className = 'portal-confetti-canvas';
+        document.body.appendChild(canvas);
+      }
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+
+      const colors = ['#246bfd', '#28c8e8', '#f4b942', '#35db9e', '#fa56ae', '#7058e0'];
+      const particles = Array.from({ length: 90 }, () => ({
+        x: window.innerWidth * (0.2 + Math.random() * 0.6),
+        y: window.innerHeight * 0.4,
+        vx: (Math.random() - 0.5) * 14,
+        vy: (Math.random() - 0.8) * 18,
+        size: Math.random() * 8 + 5,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        rotation: Math.random() * 360,
+        vr: (Math.random() - 0.5) * 10,
+        opacity: 1
+      }));
+
+      let start = null;
+      const animate = (timestamp) => {
+        if (!start) start = timestamp;
+        const progress = (timestamp - start) / 2400;
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+        particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.35; // gravity
+          p.vx *= 0.98;
+          p.rotation += p.vr;
+          p.opacity = Math.max(0, 1 - progress);
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.globalAlpha = p.opacity;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.4);
+          ctx.restore();
+        });
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          canvas.remove();
+        }
+      };
+      requestAnimationFrame(animate);
+    } catch (_) {}
+  },
+  showBallotReviewModal({ positions, groups, selections, onConfirm }) {
+    document.getElementById('ballotReviewModal')?.remove();
+    const modalWrap = document.createElement('div');
+    modalWrap.id = 'ballotReviewModal';
+    modalWrap.className = 'modal-backdrop';
+
+    const itemsHtml = positions.map(pos => {
+      const selectedId = selections[pos];
+      const candidate = groups[pos]?.find(c => c._id === selectedId);
+      const name = candidate ? this.escape(candidate.name) : 'Not selected';
+      const dept = candidate ? `${this.escape(candidate.department)} · Year ${this.escape(candidate.year)}` : 'No selection';
+      const photo = candidate?.photo ? `<img src="${this.escape(candidate.photo)}" alt="${name}" onerror="this.src='${this.initialsAvatar(name)}'">` : `<div class="avatar-fallback">${name.charAt(0)}</div>`;
+
+      return `
+        <div class="ballot-review-item">
+          ${photo}
+          <div>
+            <span class="position-badge">${this.escape(pos)}</span>
+            <h4>${name}</h4>
+            <p>${dept}</p>
+          </div>
+          <i class="fa-solid fa-circle-check" style="color:var(--green);font-size:1.3rem;"></i>
+        </div>
+      `;
+    }).join('');
+
+    modalWrap.innerHTML = `
+      <div class="modal ballot-review-modal">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow"><i class="fa-solid fa-shield-halved"></i> Ballot Verification</span>
+            <h2 style="margin-top:6px">Review your selections</h2>
+          </div>
+          <button class="close" type="button" onclick="document.getElementById('ballotReviewModal').remove()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p style="color:var(--muted);margin:0 0 14px">Please verify each candidate choice below. Once confirmed and submitted, your ballot is irreversibly recorded.</p>
+        <div class="ballot-review-list">
+          ${itemsHtml}
+        </div>
+        <div class="composer-actions" style="margin-top:18px">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('ballotReviewModal').remove()">
+            <i class="fa-solid fa-arrow-left"></i> Change choices
+          </button>
+          <button type="button" class="btn btn-primary" id="confirmBallotFinal">
+            <i class="fa-solid fa-lock"></i> Confirm & cast ballot
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalWrap);
+    document.getElementById('confirmBallotFinal').onclick = () => {
+      modalWrap.remove();
+      if (typeof onConfirm === 'function') onConfirm();
+    };
+  },
+  showStudentIdCard(student) {
+    document.getElementById('studentIdModal')?.remove();
+    const modalWrap = document.createElement('div');
+    modalWrap.id = 'studentIdModal';
+    modalWrap.className = 'modal-backdrop';
+
+    const name = this.escape(student?.name || 'Student');
+    const roll = this.escape(student?.rollNumber || '—');
+    const dept = this.escape(student?.department || student?.className || 'General');
+    const year = student?.year ? `${this.escape(student.year)} Year` : 'Student';
+    const academicYear = new Date().getFullYear();
+
+    modalWrap.innerHTML = `
+      <div class="modal" style="width:min(490px,100%);padding:22px">
+        <div class="modal-head">
+          <div>
+            <span class="eyebrow"><i class="fa-solid fa-id-card"></i> Official Digital Credential</span>
+            <h2 style="margin-top:6px">Student Identity Card</h2>
+          </div>
+          <button class="close" type="button" onclick="document.getElementById('studentIdModal').remove()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="student-id-card-wrap">
+          <div class="student-id-card" id="printableStudentIdCard">
+            <div class="id-card-head">
+              <div class="id-card-college">
+                <img class="id-card-crest" src="kc.png" alt="Crest">
+                <div>
+                  <strong>KAMARAJ COLLEGE</strong>
+                  <small>Autonomous · Thoothukudi</small>
+                </div>
+              </div>
+              <div class="id-card-chip" title="Verified Digital NFC Chip"></div>
+            </div>
+            <div class="id-card-body">
+              <div class="id-card-avatar">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <div class="id-card-fields">
+                <div class="id-card-field">
+                  <small>STUDENT NAME</small>
+                  <strong>${name}</strong>
+                </div>
+                <div class="id-card-field">
+                  <small>ROLL NUMBER</small>
+                  <span>${roll}</span>
+                </div>
+                <div class="id-card-field">
+                  <small>DEPARTMENT & YEAR</small>
+                  <span>${dept} · ${year}</span>
+                </div>
+              </div>
+            </div>
+            <div class="id-card-footer">
+              <span class="id-card-barcode">|||| ||||| || |||||</span>
+              <span class="id-card-verified-badge"><i class="fa-solid fa-circle-check"></i> VERIFIED KC-FPC ${academicYear}</span>
+            </div>
+          </div>
+        </div>
+        <div class="composer-actions" style="margin-top:20px;justify-content:center">
+          <button type="button" class="btn btn-secondary" onclick="document.getElementById('studentIdModal').remove()">Close</button>
+          <button type="button" class="btn btn-primary" onclick="window.print()">
+            <i class="fa-solid fa-print"></i> Print ID Card
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalWrap);
+  },
+  initNetworkAlerts() {
+    let banner = document.querySelector('.offline-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'offline-banner';
+      banner.innerHTML = '<i class="fa-solid fa-wifi-slash"></i> You are currently offline. Viewing cached campus portal data.';
+      document.body.prepend(banner);
+    }
+    const update = () => {
+      const offline = !navigator.onLine;
+      banner.classList.toggle('visible', offline);
+      if (!offline) {
+        this.toast('Back online. Data connection restored.', 'success', 3000);
+      }
+    };
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    if (!navigator.onLine) banner.classList.add('visible');
   },
   logoutStudent() { this.clearStudent(); window.location.href = 'index.html'; },
   logoutStaff() { this.clearStaff(); window.location.href = 'index.html'; },
@@ -109,7 +350,6 @@ const Portal = {
       const original = button?.innerHTML;
       if (button) { button.innerHTML = '<i class="fa-solid fa-check"></i><span>Link copied</span>'; setTimeout(() => { button.innerHTML = original; }, 2200); }
     } catch (error) {
-      // Sharing can be cancelled by the user; do not show an intrusive browser alert.
       if (error?.name !== 'AbortError' && button) button.innerHTML = '<i class="fa-solid fa-link"></i><span>Copy unavailable</span>';
     }
   },
@@ -413,7 +653,10 @@ const Portal = {
 
 window.Portal = Portal;
 Portal.applyTheme();
-window.addEventListener('DOMContentLoaded', () => Portal.mountFooterActions());
+window.addEventListener('DOMContentLoaded', () => {
+  Portal.mountFooterActions();
+  Portal.initNetworkAlerts();
+});
 
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
