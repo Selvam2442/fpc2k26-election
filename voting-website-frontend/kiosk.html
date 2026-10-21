@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="portal.css">
   <style>
     body.kiosk-body {
-      background: radial-gradient(circle at 50% 20%, #0d284f, #051327 75%, #020914);
+      background: radial-gradient(circle at 50% 15%, #0e2d5c, #06152b 70%, #020813);
       color: #fff;
       min-height: 100vh;
       display: flex;
@@ -18,15 +18,19 @@
       user-select: none;
       -webkit-user-select: none;
       overflow-x: hidden;
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     }
     .kiosk-topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px clamp(16px, 4vw, 36px);
-      background: rgba(7, 21, 46, 0.85);
+      padding: 12px clamp(16px, 4vw, 36px);
+      background: rgba(7, 21, 46, 0.88);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
     .kiosk-brand {
       display: flex;
@@ -44,7 +48,7 @@
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      padding: 6px 12px;
+      padding: 5px 12px;
       border-radius: 999px;
       font-size: 0.72rem;
       font-weight: 800;
@@ -60,7 +64,7 @@
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.18);
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 700;
       color: #e2ecf8;
     }
@@ -79,31 +83,173 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: clamp(16px, 3vw, 40px);
-      max-width: 1100px;
+      padding: clamp(14px, 3vw, 36px);
+      max-width: 1150px;
       margin: 0 auto;
       width: 100%;
     }
     .kiosk-card {
-      background: linear-gradient(145deg, rgba(14, 41, 75, 0.95), rgba(7, 25, 49, 0.98));
-      border: 1px solid rgba(137, 177, 226, 0.2);
+      background: linear-gradient(150deg, rgba(14, 43, 78, 0.95), rgba(7, 24, 48, 0.98));
+      border: 1px solid rgba(137, 177, 226, 0.22);
       border-radius: 28px;
-      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
-      padding: clamp(24px, 4vw, 44px);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+      padding: clamp(20px, 3.5vw, 40px);
       width: 100%;
-      max-width: 720px;
+      max-width: 760px;
     }
+
+    /* Role switcher pills */
+    .kiosk-role-selector {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      background: rgba(5, 17, 36, 0.7);
+      padding: 6px;
+      border-radius: 18px;
+      border: 1px solid rgba(137, 177, 226, 0.2);
+      margin-bottom: 22px;
+    }
+    .role-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 13px 16px;
+      border-radius: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: #9cb5d2;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .role-btn:active {
+      transform: scale(0.98);
+    }
+    .role-btn.active {
+      background: linear-gradient(135deg, #246bfd, #144ebd);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(36, 107, 253, 0.35);
+    }
+
+    /* Input Field Wrap with Icons */
+    .kiosk-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+    }
+    .kiosk-input {
+      width: 100%;
+      font-size: 1.35rem;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: 0.06em;
+      background: rgba(6, 22, 44, 0.92);
+      border: 2px solid rgba(137, 177, 226, 0.28);
+      border-radius: 16px;
+      color: #fff;
+      padding: 14px 46px 14px 16px;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      font-family: 'Outfit', monospace, sans-serif;
+    }
+    .kiosk-input:focus, .kiosk-input.active-field {
+      border-color: #35db9e;
+      box-shadow: 0 0 0 4px rgba(53, 219, 158, 0.2);
+    }
+    .input-clear-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255, 255, 255, 0.12);
+      border: none;
+      color: #a7bed7;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      transition: all 0.15s ease;
+    }
+    .input-clear-btn:hover {
+      background: rgba(255, 80, 80, 0.3);
+      color: #ff8585;
+    }
+
+    /* Date field with integrated picker button */
+    .kiosk-date-field-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .kiosk-date-pick-trigger {
+      padding: 0 18px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border: none;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      min-height: 56px;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+      transition: all 0.2s ease;
+    }
+    .kiosk-date-pick-trigger:active {
+      transform: scale(0.96);
+    }
+
+    /* Keypad tab selector */
+    .kiosk-keypad-mode-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 18px 0 10px;
+      gap: 10px;
+    }
+    .keypad-toggle-tabs {
+      display: inline-flex;
+      background: rgba(5, 17, 36, 0.8);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .keypad-tab {
+      padding: 6px 14px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #9cb5d2;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .keypad-tab.active {
+      background: #246bfd;
+      color: #fff;
+    }
+
+    /* Touch Numpad */
     .kiosk-numpad {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-top: 18px;
+      gap: 10px;
     }
     .numpad-key {
-      min-height: 62px;
-      border-radius: 16px;
+      min-height: 58px;
+      border-radius: 14px;
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       color: #fff;
       font-family: 'Outfit', sans-serif;
       font-size: 1.55rem;
@@ -111,19 +257,92 @@
       display: grid;
       place-items: center;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: all 0.12s ease;
       touch-action: manipulation;
     }
     .numpad-key:active {
-      transform: scale(0.95);
-      background: rgba(36, 107, 253, 0.4);
+      transform: scale(0.94);
+      background: rgba(36, 107, 253, 0.45);
       border-color: #246bfd;
     }
     .numpad-key.action-key {
-      font-size: 1.05rem;
-      background: rgba(255, 255, 255, 0.04);
-      color: #9cb2cb;
+      font-size: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: #a7bfdc;
     }
+
+    /* Full Touch QWERTY Keyboard */
+    .kiosk-qwerty-keyboard {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .qwerty-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+    }
+    .qwerty-key {
+      flex: 1;
+      max-width: 64px;
+      min-height: 52px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      touch-action: manipulation;
+    }
+    .qwerty-key:active {
+      transform: scale(0.93);
+      background: rgba(36, 107, 253, 0.5);
+      border-color: #246bfd;
+    }
+    .qwerty-key.wide-key {
+      flex: 1.6;
+      font-size: 0.95rem;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9cb5d2;
+    }
+    .qwerty-key.space-key {
+      flex: 3.5;
+      font-size: 0.95rem;
+    }
+
+    /* Quick Chips */
+    .kiosk-quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+    .chip-btn {
+      padding: 7px 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(137, 177, 226, 0.22);
+      color: #b5cde7;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .chip-btn:hover, .chip-btn:active {
+      background: rgba(36, 107, 253, 0.3);
+      border-color: #246bfd;
+      color: #fff;
+      transform: scale(0.96);
+    }
+
+    /* Candidate Cards Grid */
     .kiosk-ballot-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -132,9 +351,9 @@
       margin: 20px 0;
     }
     .kiosk-candidate-card {
-      background: rgba(14, 39, 72, 0.85);
+      background: rgba(14, 39, 72, 0.88);
       border: 2px solid rgba(137, 177, 226, 0.22);
-      border-radius: 20px;
+      border-radius: 22px;
       overflow: hidden;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -148,8 +367,8 @@
     }
     .kiosk-candidate-card.selected {
       border-color: #246bfd;
-      background: linear-gradient(145deg, rgba(36, 107, 253, 0.25), rgba(11, 41, 79, 0.95));
-      box-shadow: 0 10px 30px rgba(36, 107, 253, 0.35);
+      background: linear-gradient(150deg, rgba(36, 107, 253, 0.28), rgba(11, 41, 79, 0.96));
+      box-shadow: 0 12px 34px rgba(36, 107, 253, 0.4);
     }
     .kiosk-candidate-card.selected::after {
       content: "SELECTED ✓";
@@ -158,15 +377,15 @@
       right: 12px;
       background: #246bfd;
       color: #fff;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       font-weight: 900;
-      padding: 4px 9px;
+      padding: 4px 10px;
       border-radius: 999px;
       letter-spacing: 0.08em;
     }
     .kiosk-candidate-card img {
       width: 100%;
-      height: 180px;
+      height: 185px;
       object-fit: cover;
       background: #0d2547;
     }
@@ -184,6 +403,118 @@
       font-size: 0.85rem;
       margin: 0;
     }
+
+    /* Modal / Bottom Sheet for Easy Date Selection */
+    .kiosk-modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 8, 19, 0.82);
+      backdrop-filter: blur(14px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .kiosk-modal-backdrop.open {
+      display: flex;
+      animation: fadeIn 0.2s ease;
+    }
+    .kiosk-date-modal {
+      background: linear-gradient(160deg, #0e2b52, #071933);
+      border: 1px solid rgba(137, 177, 226, 0.3);
+      border-radius: 26px;
+      padding: 24px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.7);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .date-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+    .date-modal-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #63ddf0;
+    }
+    .date-section-label {
+      font-size: 0.76rem;
+      font-weight: 850;
+      letter-spacing: 0.08em;
+      color: #8da4be;
+      margin: 14px 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .date-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+      gap: 8px;
+    }
+    .date-chip {
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #e2edf9;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .date-chip:hover {
+      background: rgba(36, 107, 253, 0.25);
+      border-color: #246bfd;
+    }
+    .date-chip.selected {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #34d399;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+    }
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+    .month-chip {
+      padding: 10px 4px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #d8e6f7;
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.92rem;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .month-chip:hover {
+      background: rgba(36, 107, 253, 0.25);
+    }
+    .month-chip.selected {
+      background: linear-gradient(135deg, #246bfd, #1251c6);
+      border-color: #60a5fa;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    }
+
     .kiosk-step { display: none; width: 100%; }
     .kiosk-step.active { display: block; animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -202,6 +533,7 @@
 </head>
 <body class="kiosk-body" onclick="resetInactivityTimer()" onkeydown="resetInactivityTimer()" ontouchstart="resetInactivityTimer()">
 
+  <!-- KIOSK TOPBAR -->
   <header class="kiosk-topbar">
     <div class="kiosk-brand">
       <img src="kc.png" alt="Kamaraj College">
@@ -209,13 +541,13 @@
         <strong style="font-size: 1rem; letter-spacing: -0.01em;">Kamaraj College Digital Voting Station</strong>
         <div style="display:flex; align-items:center; gap:8px; margin-top:2px;">
           <span class="kiosk-badge"><i class="fa-solid fa-cube"></i> Polling Station #01</span>
-          <span style="font-size: 0.75rem; color: #87a0bd;">Official Campus Democracy Terminal</span>
+          <span style="font-size: 0.75rem; color: #87a0bd;" id="currentModeLabel">Student & Staff Voting Terminal</span>
         </div>
       </div>
     </div>
     <div style="display:flex; align-items:center; gap:12px;">
       <div class="kiosk-inactivity-pill" id="inactivityPill">
-        <i class="fa-regular fa-clock"></i> Inactivity timeout: <span class="timer-val" id="inactivityTimerText">30s</span>
+        <i class="fa-regular fa-clock"></i> Inactivity reset: <span class="timer-val" id="inactivityTimerText">30s</span>
       </div>
       <button class="btn btn-secondary btn-sm" type="button" onclick="toggleKioskFullscreen()" title="Full screen">
         <i class="fa-solid fa-expand"></i>
@@ -228,32 +560,89 @@
 
   <main class="kiosk-shell">
 
-    <!-- STEP 1: ROLL NUMBER & DOB AUTH -->
+    <!-- STEP 1: ROLL NUMBER / STAFF ID & DOB AUTH -->
     <section class="kiosk-step active" id="kioskStepAuth">
       <div class="kiosk-card" style="margin: 0 auto;">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <span class="eyebrow" style="background: rgba(36, 107, 253, 0.2); color: #69dff1;">
-            <i class="fa-solid fa-id-card-clip"></i> Voter Verification
-          </span>
-          <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.2rem; margin: 12px 0 6px;">Cast Your Vote</h1>
-          <p style="color: #9cb4cf; margin: 0; font-size: 0.95rem;">Enter your college roll number and date of birth using the touch pad below.</p>
+        
+        <!-- Role Switcher: Student vs Staff -->
+        <div class="kiosk-role-selector">
+          <button class="role-btn active" id="roleBtnStudent" type="button" onclick="setKioskVoterRole('student')">
+            <i class="fa-solid fa-user-graduate"></i> Student Voter
+          </button>
+          <button class="role-btn" id="roleBtnStaff" type="button" onclick="setKioskVoterRole('staff')">
+            <i class="fa-solid fa-chalkboard-user"></i> Faculty / Staff
+          </button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 20px;">
+          <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.1rem; margin: 0 0 6px;" id="authHeaderTitle">Student Voting Booth</h1>
+          <p style="color: #9cb4cf; margin: 0; font-size: 0.95rem;" id="authHeaderSubtitle">
+            Enter your college roll number and date of birth to verify eligibility.
+          </p>
         </div>
 
         <div id="kioskAlert" style="margin-bottom: 16px;"></div>
 
+        <!-- Input Fields -->
         <div class="form-grid" style="grid-template-columns: 1fr 1fr; gap: 14px;">
           <div class="field">
-            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850;">STUDENT ROLL NUMBER</label>
-            <input class="input" id="kioskRollInput" style="font-size: 1.35rem; font-weight: 800; text-align: center; letter-spacing: 0.05em; background: rgba(7, 24, 48, 0.9); border-color: rgba(137, 177, 226, 0.3); color: #fff;" placeholder="e.g. 23UCA12" readonly onclick="setActiveInput('roll')">
+            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850; letter-spacing: 0.05em;" id="voterIdLabel">
+              STUDENT ROLL NUMBER
+            </label>
+            <div class="kiosk-input-wrap">
+              <input class="kiosk-input active-field" id="kioskRollInput" 
+                placeholder="e.g. 23UCA12" 
+                autocomplete="off" 
+                autocapitalize="characters" 
+                onfocus="setActiveInput('roll')" 
+                onclick="setActiveInput('roll')"
+                oninput="onVoterIdInput(this)">
+              <button class="input-clear-btn" type="button" onclick="clearInputField('roll')" title="Clear">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
           </div>
+
           <div class="field">
-            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850;">DATE OF BIRTH (DD-MM-YYYY)</label>
-            <input class="input" id="kioskDobInput" style="font-size: 1.35rem; font-weight: 800; text-align: center; letter-spacing: 0.05em; background: rgba(7, 24, 48, 0.9); border-color: rgba(137, 177, 226, 0.3); color: #fff;" placeholder="DD-MM-YYYY" readonly onclick="setActiveInput('dob')">
+            <label style="color: #8da4be; font-size: 0.72rem; font-weight: 850; letter-spacing: 0.05em;">
+              DATE OF BIRTH (DD-MM-YYYY)
+            </label>
+            <div class="kiosk-date-field-row">
+              <div class="kiosk-input-wrap" style="flex: 1;">
+                <input class="kiosk-input" id="kioskDobInput" 
+                  placeholder="DD-MM-YYYY" 
+                  autocomplete="off" 
+                  maxlength="10"
+                  onfocus="setActiveInput('dob')" 
+                  onclick="setActiveInput('dob')"
+                  oninput="onDobInput(this)">
+                <button class="input-clear-btn" type="button" onclick="clearInputField('dob')" title="Clear">
+                  <i class="fa-solid fa-xmark"></i>
+                </button>
+              </div>
+              <button class="kiosk-date-pick-trigger" type="button" onclick="openDateModal()" title="Easy Touch Date Picker">
+                <i class="fa-solid fa-calendar-days"></i> Pick Date
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Touch Numpad -->
-        <div class="kiosk-numpad">
+        <!-- Hidden Native Date Picker for iPad / Android System Pickers -->
+        <input type="date" id="nativeDatePicker" style="display:none;" onchange="onNativeDateSelected(this.value)">
+
+        <!-- Keypad Mode Switcher & Quick Prefixes -->
+        <div class="kiosk-keypad-mode-bar">
+          <span style="font-size: 0.8rem; font-weight: 800; color: #8fa7c3;">
+            <i class="fa-solid fa-keyboard"></i> On-Screen Touch Keyboard:
+          </span>
+          <div class="keypad-toggle-tabs">
+            <button class="keypad-tab active" id="keypadTabNum" type="button" onclick="setKeypadMode('num')">123 Numpad</button>
+            <button class="keypad-tab" id="keypadTabAbc" type="button" onclick="setKeypadMode('abc')">ABC Full Keyboard</button>
+          </div>
+        </div>
+
+        <!-- 1. NUMPAD MODE -->
+        <div class="kiosk-numpad" id="numpadContainer">
           <button class="numpad-key" type="button" onclick="numpadPress('1')">1</button>
           <button class="numpad-key" type="button" onclick="numpadPress('2')">2</button>
           <button class="numpad-key" type="button" onclick="numpadPress('3')">3</button>
@@ -268,15 +657,55 @@
           <button class="numpad-key action-key" type="button" onclick="numpadBackspace()"><i class="fa-solid fa-delete-left"></i> Back</button>
         </div>
 
-        <!-- Alpha quick buttons for college roll numbers -->
-        <div style="display:flex; gap:8px; margin-top:10px; justify-content:center;">
-          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UCA')">23UCA</button>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UBA')">23UBA</button>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('23UCM')">23UCM</button>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="numpadPress('-')">- (dash)</button>
+        <!-- 2. FULL QWERTY TOUCH KEYBOARD MODE -->
+        <div class="kiosk-qwerty-keyboard" id="qwertyContainer">
+          <div class="qwerty-row">
+            <button class="qwerty-key" type="button" onclick="numpadPress('Q')">Q</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('W')">W</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('E')">E</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('R')">R</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('T')">T</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('Y')">Y</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('U')">U</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('I')">I</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('O')">O</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('P')">P</button>
+          </div>
+          <div class="qwerty-row">
+            <button class="qwerty-key" type="button" onclick="numpadPress('A')">A</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('S')">S</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('D')">D</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('F')">F</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('G')">G</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('H')">H</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('J')">J</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('K')">K</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('L')">L</button>
+          </div>
+          <div class="qwerty-row">
+            <button class="qwerty-key" type="button" onclick="numpadPress('Z')">Z</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('X')">X</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('C')">C</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('V')">V</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('B')">B</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('N')">N</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('M')">M</button>
+            <button class="qwerty-key" type="button" onclick="numpadPress('-')">-</button>
+            <button class="qwerty-key wide-key" type="button" onclick="numpadBackspace()"><i class="fa-solid fa-delete-left"></i></button>
+          </div>
+          <div class="qwerty-row">
+            <button class="qwerty-key wide-key" type="button" onclick="numpadClear()">Clear</button>
+            <button class="qwerty-key space-key" type="button" onclick="switchInputFocus()">Next Field ⇥</button>
+            <button class="qwerty-key wide-key" type="button" onclick="setKeypadMode('num')">123 Num</button>
+          </div>
         </div>
 
-        <button class="btn btn-primary btn-block" id="kioskVerifyBtn" style="margin-top: 20px; padding: 16px; font-size: 1.15rem;" onclick="verifyKioskVoter()">
+        <!-- Quick Prefix Chips for Faster Entry -->
+        <div class="kiosk-quick-chips" id="quickPrefixContainer">
+          <!-- Filled dynamically based on Student or Staff -->
+        </div>
+
+        <button class="btn btn-primary btn-block" id="kioskVerifyBtn" style="margin-top: 22px; padding: 16px; font-size: 1.15rem; font-weight: 850;" onclick="verifyKioskVoter()">
           <i class="fa-solid fa-shield-check"></i> Verify & Begin Ballot
         </button>
       </div>
@@ -285,19 +714,21 @@
     <!-- STEP 2: WELCOME & VERIFIED IDENTITY -->
     <section class="kiosk-step" id="kioskStepWelcome">
       <div class="kiosk-card" style="text-align: center; margin: 0 auto;">
-        <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(36, 185, 147, 0.15); border: 2px solid #24b993; display: grid; place-items: center; margin: 0 auto 16px; color: #35db9e; font-size: 2.2rem;">
+        <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(36, 185, 147, 0.15); border: 2px solid #24b993; display: grid; place-items: center; margin: 0 auto 16px; color: #35db9e; font-size: 2.3rem;">
           <i class="fa-solid fa-user-check"></i>
         </div>
-        <span class="eyebrow" style="background: rgba(36, 185, 147, 0.15); color: #35db9e;">Eligible Voter Confirmed</span>
+        <span class="eyebrow" style="background: rgba(36, 185, 147, 0.15); color: #35db9e;" id="voterTypeBadge">
+          Eligible Student Voter Confirmed
+        </span>
         <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.3rem; margin: 12px 0 6px;" id="kioskVoterName">—</h1>
         <p style="color: #9cb4cf; font-size: 1.05rem;" id="kioskVoterMeta">—</p>
 
         <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 18px; margin: 24px 0; text-align: left;">
-          <h3 style="margin: 0 0 8px; font-size: 1rem;"><i class="fa-solid fa-lock" style="color:#63ddf0;"></i> Private Ballot Rules:</h3>
+          <h3 style="margin: 0 0 8px; font-size: 1rem;"><i class="fa-solid fa-lock" style="color:#63ddf0;"></i> Private Booth Guidelines:</h3>
           <ul style="margin: 0; padding-left: 20px; color: #b4c9e2; font-size: 0.9rem; line-height: 1.6;">
             <li>Select exactly one candidate for each contested position.</li>
-            <li>Your ballot is anonymous and recorded with end-to-end cloud protection.</li>
-            <li>Upon voting, your session will clear immediately for the next student.</li>
+            <li>Your ballot is anonymous, encrypted, and recorded directly on the cloud server.</li>
+            <li>Upon voting, your session will clear immediately for the next voter.</li>
           </ul>
         </div>
 
@@ -343,7 +774,7 @@
           <i class="fa-solid fa-circle-check"></i>
         </div>
         <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.4rem; margin: 0 0 10px;">Ballot Cast Securely!</h1>
-        <p style="color: #b5cbe4; font-size: 1.05rem; line-height: 1.6; margin: 0;">
+        <p style="color: #b5cbe4; font-size: 1.05rem; line-height: 1.6; margin: 0;" id="successThankYouText">
           Thank you for making your voice count in the Kamaraj College Campus Election. Your vote has been officially tallied.
         </p>
 
@@ -359,33 +790,235 @@
 
   </main>
 
+  <!-- EASY TOUCH DATE PICKER MODAL -->
+  <div class="kiosk-modal-backdrop" id="datePickerModal" onclick="closeDateModalOnBackdrop(event)">
+    <div class="kiosk-date-modal">
+      <div class="date-modal-header">
+        <h2><i class="fa-solid fa-calendar-check"></i> Select Date of Birth</h2>
+        <button class="btn btn-ghost btn-sm" type="button" onclick="closeDateModal()" style="font-size:1.1rem; color:#fff;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Year Chooser -->
+      <div class="date-section-label">
+        <span>YEAR OF BIRTH</span>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <button class="btn btn-secondary btn-sm" style="padding:2px 8px;" onclick="stepYear(-1)"><i class="fa-solid fa-minus"></i></button>
+          <strong id="selectedYearDisplay" style="color:#63ddf0; font-size:1rem;">2005</strong>
+          <button class="btn btn-secondary btn-sm" style="padding:2px 8px;" onclick="stepYear(1)"><i class="fa-solid fa-plus"></i></button>
+        </div>
+      </div>
+      <div class="date-chips-grid" id="yearChipsContainer" style="grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));">
+        <!-- Years rendered dynamically based on student or staff -->
+      </div>
+
+      <!-- Month Chooser -->
+      <div class="date-section-label">
+        <span>MONTH</span>
+        <span id="selectedMonthDisplay" style="color:#63ddf0; font-size:0.9rem;">August</span>
+      </div>
+      <div class="month-grid" id="monthGridContainer">
+        <!-- 12 Months -->
+      </div>
+
+      <!-- Day Chooser -->
+      <div class="date-section-label">
+        <span>DAY (DATE)</span>
+        <span id="selectedDayDisplay" style="color:#35db9e; font-size:0.9rem;">15</span>
+      </div>
+      <div class="date-chips-grid" id="dayGridContainer">
+        <!-- 1 to 31 Days -->
+      </div>
+
+      <!-- Live Selection Summary & Confirm Button -->
+      <div style="margin-top: 20px; padding: 14px; background: rgba(5, 17, 36, 0.85); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="font-size:0.75rem; color:#8fa7c3; display:block;">FORMATTED DATE:</span>
+          <strong style="font-size:1.2rem; color:#35db9e; font-family:'Outfit', monospace;" id="modalFormattedDatePreview">15-08-2005</strong>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary btn-sm" type="button" onclick="triggerNativeDatePicker()" title="Use device date wheel">
+            <i class="fa-solid fa-mobile-screen"></i> Native
+          </button>
+          <button class="btn btn-primary" type="button" style="padding: 10px 20px; font-weight:800;" onclick="applyDateSelection()">
+            <i class="fa-solid fa-check"></i> Apply Date
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="portal.js"></script>
   <script>
+    // State variables
+    let currentVoterRole = 'student'; // 'student' | 'staff'
     let activeField = 'roll';
     let currentVoter = null;
+    let voterToken = null;
     let groups = {};
     let positions = [];
     let positionIdx = 0;
     let selections = {};
     let inactivitySeconds = 30;
-    let inactivityTimer = null;
     let resetCountdownTimer = null;
 
-    function setActiveInput(field) {
-      activeField = field;
-      document.getElementById('kioskRollInput').style.borderColor = field === 'roll' ? '#246bfd' : 'rgba(137, 177, 226, 0.3)';
-      document.getElementById('kioskDobInput').style.borderColor = field === 'dob' ? '#246bfd' : 'rgba(137, 177, 226, 0.3)';
+    // Date Picker state
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    let pickerDay = 15;
+    let pickerMonth = 8; // 1-12
+    let pickerYear = 2005;
+
+    // Quick prefixes
+    const STUDENT_PREFIXES = ['23UCA', '23UBA', '23UCM', '24MCA', '22UPH', '23BCO', '23BBA', '24ENG'];
+    const STAFF_PREFIXES = ['STF', 'FAC', 'HOD', 'PROF', 'KC', 'ENG', 'MAT', 'CS'];
+
+    // Switch Role: Student vs Staff
+    function setKioskVoterRole(role) {
+      currentVoterRole = role;
+      document.getElementById('roleBtnStudent').classList.toggle('active', role === 'student');
+      document.getElementById('roleBtnStaff').classList.toggle('active', role === 'staff');
+
+      const isStaff = role === 'staff';
+      document.getElementById('currentModeLabel').textContent = isStaff ? 'Faculty / Staff Voting Terminal' : 'Student Voting Terminal';
+      document.getElementById('authHeaderTitle').textContent = isStaff ? 'Staff & Faculty Booth' : 'Student Voting Booth';
+      document.getElementById('authHeaderSubtitle').textContent = isStaff 
+        ? 'Enter your Staff ID and date of birth to verify voter eligibility.' 
+        : 'Enter your college roll number and date of birth to verify eligibility.';
+      document.getElementById('voterIdLabel').textContent = isStaff ? 'STAFF / EMPLOYEE ID' : 'STUDENT ROLL NUMBER';
+      document.getElementById('kioskRollInput').placeholder = isStaff ? 'e.g. STF102' : 'e.g. 23UCA12';
+      
+      // Update default picker year
+      if (isStaff && pickerYear > 2001) {
+        pickerYear = 1985;
+      } else if (!isStaff && pickerYear < 1998) {
+        pickerYear = 2005;
+      }
+
+      renderQuickChips();
+      renderYearChips();
+      updateDatePreview();
+      kioskResetToStart(false);
     }
 
+    function renderQuickChips() {
+      const container = document.getElementById('quickPrefixContainer');
+      const prefixes = currentVoterRole === 'student' ? STUDENT_PREFIXES : STAFF_PREFIXES;
+      container.innerHTML = prefixes.map(p => `
+        <button class="chip-btn" type="button" onclick="appendPrefix('${p}')">${p}</button>
+      `).join('') + `
+        <button class="chip-btn" type="button" onclick="appendPrefix('-')">- (dash)</button>
+      `;
+    }
+
+    function appendPrefix(prefix) {
+      const input = document.getElementById('kioskRollInput');
+      input.value = prefix;
+      setActiveInput('roll');
+      resetInactivityTimer();
+      input.focus();
+    }
+
+    // Input management
+    function setActiveInput(field) {
+      activeField = field;
+      const rollInput = document.getElementById('kioskRollInput');
+      const dobInput = document.getElementById('kioskDobInput');
+      rollInput.classList.toggle('active-field', field === 'roll');
+      dobInput.classList.toggle('active-field', field === 'dob');
+    }
+
+    function switchInputFocus() {
+      if (activeField === 'roll') {
+        setActiveInput('dob');
+        document.getElementById('kioskDobInput').focus();
+      } else {
+        setActiveInput('roll');
+        document.getElementById('kioskRollInput').focus();
+      }
+    }
+
+    function clearInputField(field) {
+      if (field === 'roll') {
+        document.getElementById('kioskRollInput').value = '';
+        setActiveInput('roll');
+      } else {
+        document.getElementById('kioskDobInput').value = '';
+        setActiveInput('dob');
+      }
+      resetInactivityTimer();
+    }
+
+    function onVoterIdInput(input) {
+      input.value = input.value.toUpperCase();
+      resetInactivityTimer();
+    }
+
+    // Smart auto-formatter for DOB input (formats DD-MM-YYYY automatically)
+    function onDobInput(input) {
+      let val = input.value.replace(/[^0-9]/g, '');
+      if (val.length > 8) val = val.slice(0, 8);
+      
+      let formatted = '';
+      if (val.length > 4) {
+        formatted = val.slice(0, 2) + '-' + val.slice(2, 4) + '-' + val.slice(4);
+      } else if (val.length > 2) {
+        formatted = val.slice(0, 2) + '-' + val.slice(2);
+      } else {
+        formatted = val;
+      }
+      input.value = formatted;
+      resetInactivityTimer();
+    }
+
+    // Keypad press handler (supports auto-dash formatting when DOB field is active)
     function numpadPress(val) {
       const input = activeField === 'roll' ? document.getElementById('kioskRollInput') : document.getElementById('kioskDobInput');
-      input.value += val;
+      
+      if (activeField === 'dob') {
+        if (/^[0-9]$/.test(val)) {
+          let currentDigits = input.value.replace(/[^0-9]/g, '');
+          if (currentDigits.length < 8) {
+            currentDigits += val;
+            let formatted = '';
+            if (currentDigits.length > 4) {
+              formatted = currentDigits.slice(0, 2) + '-' + currentDigits.slice(2, 4) + '-' + currentDigits.slice(4);
+            } else if (currentDigits.length > 2) {
+              formatted = currentDigits.slice(0, 2) + '-' + currentDigits.slice(2);
+            } else {
+              formatted = currentDigits;
+            }
+            input.value = formatted;
+          }
+        } else if (val === '-') {
+          input.value += val;
+        }
+      } else {
+        input.value = (input.value + val).toUpperCase();
+      }
       resetInactivityTimer();
     }
 
     function numpadBackspace() {
       const input = activeField === 'roll' ? document.getElementById('kioskRollInput') : document.getElementById('kioskDobInput');
-      input.value = input.value.slice(0, -1);
+      if (activeField === 'dob') {
+        let currentDigits = input.value.replace(/[^0-9]/g, '');
+        if (currentDigits.length > 0) {
+          currentDigits = currentDigits.slice(0, -1);
+          let formatted = '';
+          if (currentDigits.length > 4) {
+            formatted = currentDigits.slice(0, 2) + '-' + currentDigits.slice(2, 4) + '-' + currentDigits.slice(4);
+          } else if (currentDigits.length > 2) {
+            formatted = currentDigits.slice(0, 2) + '-' + currentDigits.slice(2);
+          } else {
+            formatted = currentDigits;
+          }
+          input.value = formatted;
+        }
+      } else {
+        input.value = input.value.slice(0, -1);
+      }
       resetInactivityTimer();
     }
 
@@ -395,6 +1028,147 @@
       resetInactivityTimer();
     }
 
+    function setKeypadMode(mode) {
+      document.getElementById('keypadTabNum').classList.toggle('active', mode === 'num');
+      document.getElementById('keypadTabAbc').classList.toggle('active', mode === 'abc');
+      document.getElementById('numpadContainer').style.display = mode === 'num' ? 'grid' : 'none';
+      document.getElementById('qwertyContainer').style.display = mode === 'abc' ? 'flex' : 'none';
+    }
+
+    // --- EASY DATE PICKER MODAL LOGIC ---
+    function openDateModal() {
+      // If DOB input already has a value, parse it
+      const currentDob = document.getElementById('kioskDobInput').value.trim();
+      const parts = currentDob.split('-');
+      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+        pickerDay = parseInt(parts[0], 10) || pickerDay;
+        pickerMonth = parseInt(parts[1], 10) || pickerMonth;
+        pickerYear = parseInt(parts[2], 10) || pickerYear;
+      }
+      renderYearChips();
+      renderMonthGrid();
+      renderDayGrid();
+      updateDatePreview();
+      document.getElementById('datePickerModal').classList.add('open');
+      resetInactivityTimer();
+    }
+
+    function closeDateModal() {
+      document.getElementById('datePickerModal').classList.remove('open');
+    }
+
+    function closeDateModalOnBackdrop(e) {
+      if (e.target.id === 'datePickerModal') {
+        closeDateModal();
+      }
+    }
+
+    function renderYearChips() {
+      const container = document.getElementById('yearChipsContainer');
+      const isStaff = currentVoterRole === 'staff';
+      const startYear = isStaff ? 1962 : 1999;
+      const endYear = isStaff ? 2004 : 2009;
+      const years = [];
+      for (let y = startYear; y <= endYear; y++) years.push(y);
+
+      container.innerHTML = years.map(y => `
+        <div class="date-chip ${y === pickerYear ? 'selected' : ''}" onclick="selectYear(${y})">${y}</div>
+      `).join('');
+      document.getElementById('selectedYearDisplay').textContent = pickerYear;
+    }
+
+    function stepYear(delta) {
+      pickerYear += delta;
+      renderYearChips();
+      renderDayGrid();
+      updateDatePreview();
+    }
+
+    function selectYear(y) {
+      pickerYear = y;
+      renderYearChips();
+      renderDayGrid();
+      updateDatePreview();
+    }
+
+    function renderMonthGrid() {
+      const container = document.getElementById('monthGridContainer');
+      container.innerHTML = MONTHS.map((m, idx) => `
+        <div class="month-chip ${(idx + 1) === pickerMonth ? 'selected' : ''}" onclick="selectMonth(${idx + 1})">${m}</div>
+      `).join('');
+      document.getElementById('selectedMonthDisplay').textContent = MONTH_NAMES[pickerMonth - 1];
+    }
+
+    function selectMonth(m) {
+      pickerMonth = m;
+      renderMonthGrid();
+      renderDayGrid();
+      updateDatePreview();
+    }
+
+    function daysInMonth(year, month) {
+      return new Date(year, month, 0).getDate();
+    }
+
+    function renderDayGrid() {
+      const maxDays = daysInMonth(pickerYear, pickerMonth);
+      if (pickerDay > maxDays) pickerDay = maxDays;
+      const container = document.getElementById('dayGridContainer');
+      const days = [];
+      for (let d = 1; d <= maxDays; d++) days.push(d);
+
+      container.innerHTML = days.map(d => `
+        <div class="date-chip ${d === pickerDay ? 'selected' : ''}" onclick="selectDay(${d})">${String(d).padStart(2, '0')}</div>
+      `).join('');
+      document.getElementById('selectedDayDisplay').textContent = String(pickerDay).padStart(2, '0');
+    }
+
+    function selectDay(d) {
+      pickerDay = d;
+      renderDayGrid();
+      updateDatePreview();
+    }
+
+    function updateDatePreview() {
+      const formatted = `${String(pickerDay).padStart(2, '0')}-${String(pickerMonth).padStart(2, '0')}-${pickerYear}`;
+      const previewEl = document.getElementById('modalFormattedDatePreview');
+      if (previewEl) previewEl.textContent = formatted;
+    }
+
+    function applyDateSelection() {
+      const formatted = `${String(pickerDay).padStart(2, '0')}-${String(pickerMonth).padStart(2, '0')}-${pickerYear}`;
+      document.getElementById('kioskDobInput').value = formatted;
+      closeDateModal();
+      setActiveInput('dob');
+      resetInactivityTimer();
+    }
+
+    function triggerNativeDatePicker() {
+      const nativeInput = document.getElementById('nativeDatePicker');
+      try {
+        if ('showPicker' in HTMLInputElement.prototype) {
+          nativeInput.showPicker();
+        } else {
+          nativeInput.click();
+        }
+      } catch (_) {
+        nativeInput.focus();
+      }
+    }
+
+    function onNativeDateSelected(val) {
+      if (!val) return;
+      // val is YYYY-MM-DD
+      const [y, m, d] = val.split('-');
+      if (y && m && d) {
+        pickerYear = parseInt(y, 10);
+        pickerMonth = parseInt(m, 10);
+        pickerDay = parseInt(d, 10);
+        applyDateSelection();
+      }
+    }
+
+    // Inactivity Watchdog
     function resetInactivityTimer() {
       inactivitySeconds = 30;
       updateInactivityDisplay();
@@ -439,51 +1213,73 @@
       resetInactivityTimer();
     }
 
-    function kioskResetToStart() {
+    function kioskResetToStart(clearInputs = true) {
       if (resetCountdownTimer) clearInterval(resetCountdownTimer);
       Portal.clearStudent();
+      Portal.clearStaff();
       currentVoter = null;
+      voterToken = null;
       selections = {};
       positionIdx = 0;
-      document.getElementById('kioskRollInput').value = '';
-      document.getElementById('kioskDobInput').value = '';
+      if (clearInputs) {
+        document.getElementById('kioskRollInput').value = '';
+        document.getElementById('kioskDobInput').value = '';
+      }
       document.getElementById('kioskAlert').innerHTML = '';
+      closeDateModal();
       setActiveInput('roll');
       showKioskStep('kioskStepAuth');
     }
 
+    // Authenticate Voter (Student OR Staff)
     async function verifyKioskVoter() {
-      const rollNumber = document.getElementById('kioskRollInput').value.trim();
+      const voterId = document.getElementById('kioskRollInput').value.trim();
       const dob = document.getElementById('kioskDobInput').value.trim();
       const alertBox = document.getElementById('kioskAlert');
       const btn = document.getElementById('kioskVerifyBtn');
 
-      if (!rollNumber || !dob) {
-        alertBox.innerHTML = '<div class="alert alert-error">Please enter both your roll number and date of birth.</div>';
+      if (!voterId || !dob) {
+        const idName = currentVoterRole === 'staff' ? 'Staff ID' : 'roll number';
+        alertBox.innerHTML = `<div class="alert alert-error">Please enter both your ${idName} and date of birth.</div>`;
         return;
       }
 
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying voter eligibility...';
+      alertBox.innerHTML = '';
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/student/login`, {
+        const isStaff = currentVoterRole === 'staff';
+        const endpoint = isStaff ? `${API_BASE_URL}/api/staff/login` : `${API_BASE_URL}/api/student/login`;
+        const bodyPayload = isStaff ? { staffId: voterId, dob } : { rollNumber: voterId, dob };
+
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rollNumber, dob })
+          body: JSON.stringify(bodyPayload)
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Verification failed');
 
-        Portal.store('studentToken', data.token);
-        currentVoter = data.student;
+        voterToken = data.token;
+        if (isStaff) {
+          Portal.store('staffToken', data.token);
+          currentVoter = data.staff;
+          document.getElementById('voterTypeBadge').innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Eligible Faculty Voter Confirmed';
+          document.getElementById('kioskVoterName').textContent = currentVoter.name;
+          document.getElementById('kioskVoterMeta').textContent = `${currentVoter.designation || 'Faculty'} · ${currentVoter.department || ''} · Staff ID: ${currentVoter.staffId}`;
+        } else {
+          Portal.store('studentToken', data.token);
+          currentVoter = data.student;
+          document.getElementById('voterTypeBadge').innerHTML = '<i class="fa-solid fa-user-graduate"></i> Eligible Student Voter Confirmed';
+          document.getElementById('kioskVoterName').textContent = currentVoter.name;
+          document.getElementById('kioskVoterMeta').textContent = `${currentVoter.department || ''} · Year ${currentVoter.year || 1} · Roll No: ${currentVoter.rollNumber}`;
+        }
 
         if (currentVoter.hasVoted) {
           throw new Error('Your ballot for this campus election has already been recorded.');
         }
 
-        document.getElementById('kioskVoterName').textContent = currentVoter.name;
-        document.getElementById('kioskVoterMeta').textContent = `${currentVoter.department || ''} · Year ${currentVoter.year || 1} · Roll No: ${currentVoter.rollNumber}`;
         showKioskStep('kioskStepWelcome');
       } catch (err) {
         alertBox.innerHTML = `<div class="alert alert-error">${Portal.escape(err.message)}</div>`;
@@ -493,17 +1289,32 @@
       }
     }
 
+    // Begin Ballot
     async function kioskStartBallot() {
       try {
+        const isStaff = currentVoterRole === 'staff';
+        const overviewEndpoint = isStaff ? `${API_BASE_URL}/api/staff/overview` : `${API_BASE_URL}/api/student/election`;
+
         const [candRes, electRes] = await Promise.all([
           fetch(`${API_BASE_URL}/api/candidates`),
-          Portal.request('/api/student/election', {}, 'student')
+          fetch(overviewEndpoint, {
+            headers: { 'Authorization': `Bearer ${voterToken}` }
+          })
         ]);
         const candidates = await candRes.json();
-        const election = await electRes.json();
+        const overviewData = await electRes.json();
+
+        const election = isStaff ? overviewData.election : overviewData;
+
+        if (election.hasVoted) {
+          alert('Your ballot has already been submitted for this election.');
+          kioskResetToStart();
+          return;
+        }
 
         if (!election.isOpen || !election.votingAllowed) {
-          alert('Voting is currently closed or paused by the administrator.');
+          const reason = isStaff ? 'Faculty voting is currently not active.' : 'Student voting is currently paused or closed.';
+          alert(reason);
           kioskResetToStart();
           return;
         }
@@ -556,6 +1367,7 @@
       nextBtn.innerHTML = positionIdx === positions.length - 1
         ? '<i class="fa-solid fa-lock"></i> Submit Ballot Now'
         : 'Next Position <i class="fa-solid fa-arrow-right"></i>';
+      resetInactivityTimer();
     }
 
     function selectKioskCandidate(id) {
@@ -580,6 +1392,7 @@
       }
     }
 
+    // Submit Ballot
     async function submitKioskBallot() {
       const nextBtn = document.getElementById('kioskNextBtn');
       nextBtn.disabled = true;
@@ -587,14 +1400,25 @@
 
       try {
         Portal.prepareVoteFeedback();
-        const res = await Portal.request('/api/student/vote', {
+        const isStaff = currentVoterRole === 'staff';
+        const submitEndpoint = isStaff ? `${API_BASE_URL}/api/staff/vote` : `${API_BASE_URL}/api/student/vote`;
+
+        const res = await fetch(submitEndpoint, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${voterToken}`
+          },
           body: JSON.stringify({ candidateIds: Object.values(selections) })
-        }, 'student');
+        });
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Submission failed');
 
         Portal.celebrateVote();
+        document.getElementById('successThankYouText').textContent = isStaff
+          ? `Thank you, Professor ${currentVoter.name}. Your official faculty ballot has been recorded.`
+          : `Thank you, ${currentVoter.name}. Your official student ballot has been recorded.`;
+
         showKioskStep('kioskStepSuccess');
 
         let secondsLeft = 5;
@@ -613,6 +1437,8 @@
       }
     }
 
+    // Initialize default states
+    renderQuickChips();
     setActiveInput('roll');
   </script>
 </body>
