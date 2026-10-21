@@ -429,58 +429,65 @@ function currentClassDirectory() {
     .map(({ sourceOrder, sheetOrder, ...group }) => group);
 }
 
-async function syncSource(source) {
-  try {
-    const response = await fetch(exportUrl(source.sheetId), { signal: AbortSignal.timeout(20000) });
-    if (!response.ok) throw new Error(`Google Sheets returned ${response.status}`);
-    const workbook = xlsx.read(Buffer.from(await response.arrayBuffer()), { type: 'buffer', cellDates: false });
-    const documentTitle = sheetDocumentTitle(response, workbook, source.name);
-    const classes = new Set();
-    const sourceClasses = [];
-    const students = [];
-    const defaultSourceOrder = DEFAULT_STUDENT_SOURCES.findIndex(item => item.sheetId === source.sheetId);
-    const sourceOrder = defaultSourceOrder < 0 ? DEFAULT_STUDENT_SOURCES.length : defaultSourceOrder;
+async function syncSource(source, retries = 2) {
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    try {
+      const response = await fetch(exportUrl(source.sheetId), { signal: AbortSignal.timeout(25000) });
+      if (!response.ok) throw new Error(`Google Sheets returned ${response.status}`);
+      const workbook = xlsx.read(Buffer.from(await response.arrayBuffer()), { type: 'buffer', cellDates: false });
+      const documentTitle = sheetDocumentTitle(response, workbook, source.name);
+      const classes = new Set();
+      const sourceClasses = [];
+      const students = [];
+      const defaultSourceOrder = DEFAULT_STUDENT_SOURCES.findIndex(item => item.sheetId === source.sheetId);
+      const sourceOrder = defaultSourceOrder < 0 ? DEFAULT_STUDENT_SOURCES.length : defaultSourceOrder;
 
-    for (const [sheetOrder, sheetTitle] of workbook.SheetNames.entries()) {
-      const displayTitle = meaningfulSheetTitle(sheetTitle, documentTitle);
-      const classDetails = classDetailsFor(displayTitle);
-      classes.add(classDetails.className);
-      sourceClasses.push({ ...classDetails, sourceOrder, sheetOrder });
-      const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
-      for (const [sourceRow, row] of rows.entries()) {
-        const rollNumber = firstValue(row, ['RollNumber', 'RollNo', 'RegisterNumber', 'RegisterNo', 'StudentId', 'AdmissionNumber']).toUpperCase();
-        const name = firstValue(row, ['Name', 'StudentName', 'FullName']);
-        const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
-        if (!rollNumber || !name || !dob) continue;
-        students.push({
-          sourceId: String(source._id),
-          sourceName: source.name,
-          sourceOrder,
-          sheetOrder,
-          sourceRow,
-          rollNumber,
-          name,
-          dob,
-          email: firstValue(row, ['Email', 'EmailAddress']),
-          active: true,
-          ...classDetails
-        });
+      for (const [sheetOrder, sheetTitle] of workbook.SheetNames.entries()) {
+        const displayTitle = meaningfulSheetTitle(sheetTitle, documentTitle);
+        const classDetails = classDetailsFor(displayTitle);
+        classes.add(classDetails.className);
+        sourceClasses.push({ ...classDetails, sourceOrder, sheetOrder });
+        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetTitle], { raw: false, defval: '' });
+        for (const [sourceRow, row] of rows.entries()) {
+          const rollNumber = firstValue(row, ['RollNumber', 'RollNo', 'RegisterNumber', 'RegisterNo', 'StudentId', 'AdmissionNumber']).toUpperCase();
+          const name = firstValue(row, ['Name', 'StudentName', 'FullName']);
+          const dob = normalizeDob(firstValue(row, ['DOB', 'DateOfBirth', 'BirthDate']));
+          if (!rollNumber || !name || !dob) continue;
+          students.push({
+            sourceId: String(source._id),
+            sourceName: source.name,
+            sourceOrder,
+            sheetOrder,
+            sourceRow,
+            rollNumber,
+            name,
+            dob,
+            email: firstValue(row, ['Email', 'EmailAddress']),
+            active: true,
+            ...classDetails
+          });
+        }
       }
-    }
 
-    studentDirectoryBySource.set(source.sheetId, students);
-    classDirectoryBySource.set(source.sheetId, sourceClasses);
-    source.lastSyncAt = new Date();
-    if (/^(Primary )?student register(?: \d+)?$/i.test(source.name)) source.name = documentTitle;
-    source.lastError = '';
-    source.studentCount = students.length;
-    source.classCount = classes.size;
-    await source.save().catch(error => console.error(`Spreadsheet metadata could not be saved: ${error.message}`));
-    return { imported: students.length, classes: [...classes], students };
-  } catch (error) {
-    source.lastError = error.message;
-    await source.save().catch(saveError => console.error(`Spreadsheet error status could not be saved: ${saveError.message}`));
-    throw error;
+      studentDirectoryBySource.set(source.sheetId, students);
+      classDirectoryBySource.set(source.sheetId, sourceClasses);
+      source.lastSyncAt = new Date();
+      if (/^(Primary )?student register(?: \d+)?$/i.test(source.name)) source.name = documentTitle;
+      source.lastError = '';
+      source.studentCount = students.length;
+      source.classCount = classes.size;
+      await source.save().catch(error => console.error(`Spreadsheet metadata could not be saved: ${error.message}`));
+      return { imported: students.length, classes: [...classes], students };
+    } catch (error) {
+      if (attempt <= retries) {
+        console.warn(`Sync attempt ${attempt} failed for ${source.name} (${error.message}). Retrying in ${attempt * 1.5}s...`);
+        await new Promise(r => setTimeout(r, attempt * 1500));
+        continue;
+      }
+      source.lastError = error.message;
+      await source.save().catch(saveError => console.error(`Spreadsheet error status could not be saved: ${saveError.message}`));
+      throw error;
+    }
   }
 }
 
